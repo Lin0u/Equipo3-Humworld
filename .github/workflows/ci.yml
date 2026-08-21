@@ -1,0 +1,64 @@
+# Pipeline CI/CD — origina en: instrucciones del proyecto, sección 8 y 14.
+# Jobs dependientes (`needs`): build/despliegue SOLO si test y sonarqube
+# son exitosos.
+#
+# TODO(equipo):
+# - Configurar el secret SONAR_TOKEN en GitHub (Settings > Secrets).
+# - Ajustar el umbral de cobertura si SonarQube lo re-valida (>= 80%, sección 14).
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Instalar dependencias
+        run: pip install -r src/requirements.txt
+      - name: Ejecutar pruebas con cobertura
+        run: |
+          cd src
+          pytest --cov=app --cov-report=xml --cov-report=term-missing --cov-fail-under=80
+        # TODO(equipo): --cov-fail-under=80 fallará mientras no haya lógica de
+        # negocio ni pruebas reales implementadas — es intencional (sección 14, DoD).
+      - name: Subir reporte de cobertura
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: src/coverage.xml
+
+  sonarqube:
+    runs-on: ubuntu-latest
+    needs: [test]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Descargar reporte de cobertura
+        uses: actions/download-artifact@v4
+        with:
+          name: coverage-report
+          path: src/
+      - name: Análisis SonarQube
+        uses: sonarsource/sonarqube-scan-action@v2
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        # TODO(equipo): agregar sonar-project.properties en la raíz del repo.
+
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    needs: [test, sonarqube]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build imagen Docker
+        run: docker build -t humworld-rss-api:${{ github.sha }} .
+      # TODO(equipo): agregar paso de push a registry y despliegue real,
+      # una vez definido el entorno de destino.
