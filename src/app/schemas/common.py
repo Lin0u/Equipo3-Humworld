@@ -7,7 +7,7 @@ from typing import List, Optional
 from pydantic import BaseModel
 
 
-class ErrorResponse(BaseModel):
+class Error(BaseModel):
     codigo: str
     mensaje: str
     detalles: Optional[List[str]] = None
