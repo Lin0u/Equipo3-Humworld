@@ -8,7 +8,10 @@ Contrato: contrato-canales-fuentes-rss.openapi.yaml.
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
 
+from app.schemas.common import Error
 from app.routers import captures, channels, health, sources
 
 
@@ -34,6 +37,18 @@ app = FastAPI(
     openapi_url="/api/openapi.json",
     lifespan=lifespan,
 )
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_error_handler(request, exc: RequestValidationError):
+    error = Error(
+        codigo="DATOS_INVALIDOS",
+        mensaje="Los datos enviados no son válidos.",
+    )
+    return JSONResponse(
+        status_code=400,
+        content=error.model_dump(exclude_none=True),
+    )
 
 api_v1_prefix = "/api/v1"
 

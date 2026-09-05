@@ -7,7 +7,7 @@ componentes `CanalNoticias` / `CanalNoticiasCrear`.
 """
 from typing import Optional
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class CanalNoticiasCrear(BaseModel):
@@ -15,6 +15,13 @@ class CanalNoticiasCrear(BaseModel):
     continente: str = Field(..., min_length=1, max_length=50)
     pais: Optional[str] = Field(default=None, max_length=100)
     descripcion: Optional[str] = Field(default=None, max_length=500)
+
+    @field_validator("nombre", "continente", "pais", "descripcion", mode="before")
+    @classmethod
+    def recortar_texto(cls, valor):
+        if isinstance(valor, str):
+            return valor.strip()
+        return valor
 
 
 class CanalNoticias(BaseModel):

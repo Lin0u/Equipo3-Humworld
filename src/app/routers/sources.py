@@ -8,36 +8,68 @@ Contrato: contrato-canales-fuentes-rss.openapi.yaml, paths /sources, /sources/{i
 
 TODO(equipo): sin lógica de negocio implementada — ver TODOs por endpoint.
 """
-from typing import List, Optional
+from typing import Optional
 
 from fastapi import APIRouter, Depends, Query
+from fastapi.responses import JSONResponse, Response
 from sqlalchemy.orm import Session
 
 from app.database import get_db
+from app.exceptions import (
+    CanalNoticiasNotFoundError,
+    FuenteRSSNotFoundError,
+)
+from app.schemas.common import Error
 from app.schemas.fuente import (
     FuenteRSS,
     FuenteRSSActualizar,
     FuenteRSSActualizarParcial,
     FuenteRSSCrear,
+    FuenteRSSListado,
+)
+from app.services.fuente_service import (
+    actualizar_fuente as actualizar_fuente_service,
+    crear_fuente as crear_fuente_service,
+    eliminar_fuente as eliminar_fuente_service,
+    listar_fuentes as listar_fuentes_service,
+    obtener_fuente as obtener_fuente_service,
 )
 
 router = APIRouter(prefix="/sources", tags=["sources"])
 
 
-@router.get("", response_model=List[FuenteRSS])
+@router.get(
+    "",
+    response_model=FuenteRSSListado,
+    responses={400: {"model": Error}},
+)
 def listar_fuentes(
     canal_id: Optional[int] = Query(default=None, description="Filtra por canal propietario."),
     continente: Optional[str] = Query(default=None, description="Filtra por continente del canal."),
     categoria_iptc: Optional[str] = Query(default=None, description="Filtra por categoría IPTC (nivel 1)."),
     activo: Optional[bool] = Query(default=None, description="Filtra por estado activo/inactivo."),
+    pagina: int = Query(default=1, ge=1, description="Número de página."),
+    tamanio_pagina: int = Query(default=10, ge=1, le=50, description="Elementos por página."),
     db: Session = Depends(get_db),
 ):
     """Origina en HU-RSS-003 (consulta y filtrado de fuentes RSS)."""
-    # TODO(equipo): implementar consulta real con filtros combinables
-    raise NotImplementedError("HU-RSS-003: listado de fuentes pendiente de implementación")
+    return listar_fuentes_service(
+        db,
+        pagina,
+        tamanio_pagina,
+        canal_id=canal_id,
+        continente=continente,
+        categoria_iptc=categoria_iptc,
+        activo=activo,
+    )
 
 
-@router.post("", response_model=FuenteRSS, status_code=201)
+@router.post(
+    "",
+    response_model=FuenteRSS,
+    status_code=201,
+    responses={400: {"model": Error}, 404: {"model": Error}},
+)
 def crear_fuente(payload: FuenteRSSCrear, db: Session = Depends(get_db)):
     """
     Origina en HU-RSS-002.
@@ -47,34 +79,86 @@ def crear_fuente(payload: FuenteRSSCrear, db: Session = Depends(get_db)):
       en verdadero.
     - 404 si "canal_id" no corresponde a ningún canal registrado.
     """
-    # TODO(equipo): verificar existencia de canal_id (404 si no existe) + persistir
-    raise NotImplementedError("HU-RSS-002: alta de fuente pendiente de implementación")
+    try:
+        return crear_fuente_service(db, payload)
+    except CanalNoticiasNotFoundError:
+        error = Error(
+            codigo="CANAL_NOTICIAS_NO_ENCONTRADO",
+            mensaje="El canal de noticias indicado no existe.",
+        )
+        return JSONResponse(
+            status_code=404,
+            content=error.model_dump(exclude_none=True),
+        )
 
 
-@router.get("/{fuente_id}", response_model=FuenteRSS)
+@router.get(
+    "/{fuente_id}",
+    response_model=FuenteRSS,
+    responses={404: {"model": Error}},
+)
 def obtener_fuente(fuente_id: int, db: Session = Depends(get_db)):
     """Origina en HU-RSS-003 (consulta de detalle)."""
-    # TODO(equipo): implementar consulta real; 404 si no existe
-    raise NotImplementedError("HU-RSS-003: detalle de fuente pendiente de implementación")
+    try:
+        return obtener_fuente_service(db, fuente_id)
+    except FuenteRSSNotFoundError:
+        error = Error(
+            codigo="FUENTE_RSS_NO_ENCONTRADA",
+            mensaje="La fuente RSS indicada no existe.",
+        )
+        return JSONResponse(
+            status_code=404,
+            content=error.model_dump(exclude_none=True),
+        )
 
 
-@router.put("/{fuente_id}", response_model=FuenteRSS)
+@router.put(
+    "/{fuente_id}",
+    response_model=FuenteRSS,
+    responses={400: {"model": Error}, 404: {"model": Error}},
+)
 def actualizar_fuente(fuente_id: int, payload: FuenteRSSActualizar, db: Session = Depends(get_db)):
     """Origina en HU-RSS-004 — actualización completa e idempotente."""
-    # TODO(equipo): implementar reemplazo completo; 404 si no existe
-    raise NotImplementedError("HU-RSS-004: actualización (PUT) pendiente de implementación")
+    try:
+        return actualizar_fuente_service(db, fuente_id, payload)
+    except FuenteRSSNotFoundError:
+        error = Error(
+            codigo="FUENTE_RSS_NO_ENCONTRADA",
+            mensaje="La fuente RSS indicada no existe.",
+        )
+        return JSONResponse(
+            status_code=404,
+            content=error.model_dump(exclude_none=True),
+        )
 
 
-@router.patch("/{fuente_id}", response_model=FuenteRSS)
+@router.patch(
+    "/{fuente_id}",
+    response_model=FuenteRSS,
+    responses={400: {"model": Error}, 404: {"model": Error}},
+)
 def actualizar_fuente_parcial(
     fuente_id: int, payload: FuenteRSSActualizarParcial, db: Session = Depends(get_db)
 ):
     """Origina en HU-RSS-004 — actualización parcial (solo campos presentes)."""
-    # TODO(equipo): aplicar solo los campos no-None del payload; 404 si no existe
-    raise NotImplementedError("HU-RSS-004: actualización (PATCH) pendiente de implementación")
+    try:
+        return actualizar_fuente_service(db, fuente_id, payload)
+    except FuenteRSSNotFoundError:
+        error = Error(
+            codigo="FUENTE_RSS_NO_ENCONTRADA",
+            mensaje="La fuente RSS indicada no existe.",
+        )
+        return JSONResponse(
+            status_code=404,
+            content=error.model_dump(exclude_none=True),
+        )
 
 
-@router.delete("/{fuente_id}", status_code=204)
+@router.delete(
+    "/{fuente_id}",
+    status_code=204,
+    responses={404: {"model": Error}},
+)
 def eliminar_fuente(fuente_id: int, db: Session = Depends(get_db)):
     """
     Origina en HU-RSS-005.
@@ -83,5 +167,15 @@ def eliminar_fuente(fuente_id: int, db: Session = Depends(get_db)):
     política de eliminación en cascada de noticias asociadas vs. desasociación
     (soft delete) — pendiente de decisión del equipo antes de implementar.
     """
-    # TODO(equipo): implementar eliminación real; 404 si no existe
-    raise NotImplementedError("HU-RSS-005: eliminación pendiente de implementación")
+    try:
+        eliminar_fuente_service(db, fuente_id)
+        return Response(status_code=204)
+    except FuenteRSSNotFoundError:
+        error = Error(
+            codigo="FUENTE_RSS_NO_ENCONTRADA",
+            mensaje="La fuente RSS indicada no existe.",
+        )
+        return JSONResponse(
+            status_code=404,
+            content=error.model_dump(exclude_none=True),
+        )

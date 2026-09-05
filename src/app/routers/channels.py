@@ -13,10 +13,14 @@ directamente aquí, para mantener la separación de capas de ADR-002, sección 4
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
 from app.database import get_db
+from app.exceptions import ChannelNameConflictError
 from app.schemas.canal import CanalNoticias, CanalNoticiasCrear
+from app.schemas.common import Error
+from app.services.canal_service import crear_canal as crear_canal_service
 
 router = APIRouter(prefix="/channels", tags=["channels"])
 
@@ -37,13 +41,21 @@ def crear_canal(payload: CanalNoticiasCrear, db: Session = Depends(get_db)):
     Origina en HU-RSS-001.
 
     Criterios de aceptación (Gherkin, ver HU-RSS-001):
-    - 201 si "nombre" y "continente" son válidos y no vacíos (Pydantic ya
-      garantiza no-vacío vía `min_length=1`).
-    - 409 si ya existe un canal con el mismo "nombre" (TODO: implementar
-      verificación de unicidad en la capa de servicio antes de persistir).
+    - 201 si "nombre" y "continente" son válidos y no vacíos.
+    - 409 si ya existe un canal con el mismo "nombre" sin distinguir
+      mayúsculas/minúsculas.
     """
-    # TODO(equipo): implementar creación real + verificación de duplicado (409)
-    raise NotImplementedError("HU-RSS-001: alta de canal pendiente de implementación")
+    try:
+      return crear_canal_service(db, payload)
+    except ChannelNameConflictError:
+      error = Error(
+        codigo="NOMBRE_CANAL_DUPLICADO",
+        mensaje="Ya existe un canal con ese nombre.",
+      )
+      return JSONResponse(
+        status_code=409,
+        content=error.model_dump(exclude_none=True),
+      )
 
 
 @router.get("/{canal_id}", response_model=CanalNoticias)
