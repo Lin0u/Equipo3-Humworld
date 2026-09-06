@@ -70,6 +70,7 @@ def crear_canal_registrado(
     return canal
 
 
+# HU-RSS-001 — Escenario: Alta exitosa de un canal de noticias (con normalización de campos)
 def test_crear_canal_normaliza_todos_los_campos_y_acepta_continente_libre(client):
     response = client.post(
         "/api/v1/channels",
@@ -91,6 +92,7 @@ def test_crear_canal_normaliza_todos_los_campos_y_acepta_continente_libre(client
     }
 
 
+# HU-RSS-001 — Escenario: Alta exitosa con campos opcionales (pais/descripcion) ausentes
 def test_crear_canal_acepta_campos_opcionales_ausentes(client):
     response = client.post(
         "/api/v1/channels",
@@ -110,6 +112,7 @@ def test_crear_canal_acepta_campos_opcionales_ausentes(client):
         {"nombre": "x" * 151, "continente": "Europa"},
     ],
 )
+# HU-RSS-001 — Escenario: Rechazo por datos obligatorios faltantes/inválidos (HTTP 400)
 def test_crear_canal_rechaza_datos_invalidos_con_error_de_contrato(client, payload):
     response = client.post("/api/v1/channels", json=payload)
 
@@ -117,6 +120,7 @@ def test_crear_canal_rechaza_datos_invalidos_con_error_de_contrato(client, paylo
     assert set(response.json()) == {"codigo", "mensaje"}
 
 
+# HU-RSS-001 — Escenario: Rechazo por nombre de canal duplicado (HTTP 409)
 def test_crear_canal_rechaza_nombre_duplicado_sin_distinguir_mayusculas(client):
     client.post(
         "/api/v1/channels",
@@ -135,6 +139,7 @@ def test_crear_canal_rechaza_nombre_duplicado_sin_distinguir_mayusculas(client):
     }
 
 
+# HU-RSS-001 — Escenario: Rechazo por duplicado (capa repositorio traduce la violación de unicidad de la BD)
 def test_repositorio_traduce_violacion_de_unicidad():
     repository = CanalNoticiasRepository()
 
@@ -154,6 +159,7 @@ def test_repositorio_traduce_violacion_de_unicidad():
         repository.crear(FakeSession(), CanalNoticias(nombre="Noticias", continente="Europa"))
 
 
+# HU-RSS-001 — Escenario: Rechazo por duplicado en condición de carrera (capa servicio -> 409)
 def test_servicio_traduce_carrera_de_unicidad_a_conflicto():
     class ConflictingRepository:
         def buscar_por_nombre(self, db, nombre):
@@ -173,6 +179,7 @@ def test_servicio_traduce_carrera_de_unicidad_a_conflicto():
 # --- HU-RSS-010: listado paginado ---------------------------------------
 
 
+# HU-RSS-010 — Escenario: Listado paginado por defecto (10 elementos, pagina=1, tamanio_pagina=10)
 def test_listar_canales_devuelve_respuesta_paginada_por_defecto(client, database_session):
     for indice in range(15):
         crear_canal_registrado(database_session, indice + 1, f"Canal {indice:02d}")
@@ -187,6 +194,7 @@ def test_listar_canales_devuelve_respuesta_paginada_por_defecto(client, database
     assert body["total"] == 15
 
 
+# HU-RSS-010 — Escenario: Orden del listado alfabético por "nombre" (insensible a mayúsculas)
 def test_listar_canales_ordena_alfabeticamente_insensible_a_mayusculas(client, database_session):
     crear_canal_registrado(database_session, 1, "zebra News")
     crear_canal_registrado(database_session, 2, "Al Jazeera")
@@ -199,6 +207,7 @@ def test_listar_canales_ordena_alfabeticamente_insensible_a_mayusculas(client, d
     assert nombres == ["Al Jazeera", "bbc News", "zebra News"]
 
 
+# HU-RSS-010 — Escenario: Solicitud de una página específica (pagina=2)
 def test_listar_canales_pagina_especifica(client, database_session):
     for indice in range(23):
         crear_canal_registrado(database_session, indice + 1, f"Canal {indice:02d}")
@@ -211,6 +220,7 @@ def test_listar_canales_pagina_especifica(client, database_session):
     assert len(body["items"]) == 10
 
 
+# HU-RSS-010 — Escenario: tamanio_pagina personalizado dentro del máximo permitido (50)
 def test_listar_canales_tamanio_pagina_personalizado_dentro_del_maximo(client, database_session):
     for indice in range(60):
         crear_canal_registrado(database_session, indice + 1, f"Canal {indice:03d}")
@@ -221,6 +231,7 @@ def test_listar_canales_tamanio_pagina_personalizado_dentro_del_maximo(client, d
     assert len(response.json()["items"]) == 50
 
 
+# HU-RSS-010 — Escenario: Página posterior a la última devuelve items vacío (total intacto)
 def test_listar_canales_pagina_posterior_a_la_ultima_devuelve_vacio(client, database_session):
     for indice in range(5):
         crear_canal_registrado(database_session, indice + 1, f"Canal {indice}")
@@ -234,6 +245,7 @@ def test_listar_canales_pagina_posterior_a_la_ultima_devuelve_vacio(client, data
     assert body["total"] == 5
 
 
+# HU-RSS-010 — Escenario: Listado vacío (sin canales registrados) devuelve items=[] y total=0
 def test_listar_canales_sin_registros_devuelve_pagina_vacia(client):
     response = client.get("/api/v1/channels")
 
@@ -246,6 +258,7 @@ def test_listar_canales_sin_registros_devuelve_pagina_vacia(client):
     }
 
 
+# HU-RSS-010 — Escenario: Listado paginado con volumen alto mantiene la forma de respuesta
 def test_listar_canales_con_volumen_alto_mantiene_la_forma_esperada(client, database_session):
     canales = [
         CanalNoticias(id=indice + 1, nombre=f"Canal {indice:04d}", continente="Europa")
@@ -275,6 +288,7 @@ def test_listar_canales_con_volumen_alto_mantiene_la_forma_esperada(client, data
         "tamanio_pagina=abc",
     ],
 )
+# HU-RSS-010 — Escenario: Rechazo por parámetros de paginación fuera de rango o no numéricos (HTTP 400)
 def test_listar_canales_rechaza_paginacion_invalida(client, query):
     response = client.get(f"/api/v1/channels?{query}")
 
@@ -282,6 +296,7 @@ def test_listar_canales_rechaza_paginacion_invalida(client, query):
     assert set(response.json()) == {"codigo", "mensaje"}
 
 
+# HU-RSS-010 — Escenario: Paginación inválida combinada responde un único error de contrato
 def test_listar_canales_rechaza_combinacion_de_paginacion_invalida_con_error_unico(client):
     response = client.get("/api/v1/channels?pagina=-1&tamanio_pagina=999")
 
@@ -291,6 +306,7 @@ def test_listar_canales_rechaza_combinacion_de_paginacion_invalida_con_error_uni
     assert "detalles" not in body
 
 
+# HU-RSS-010 — Escenario: Filtrado por continente combinado con paginación
 def test_listar_canales_filtra_por_continente_combinado_con_paginacion(client, database_session):
     crear_canal_registrado(database_session, 1, "Canal America 1", continente="America")
     crear_canal_registrado(database_session, 2, "Canal America 2", continente="america")
@@ -304,6 +320,7 @@ def test_listar_canales_filtra_por_continente_combinado_con_paginacion(client, d
     assert all(item["continente"].lower() == "america" for item in body["items"])
 
 
+# HU-RSS-010 — Escenario: Filtrado por continente insensible a diacríticos (America == América)
 def test_listar_canales_filtra_continente_insensible_a_diacriticos(client, database_session):
     crear_canal_registrado(database_session, 1, "Canal Latino", continente="América")
     crear_canal_registrado(database_session, 2, "Canal Europeo", continente="Europa")
@@ -316,6 +333,7 @@ def test_listar_canales_filtra_continente_insensible_a_diacriticos(client, datab
     assert body["items"][0]["continente"] == "América"
 
 
+# HU-RSS-010 — Escenario: Filtro de continente vacío no aplica filtro (devuelve todo)
 def test_listar_canales_continente_vacio_no_aplica_filtro(client, database_session):
     crear_canal_registrado(database_session, 1, "Canal Europa", continente="Europa")
 
@@ -325,6 +343,7 @@ def test_listar_canales_continente_vacio_no_aplica_filtro(client, database_sessi
     assert response.json()["total"] == 1
 
 
+# HU-RSS-010 — Escenario: Filtro por continente sin coincidencias devuelve listado vacío
 def test_listar_canales_continente_sin_coincidencias(client, database_session):
     crear_canal_registrado(database_session, 1, "Canal Europa", continente="Europa")
 
@@ -336,6 +355,7 @@ def test_listar_canales_continente_sin_coincidencias(client, database_session):
     assert body["total"] == 0
 
 
+# HU-RSS-010 — Escenario: el schema de listado serializa correctamente 0 y 23 elementos
 def test_schema_canal_listado_serializa_cero_y_23_elementos():
     canal = CanalNoticiasSchema(id=1, nombre="Canal", continente="Europa")
 
@@ -346,6 +366,7 @@ def test_schema_canal_listado_serializa_cero_y_23_elementos():
     assert len(completo.model_dump()["items"]) == 23
 
 
+# HU-RSS-010 — Escenario: Orden alfabético insensible a mayúsculas (capa repositorio)
 def test_repositorio_lista_ordenado_alfabeticamente_case_insensitive(database_session):
     crear_canal_registrado(database_session, 1, "zebra")
     crear_canal_registrado(database_session, 2, "Alfa")
@@ -356,6 +377,7 @@ def test_repositorio_lista_ordenado_alfabeticamente_case_insensitive(database_se
     assert [canal.nombre for canal in items] == ["Alfa", "zebra"]
 
 
+# HU-RSS-010 — Escenario: Filtro por continente sin coincidencias (capa repositorio)
 def test_repositorio_filtra_por_continente_sin_coincidencias_devuelve_vacio(database_session):
     crear_canal_registrado(database_session, 1, "Canal", continente="Europa")
 
@@ -365,6 +387,7 @@ def test_repositorio_filtra_por_continente_sin_coincidencias_devuelve_vacio(data
     assert total == 0
 
 
+# HU-RSS-010 — Escenario: Detalle existente/inexistente (capa repositorio, buscar_por_id)
 def test_repositorio_buscar_por_id_existente_e_inexistente(database_session):
     crear_canal_registrado(database_session, 42, "Canal")
 
@@ -374,6 +397,7 @@ def test_repositorio_buscar_por_id_existente_e_inexistente(database_session):
     assert repository.buscar_por_id(database_session, 999999) is None
 
 
+# HU-RSS-010 — Escenario: Filtrado por continente (capa servicio delega y recorta el valor)
 def test_servicio_listar_canales_delega_en_el_repositorio_y_recorta_continente():
     llamadas = []
 
@@ -390,6 +414,7 @@ def test_servicio_listar_canales_delega_en_el_repositorio_y_recorta_continente()
     assert resultado == {"items": [], "pagina": 2, "tamanio_pagina": 10, "total": 0}
 
 
+# HU-RSS-010 — Escenario: Filtro de continente en blanco se trata como ausente (capa servicio)
 def test_servicio_listar_canales_trata_continente_de_solo_espacios_como_ausente():
     llamadas = []
 
@@ -403,6 +428,7 @@ def test_servicio_listar_canales_trata_continente_de_solo_espacios_como_ausente(
     assert llamadas == [None]
 
 
+# HU-RSS-010 — Escenario: Detalle inexistente se traduce a error de dominio (capa servicio -> 404)
 def test_servicio_obtener_canal_traduce_ausencia_a_error_de_dominio():
     class FakeRepository:
         def buscar_por_id(self, db, canal_id):
@@ -415,6 +441,7 @@ def test_servicio_obtener_canal_traduce_ausencia_a_error_de_dominio():
 # --- HU-RSS-010: detalle de canal ---------------------------------------
 
 
+# HU-RSS-010 — Escenario: Consulta de detalle de un canal existente (todos los campos)
 def test_obtener_canal_existente_devuelve_todos_los_campos(client, database_session):
     crear_canal_registrado(
         database_session,
@@ -437,6 +464,7 @@ def test_obtener_canal_existente_devuelve_todos_los_campos(client, database_sess
     }
 
 
+# HU-RSS-010 — Escenario: Consulta de detalle de un canal inexistente (HTTP 404)
 def test_obtener_canal_inexistente_devuelve_404(client):
     response = client.get("/api/v1/channels/999999")
 
@@ -447,6 +475,7 @@ def test_obtener_canal_inexistente_devuelve_404(client):
     }
 
 
+# HU-RSS-010 — Escenario: Detalle con id no numérico responde 404 (schema Error, no 422)
 def test_obtener_canal_con_id_no_numerico_devuelve_404(client):
     response = client.get("/api/v1/channels/abc")
 
@@ -457,6 +486,7 @@ def test_obtener_canal_con_id_no_numerico_devuelve_404(client):
     }
 
 
+# HU-RSS-010 / DoD — El contrato OpenAPI declara respuestas de listado y detalle de canales
 def test_openapi_declara_listado_y_detalle_de_canales():
     openapi = app.openapi()
     listado = openapi["paths"]["/api/v1/channels"]["get"]
@@ -465,3 +495,44 @@ def test_openapi_declara_listado_y_detalle_de_canales():
     assert listado["responses"]["200"]["content"]["application/json"]["schema"]
     assert listado["responses"]["400"]["content"]["application/json"]["schema"]
     assert detalle["responses"]["404"]["content"]["application/json"]["schema"]
+
+
+# --- PL-07: persistencia observable a través de la API pública ----------
+# Cierra el hueco de trazabilidad detectado por QA: el resto de las pruebas de
+# listado siembran los canales directamente en la base de datos de prueba. Esta
+# prueba, en cambio, ejercita el flujo extremo a extremo únicamente por la API
+# (POST -> GET), verificando que un canal creado por el endpoint público queda
+# efectivamente persistido y es observable en el listado posterior. Cubre de
+# forma conjunta HU-RSS-001 (alta) y HU-RSS-010 (listado/detalle).
+
+
+def test_canal_creado_via_post_aparece_en_listado_y_detalle(client):
+    # HU-RSS-001 — Escenario: Alta exitosa de un canal de noticias
+    alta = client.post(
+        "/api/v1/channels",
+        json={"nombre": "Diario Integracion", "continente": "America"},
+    )
+
+    assert alta.status_code == 201
+    canal_id = alta.json()["id"]
+
+    # HU-RSS-010 — Escenario: el canal recién creado aparece en el listado
+    listado = client.get("/api/v1/channels")
+
+    assert listado.status_code == 200
+    cuerpo_listado = listado.json()
+    assert cuerpo_listado["total"] == 1
+    ids_listados = [item["id"] for item in cuerpo_listado["items"]]
+    assert canal_id in ids_listados
+
+    # HU-RSS-010 — Escenario: Consulta de detalle del canal recién creado
+    detalle = client.get(f"/api/v1/channels/{canal_id}")
+
+    assert detalle.status_code == 200
+    assert detalle.json() == {
+        "id": canal_id,
+        "nombre": "Diario Integracion",
+        "continente": "America",
+        "pais": None,
+        "descripcion": None,
+    }

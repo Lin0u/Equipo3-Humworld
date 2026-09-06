@@ -98,7 +98,9 @@ separada (PDF, sección 6.2), fuera del alcance de este backend.
   va en la capa de Repositorios (SQLAlchemy).
 - No colocar lógica de negocio en los routers.
 - Cada historia debe incluir pruebas, con dependencias externas (RSS)
-  aisladas mediante mocks.
+  aisladas mediante mocks. La estrategia de pruebas, el alcance de cobertura
+  y la matriz de trazabilidad HU-RSS ↔ escenario ↔ prueba del Sprint 1 se
+  documentan en `docs/Testing/plan-de-pruebas-sprint-1.md`.
 - Todo cambio debe corresponder a una especificación OpenSpec.
 - Los cambios arquitectónicos requieren revisión humana y, si alteran una
   decisión ya tomada, una nueva versión del ADR correspondiente.

@@ -13,6 +13,7 @@ from app.main import app
 client = TestClient(app)
 
 
+# Scaffold / DoD — Health check del servicio (arranque de la app sin BD ni mocks)
 def test_health_check_responde_ok():
     response = client.get("/api/v1/health")
     assert response.status_code == 200

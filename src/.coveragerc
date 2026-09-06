@@ -1,0 +1,23 @@
+# Configuración de cobertura del módulo Captura RSS (Sprint 1).
+#
+# La Definition of Done (sección 14 de las instrucciones del proyecto) exige
+# cobertura >= 80% "del módulo" que se está entregando. En este Sprint se
+# entregan HU-RSS-001, 002, 003-v2, 004, 005 y 010 (canales y fuentes RSS).
+#
+# El bloque de HU-RSS-006/007/008/009 es scaffolding intencional (sección 12
+# de las instrucciones del proyecto): estos archivos lanzan NotImplementedError
+# a propósito y todavía no deben tener pruebas. Se excluyen de la medición para
+# que el umbral del 80% se calcule solo sobre el código realmente entregado y
+# no penalice a un scaffolding que aún no corresponde probar.
+#
+# pytest-cov lee este archivo automáticamente al ejecutar desde src/, por lo
+# que la misma exclusión aplica en local y en el pipeline de CI sin cambios
+# adicionales en el YAML.
+[run]
+omit =
+    app/routers/captures.py
+    app/services/captura_service.py
+    app/jobs/scheduler.py
+
+[report]
+show_missing = True

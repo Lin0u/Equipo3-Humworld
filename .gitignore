@@ -2,3 +2,9 @@ venv/
 __pycache__/
 *.pyc
 .env
+
+# Artefactos de pruebas y cobertura (generados por pytest / coverage)
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
