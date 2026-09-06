@@ -10,29 +10,43 @@ entrada (Pydantic). La lógica de negocio (persistencia real, verificación de
 nombre duplicado -> 409, etc.) debe implementarse en `app/services/` — no
 directamente aquí, para mantener la separación de capas de ADR-002, sección 4.
 """
-from typing import List, Optional
+from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, Query
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.exceptions import ChannelNameConflictError
-from app.schemas.canal import CanalNoticias, CanalNoticiasCrear
+from app.exceptions import CanalNoticiasNotFoundError, ChannelNameConflictError
+from app.schemas.canal import CanalNoticias, CanalNoticiasCrear, CanalNoticiasListado
 from app.schemas.common import Error
-from app.services.canal_service import crear_canal as crear_canal_service
+from app.services.canal_service import (
+    crear_canal as crear_canal_service,
+    listar_canales as listar_canales_service,
+    obtener_canal as obtener_canal_service,
+)
 
 router = APIRouter(prefix="/channels", tags=["channels"])
 
+_ERROR_CANAL_NO_ENCONTRADO = Error(
+    codigo="CANAL_NOTICIAS_NO_ENCONTRADO",
+    mensaje="El canal de noticias indicado no existe.",
+)
 
-@router.get("", response_model=List[CanalNoticias])
+
+@router.get(
+    "",
+    response_model=CanalNoticiasListado,
+    responses={400: {"model": Error}},
+)
 def listar_canales(
     continente: Optional[str] = Query(default=None, description="Filtra canales por continente."),
+    pagina: int = Query(default=1, ge=1, description="Número de página."),
+    tamanio_pagina: int = Query(default=10, ge=1, le=50, description="Elementos por página."),
     db: Session = Depends(get_db),
 ):
-    """Origina en HU-RSS-001 (consulta implícita, soporte de sección 4.2.1 del PDF)."""
-    # TODO(equipo): implementar consulta real vía app/services/canal_service.py
-    raise NotImplementedError("HU-RSS-001: listado de canales pendiente de implementación")
+    """Origina en HU-RSS-010 (listado paginado, ordenado por "nombre" y filtrado por continente)."""
+    return listar_canales_service(db, pagina, tamanio_pagina, continente=continente)
 
 
 @router.post("", response_model=CanalNoticias, status_code=201)
@@ -58,8 +72,31 @@ def crear_canal(payload: CanalNoticiasCrear, db: Session = Depends(get_db)):
       )
 
 
-@router.get("/{canal_id}", response_model=CanalNoticias)
-def obtener_canal(canal_id: int, db: Session = Depends(get_db)):
-    """Origina en HU-RSS-001 (soporte de consulta de detalle)."""
-    # TODO(equipo): implementar consulta real; 404 si no existe
-    raise NotImplementedError("HU-RSS-001: detalle de canal pendiente de implementación")
+@router.get(
+    "/{canal_id}",
+    response_model=CanalNoticias,
+    responses={404: {"model": Error}},
+)
+def obtener_canal(canal_id: str, db: Session = Depends(get_db)):
+    """
+    Origina en HU-RSS-010 (detalle de canal).
+
+    "canal_id" se recibe como texto (no como "int" tipado por FastAPI) para
+    que un identificador no numérico responda 404 con el schema "Error",
+    en lugar del 422 automático de validación de FastAPI/Pydantic.
+    """
+    try:
+        canal_id_numerico = int(canal_id)
+    except ValueError:
+        return JSONResponse(
+            status_code=404,
+            content=_ERROR_CANAL_NO_ENCONTRADO.model_dump(exclude_none=True),
+        )
+
+    try:
+        return obtener_canal_service(db, canal_id_numerico)
+    except CanalNoticiasNotFoundError:
+        return JSONResponse(
+            status_code=404,
+            content=_ERROR_CANAL_NO_ENCONTRADO.model_dump(exclude_none=True),
+        )
