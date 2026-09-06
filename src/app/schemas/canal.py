@@ -5,7 +5,7 @@ Origina en: HU-RSS-001.
 Coherente 1:1 con `contrato-canales-fuentes-rss.openapi.yaml`,
 componentes `CanalNoticias` / `CanalNoticiasCrear`.
 """
-from typing import Optional
+from typing import List, Optional
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -32,3 +32,10 @@ class CanalNoticias(BaseModel):
     descripcion: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class CanalNoticiasListado(BaseModel):
+    items: List[CanalNoticias]
+    pagina: int
+    tamanio_pagina: int
+    total: int
