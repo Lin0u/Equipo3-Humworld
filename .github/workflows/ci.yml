@@ -2,8 +2,10 @@
 # Jobs dependientes (`needs`): build/despliegue SOLO si test y sonarqube
 # son exitosos.
 #
-# TODO(equipo):
-# - Configurar el secret SONAR_TOKEN en GitHub (Settings > Secrets).
+# PENDIENTE REAL (acción manual, no verificable desde el código):
+# - Configurar el secret SONAR_TOKEN en GitHub (Settings > Secrets). Si no
+#   está cargado, el job `sonarqube` falla y, por `needs: [test, sonarqube]`,
+#   `build-and-deploy` tampoco corre — aunque `test` pase con cobertura >= 80%.
 # - Ajustar el umbral de cobertura si SonarQube lo re-valida (>= 80%, sección 14).
 name: CI
 
@@ -27,8 +29,10 @@ jobs:
         run: |
           cd src
           pytest --cov=app --cov-report=xml --cov-report=term-missing --cov-fail-under=80
-        # TODO(equipo): --cov-fail-under=80 fallará mientras no haya lógica de
-        # negocio ni pruebas reales implementadas — es intencional (sección 14, DoD).
+        # Nota: el paso corre desde src/, por lo que recoge automáticamente
+        # src/.coveragerc (excluye el scaffolding de HU-RSS-006/007/008/009 de
+        # la cobertura) y src/pytest.ini. Con HU-RSS-001/002/003-v2/004/005/010
+        # implementadas y probadas, la cobertura del módulo es >= 80%.
       - name: Subir reporte de cobertura
         uses: actions/upload-artifact@v4
         with:
@@ -51,7 +55,9 @@ jobs:
         uses:    SonarSource/sonarqube-scan-action@7006c4492b2e0ee0f816d36501671557c97f5995 # v8.1.0
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        # TODO(equipo): agregar sonar-project.properties en la raíz del repo.
+        # sonar-project.properties ya existe en la raíz del repo (sonar.projectKey
+        # y sonar.organization definidos). Requiere el secret SONAR_TOKEN cargado
+        # en Settings > Secrets (ver PENDIENTE REAL del encabezado).
 
   build-and-deploy:
     runs-on: ubuntu-latest
