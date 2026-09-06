@@ -1,0 +1,566 @@
+openapi: 3.0.3
+info:
+  title: HumWorld API — Módulo Captura RSS
+  description: >
+    Contrato de API (OpenSpec) para la gestión de canales de noticias y fuentes RSS,
+    y para el disparo de capturas manuales. Origina en las historias de usuario
+    HU-RSS-001 a HU-RSS-010 (y su versión HU-RSS-003-v2) y en ADR-001 (stack backend)
+    y ADR-002 (arquitectura de captura RSS). Fuente funcional: PDF de especificaciones,
+    secciones 4.2.1, 4.2.3, 10.2 y 10.3.
+  version: "1.3.0"
+servers:
+  - url: /api/v1
+    description: Base URL versionada (PDF, sección 10.3)
+
+tags:
+  - name: channels
+    description: Gestión de canales de noticias (medios). Alta origina en HU-RSS-001; consulta/listado paginado origina en HU-RSS-010.
+  - name: sources
+    description: Gestión de fuentes RSS. Alta, modificación y eliminación originan en HU-RSS-002, HU-RSS-004, HU-RSS-005; consulta/listado paginado origina en HU-RSS-003-v2 (reemplaza a HU-RSS-003, deprecada).
+  - name: captures
+    description: Disparo de capturas manuales. Origina en HU-RSS-008.
+
+paths:
+
+  /channels:
+    get:
+      tags: [channels]
+      summary: Listar canales de noticias (paginado)
+      description: >
+        Origina en HU-RSS-010 (consulta y listado de canales). Listado ordenado
+        alfabéticamente en forma ascendente por "nombre", con paginación
+        (parámetros pagina/tamanio_pagina) y filtro opcional por continente.
+      parameters:
+        - name: continente
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Filtra canales por continente.
+        - name: pagina
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+          description: Número de página solicitada (base 1).
+        - name: tamanio_pagina
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 10
+          description: Cantidad de canales por página. Por defecto 10; máximo 50.
+      responses:
+        "200":
+          description: Página de canales obtenida correctamente.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CanalesPaginados"
+        "400":
+          description: Parámetro de paginación fuera de rango (p. ej. tamanio_pagina > 50).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          $ref: "#/components/responses/ErrorInterno"
+    post:
+      tags: [channels]
+      summary: Dar de alta un canal de noticias
+      description: Origina en HU-RSS-001.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CanalNoticiasCrear"
+      responses:
+        "201":
+          description: Canal creado exitosamente.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CanalNoticias"
+        "400":
+          $ref: "#/components/responses/ErrorValidacion"
+        "409":
+          description: Ya existe un canal con el mismo nombre.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /channels/{id}:
+    parameters:
+      - $ref: "#/components/parameters/CanalId"
+    get:
+      tags: [channels]
+      summary: Obtener el detalle de un canal
+      description: >
+        Origina en HU-RSS-010 (consulta de detalle de canal). No aplica el
+        envoltorio de paginación: devuelve el canal directamente.
+      responses:
+        "200":
+          description: Canal encontrado.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CanalNoticias"
+        "404":
+          $ref: "#/components/responses/NoEncontrado"
+
+  /sources:
+    get:
+      tags: [sources]
+      summary: Listar fuentes RSS con filtros (paginado)
+      description: >
+        Origina en HU-RSS-003-v2 (reemplaza a HU-RSS-003, deprecada). Paginado
+        con los mismos parámetros pagina/tamanio_pagina que /channels, por
+        consistencia de convención de API. Listado ordenado en forma ascendente
+        por "canal_id" (agrupando las fuentes de un mismo canal/medio) y, dentro
+        de un mismo canal, alfabéticamente por "url".
+      parameters:
+        - name: canal_id
+          in: query
+          required: false
+          schema:
+            type: integer
+          description: Filtra por canal propietario.
+        - name: continente
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Filtra por continente del canal propietario.
+        - name: categoria_iptc
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Filtra por categoría IPTC Media Topics (primer nivel).
+        - name: activo
+          in: query
+          required: false
+          schema:
+            type: boolean
+          description: Filtra por estado activo/inactivo de la fuente.
+        - name: pagina
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+          description: Número de página solicitada (base 1).
+        - name: tamanio_pagina
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 10
+          description: Cantidad de fuentes por página. Por defecto 10; máximo 50.
+      responses:
+        "200":
+          description: Página de fuentes RSS obtenida correctamente.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FuentesPaginadas"
+        "400":
+          description: Parámetro de paginación fuera de rango (p. ej. tamanio_pagina > 50).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          $ref: "#/components/responses/ErrorInterno"
+    post:
+      tags: [sources]
+      summary: Dar de alta una fuente RSS dentro de un canal
+      description: Origina en HU-RSS-002.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FuenteRSSCrear"
+      responses:
+        "201":
+          description: Fuente RSS creada exitosamente.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FuenteRSS"
+        "400":
+          $ref: "#/components/responses/ErrorValidacion"
+        "404":
+          description: El canal_id indicado no existe.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /sources/{id}:
+    parameters:
+      - $ref: "#/components/parameters/FuenteId"
+    get:
+      tags: [sources]
+      summary: Obtener el detalle de una fuente RSS
+      description: >
+        Origina en HU-RSS-003-v2. No aplica el envoltorio de paginación:
+        devuelve la fuente directamente.
+      responses:
+        "200":
+          description: Fuente RSS encontrada.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FuenteRSS"
+        "404":
+          $ref: "#/components/responses/NoEncontrado"
+    put:
+      tags: [sources]
+      summary: Actualizar completamente una fuente RSS (idempotente)
+      description: Origina en HU-RSS-004.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FuenteRSSActualizar"
+      responses:
+        "200":
+          description: Fuente RSS actualizada.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FuenteRSS"
+        "400":
+          $ref: "#/components/responses/ErrorValidacion"
+        "404":
+          $ref: "#/components/responses/NoEncontrado"
+    patch:
+      tags: [sources]
+      summary: Actualizar parcialmente una fuente RSS
+      description: Origina en HU-RSS-004.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FuenteRSSActualizarParcial"
+      responses:
+        "200":
+          description: Fuente RSS actualizada parcialmente.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FuenteRSS"
+        "400":
+          $ref: "#/components/responses/ErrorValidacion"
+        "404":
+          $ref: "#/components/responses/NoEncontrado"
+    delete:
+      tags: [sources]
+      summary: Eliminar una fuente RSS
+      description: >
+        Origina en HU-RSS-005. Política de eliminación en cascada de noticias
+        asociadas pendiente de confirmación por el equipo (ver ADR-002, sección
+        de Consecuencias, y HU-RSS-005, nota de diseño).
+      responses:
+        "204":
+          description: Fuente RSS eliminada exitosamente.
+        "404":
+          $ref: "#/components/responses/NoEncontrado"
+
+  /sources/{id}/captures:
+    parameters:
+      - $ref: "#/components/parameters/FuenteId"
+    post:
+      tags: [captures]
+      summary: Disparar una captura manual para una fuente RSS específica
+      description: >
+        Origina en HU-RSS-008. Recurso modelado como sustantivo en plural
+        ("captures") conforme a las convenciones REST estrictas del proyecto
+        (sección 6 de las instrucciones), evitando verbos en la URL. Nombre
+        exacto del recurso pendiente de confirmación por el equipo (ver HU-RSS-008).
+      responses:
+        "201":
+          description: >
+            Captura ejecutada de forma síncrona; se devuelve el resumen del
+            resultado. (Alternativa 202 si se decide procesamiento asíncrono —
+            a definir por el equipo, ver ADR-002).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResultadoCaptura"
+        "404":
+          $ref: "#/components/responses/NoEncontrado"
+        "409":
+          description: La fuente indicada está inactiva.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /captures:
+    post:
+      tags: [captures]
+      summary: Disparar una captura manual para un conjunto de fuentes RSS
+      description: Origina en HU-RSS-008 (escenario de captura de conjunto).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [fuente_ids]
+              properties:
+                fuente_ids:
+                  type: array
+                  items:
+                    type: integer
+                  minItems: 1
+      responses:
+        "201":
+          description: Capturas ejecutadas; se devuelve el resumen por fuente.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ResultadoCaptura"
+        "400":
+          $ref: "#/components/responses/ErrorValidacion"
+
+components:
+  parameters:
+    CanalId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+      description: Identificador único del canal de noticias.
+    FuenteId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+      description: Identificador único de la fuente RSS.
+
+  schemas:
+    CanalNoticias:
+      type: object
+      description: Origina en HU-RSS-001 (alta) y HU-RSS-010 (consulta/listado). Entidad "todo" en la relación de composición con FuenteRSS (ver ADR-002).
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        nombre:
+          type: string
+        continente:
+          type: string
+        pais:
+          type: string
+          nullable: true
+        descripcion:
+          type: string
+          nullable: true
+      required: [id, nombre, continente]
+
+    CanalNoticiasCrear:
+      type: object
+      properties:
+        nombre:
+          type: string
+        continente:
+          type: string
+        pais:
+          type: string
+          nullable: true
+        descripcion:
+          type: string
+          nullable: true
+      required: [nombre, continente]
+
+    CanalesPaginados:
+      type: object
+      description: Envoltorio de paginación para el listado de canales. Origina en HU-RSS-010.
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/CanalNoticias"
+        pagina:
+          type: integer
+          description: Página actual (base 1).
+        tamanio_pagina:
+          type: integer
+          description: Cantidad de elementos por página.
+        total:
+          type: integer
+          description: Cantidad total de canales que cumplen el filtro aplicado (across todas las páginas).
+      required: [items, pagina, tamanio_pagina, total]
+
+    FuenteRSS:
+      type: object
+      description: Origina en HU-RSS-002. Entidad "parte" en la relación de composición con CanalNoticias (ver ADR-002).
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        canal_id:
+          type: integer
+        url:
+          type: string
+          format: uri
+        categoria_iptc:
+          type: string
+          description: Primer nivel del estándar IPTC Media Topics (PDF, sección 4.2.1).
+        activo:
+          type: boolean
+        fecha_ultima_captura_exitosa:
+          type: string
+          format: date-time
+          nullable: true
+        estado_circuit_breaker:
+          type: string
+          enum: [cerrado, abierto, semi_abierto]
+          description: Ver ADR-002, sección 3 (patrones de resiliencia).
+      required: [id, canal_id, url, categoria_iptc, activo]
+
+    FuenteRSSCrear:
+      type: object
+      properties:
+        canal_id:
+          type: integer
+        url:
+          type: string
+          format: uri
+        categoria_iptc:
+          type: string
+      required: [canal_id, url, categoria_iptc]
+
+    FuenteRSSActualizar:
+      type: object
+      properties:
+        canal_id:
+          type: integer
+        url:
+          type: string
+          format: uri
+        categoria_iptc:
+          type: string
+        activo:
+          type: boolean
+      required: [canal_id, url, categoria_iptc, activo]
+
+    FuenteRSSActualizarParcial:
+      type: object
+      description: Todos los campos son opcionales (PATCH); se aplican solo los presentes.
+      properties:
+        canal_id:
+          type: integer
+        url:
+          type: string
+          format: uri
+        categoria_iptc:
+          type: string
+        activo:
+          type: boolean
+
+    FuentesPaginadas:
+      type: object
+      description: Envoltorio de paginación para el listado de fuentes RSS. Origina en HU-RSS-003-v2.
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/FuenteRSS"
+        pagina:
+          type: integer
+          description: Página actual (base 1).
+        tamanio_pagina:
+          type: integer
+          description: Cantidad de elementos por página.
+        total:
+          type: integer
+          description: Cantidad total de fuentes que cumplen los filtros aplicados (across todas las páginas).
+      required: [items, pagina, tamanio_pagina, total]
+
+    ResultadoCaptura:
+      type: object
+      properties:
+        fuente_id:
+          type: integer
+        estado:
+          type: string
+          enum: [exitosa, fallida_transitoria, fallida_circuito_abierto]
+        noticias_nuevas:
+          type: integer
+        mensaje:
+          type: string
+          nullable: true
+
+    Error:
+      type: object
+      properties:
+        codigo:
+          type: string
+        mensaje:
+          type: string
+        detalles:
+          type: array
+          items:
+            type: string
+          nullable: true
+      required: [codigo, mensaje]
+
+  responses:
+    ErrorValidacion:
+      description: Error de validación en la solicitud (400).
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    NoEncontrado:
+      description: Recurso no encontrado (404).
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    ErrorInterno:
+      description: Error interno del servidor (500).
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+
+# Historial de revisión de este contrato
+# v1.0.0 (2026-08-14): versión inicial — HU-RSS-001 a HU-RSS-009.
+# v1.1.0 (2026-08-26): se corrige la trazabilidad de GET /channels y GET /channels/{id},
+#   que pasan de estar atribuidos de forma implícita a HU-RSS-001 a originarse
+#   formalmente en la nueva HU-RSS-010 (ver HU-RSS-captura.md). No se agregan
+#   endpoints nuevos; solo se corrige la anotación de origen y se actualiza la
+#   descripción del tag "channels".
+# v1.2.0 (2026-08-30): se agrega paginación a GET /channels (HU-RSS-010) y a
+#   GET /sources (HU-RSS-003-v2, que reemplaza a HU-RSS-003, deprecada).
+#   Nuevos parámetros de query: pagina (default 1) y tamanio_pagina (default 10,
+#   máximo 50, rechazado con 400 si se excede). Las respuestas 200 de ambos
+#   listados cambian de array simple a un objeto con items/pagina/tamanio_pagina/total
+#   (esquemas CanalesPaginados y FuentesPaginadas). Los endpoints de detalle
+#   (/channels/{id}, /sources/{id}) no cambian: no aplican el envoltorio de
+#   paginación. El criterio de orden del listado de fuentes queda pendiente de
+#   decisión del equipo (ver HU-RSS-003-v2).
+# v1.3.0 (2026-08-30): se define el criterio de orden de GET /sources, que
+#   quedaba pendiente en v1.2.0: ascendente por canal_id y, dentro de un mismo
+#   canal, alfabético por url. Sin cambios de esquema respecto a v1.2.0.
