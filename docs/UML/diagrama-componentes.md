@@ -54,6 +54,8 @@ flowchart TB
 - Toda sentencia de acceso a datos vive **únicamente** en la capa de Repositorios (`app/repositories/`).
 - Toda llamada a un feed RSS externo (`captura_service.py`, HU-RSS-006/008) debe aplicar Timeout explícito, Retry acotado con backoff exponencial y Circuit Breaker por fuente — patrones de resiliencia obligatorios definidos en ADR-002, sección 3.
 
+**Excepción a "verificadas contra el código actual":** la flecha `SCaptura --> RepoFuentes` (captura_service.py → repositories/fuentes.py) representa la dependencia de diseño **esperada**, no una que exista hoy en el código: `captura_service.py` es scaffolding (sección 12) y sus funciones lanzan `NotImplementedError` sin importar ni invocar el repositorio de fuentes. El resto de flechas del diagrama sí están verificadas 1:1 contra las importaciones reales de `canal_service.py` y `fuente_service.py`.
+
 ## Componentes que aparecen en el modelo pero aún no están implementados
 
 - `config.py` / router de Configuraciones (`GET`/`PUT /api/v1/config`, HU-RSS-007) — no forma parte del código ya subido al repositorio.

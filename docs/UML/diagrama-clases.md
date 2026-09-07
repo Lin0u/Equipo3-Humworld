@@ -31,7 +31,7 @@ classDiagram
         +int fuente_rss_id
         +string identificador_item_rss
         +string titulo
-        +string contenido
+        +Text contenido
         +string enlace_original
         +datetime fecha_publicacion
         +datetime fecha_registro
@@ -55,7 +55,7 @@ classDiagram
 ## Justificación de las relaciones (ver ADR-002, sección 1)
 
 - **`CanalNoticias` ◆── `FuenteRSS` (Composición):** una `FuenteRSS` no tiene existencia ni sentido de negocio independiente de su `CanalNoticias` contenedor. Coherente con la instrucción explícita de la sección 8 del proyecto, que usa exactamente este par de entidades como caso de referencia de composición, y con la implementación real (`app/models/canal.py`, relación `cascade="all, delete-orphan"`).
-- **`FuenteRSS` ── `Noticia` (Agregación):** una `Noticia`, una vez capturada, tiene valor informativo y analítico propio e independiente del ciclo de vida de su fuente — alimenta series históricas de humor que deben sobrevivir incluso si la fuente se da de baja. Esto ya está implementado: `HU-RSS-005` elimina la `FuenteRSS` mediante *soft delete* (`activo=false`) precisamente para no arrastrar en cascada las `Noticia` ya capturadas.
+- **`FuenteRSS` ── `Noticia` (Agregación):** una `Noticia`, una vez capturada, tiene valor informativo y analítico propio e independiente del ciclo de vida de su fuente — alimenta series históricas de humor que deben sobrevivir incluso si la fuente se da de baja. A diferencia de `CanalNoticias.fuentes` (que sí declara `cascade="all, delete-orphan"`), la relación `FuenteRSS.noticias` en `app/models/fuente.py` **no** declara cascade de borrado — eso es lo que en el código actual la hace consistente con una agregación y no con una composición. **Aclaración importante:** el propio docstring de `app/models/noticia.py` y ADR-002 (sección "Consecuencias") marcan la política de borrado en cascada de `Noticia` como **punto abierto, pendiente de validación por el equipo** — que `HU-RSS-005` implemente *soft delete* (`activo=false`) en `FuenteRSS` es una decisión de la capa de servicio y no cierra por sí sola esa pregunta de diseño. Este diagrama documenta el estado actual del código, no una decisión ya ratificada.
 - **`estado_circuit_breaker`** es un atributo de `FuenteRSS`, no una entidad propia — modela el patrón de resiliencia Circuit Breaker por fuente individual (ADR-002, sección 3).
 - `valor_humor` en `Noticia` queda **nullable** y fuera del alcance de EPIC-RSS: lo calcula el módulo de Análisis de Sentimiento (EPIC-SENT, no implementado todavía).
 
