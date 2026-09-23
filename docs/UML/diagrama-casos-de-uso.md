@@ -1,7 +1,7 @@
 # Diagrama de Casos de Uso — Módulo Captura RSS (EPIC-RSS, Sprint 1)
 
 **Proyecto:** HumWorld — Equipo 3
-**Alcance:** Historias HU-RSS-001 a HU-RSS-010 (módulo de Captura y Gestión de Fuentes RSS), según `HU-RSS-captura.md`.
+**Alcance:** Historias HU-RSS-001, 002, 003-v2, 004 a 010 (módulo de Captura y Gestión de Fuentes RSS), según `HU-RSS-captura.md`. No incluye HU-RSS-003, Deprecada en favor de HU-RSS-003-v2.
 **Origen:** PDF de especificaciones, sección 4.7.3.a ("Documentación UML de diseño → Diagrama de casos de uso").
 **Nota:** Este diagrama cubre únicamente EPIC-RSS (lo único implementado hasta ahora). Los módulos EPIC-SENT, EPIC-DASH y EPIC-ADMIN tendrán su propio diagrama cuando se aborden esos sprints.
 
