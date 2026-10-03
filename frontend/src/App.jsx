@@ -3,6 +3,7 @@
 // Historias HU-DASH-001 a 003 y ADR del frontend: pendientes de redactar.
 import { useState } from 'react'
 import './App.css'
+import ListadoNoticias from './pantallas/ListadoNoticias.jsx'
 
 // Lista de pantallas del menú. Para agregar una pantalla nueva, se suma una línea aquí.
 const PANTALLAS = [
@@ -12,6 +13,7 @@ const PANTALLAS = [
 ]
 
 // Pantallas provisorias. Cada una se moverá a su propio archivo cuando la construyamos.
+// La de noticias ya vive en src/pantallas/ListadoNoticias.jsx.
 function MapaHumor() {
   return (
     <section className="pantalla">
@@ -26,15 +28,6 @@ function NubePalabras() {
     <section className="pantalla">
       <h2>Nube de palabras</h2>
       <p>Aquí irán las palabras que más influyen en el humor.</p>
-    </section>
-  )
-}
-
-function ListadoNoticias() {
-  return (
-    <section className="pantalla">
-      <h2>Noticias</h2>
-      <p>Aquí irán las noticias que más pesaron en el cálculo del humor.</p>
     </section>
   )
 }
