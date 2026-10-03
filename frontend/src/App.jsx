@@ -1,122 +1,72 @@
+// HumWorld - estructura base del frontend (andamiaje, sin lógica de negocio).
+// Origen: vistas de dashboard del PDF del proyecto y Sprint 3 de la planificación.
+// Historias HU-DASH-001 a 003 y ADR del frontend: pendientes de redactar.
 import { useState } from 'react'
-import heroImg from './assets/hero.png'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
 import './App.css'
 
-function App() {
-  const [count, setCount] = useState(0)
+// Lista de pantallas del menú. Para agregar una pantalla nueva, se suma una línea aquí.
+const PANTALLAS = [
+  { id: 'mapa', nombre: 'Mapa de humor' },
+  { id: 'nube', nombre: 'Nube de palabras' },
+  { id: 'noticias', nombre: 'Noticias' },
+]
 
+// Pantallas provisorias. Cada una se moverá a su propio archivo cuando la construyamos.
+function MapaHumor() {
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
-
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
+    <section className="pantalla">
+      <h2>Mapa de humor</h2>
+      <p>Aquí irá el mapa del mundo con el humor de cada continente.</p>
+    </section>
   )
 }
 
-export default App
+function NubePalabras() {
+  return (
+    <section className="pantalla">
+      <h2>Nube de palabras</h2>
+      <p>Aquí irán las palabras que más influyen en el humor.</p>
+    </section>
+  )
+}
+
+function ListadoNoticias() {
+  return (
+    <section className="pantalla">
+      <h2>Noticias</h2>
+      <p>Aquí irán las noticias que más pesaron en el cálculo del humor.</p>
+    </section>
+  )
+}
+
+export default function App() {
+  // Guarda cuál pantalla se está mostrando. Parte en el mapa.
+  const [pantallaActiva, setPantallaActiva] = useState('mapa')
+
+  return (
+    <div className="app">
+      <header className="cabecera">
+        <h1 className="marca">HumWorld</h1>
+        <nav className="menu" aria-label="Pantallas">
+          {PANTALLAS.map((pantalla) => (
+            <button
+              key={pantalla.id}
+              type="button"
+              className={pantalla.id === pantallaActiva ? 'menu-boton activo' : 'menu-boton'}
+              aria-current={pantalla.id === pantallaActiva ? 'page' : undefined}
+              onClick={() => setPantallaActiva(pantalla.id)}
+            >
+              {pantalla.nombre}
+            </button>
+          ))}
+        </nav>
+      </header>
+
+      <main className="contenido">
+        {pantallaActiva === 'mapa' && <MapaHumor />}
+        {pantallaActiva === 'nube' && <NubePalabras />}
+        {pantallaActiva === 'noticias' && <ListadoNoticias />}
+      </main>
+    </div>
+  )
+}
