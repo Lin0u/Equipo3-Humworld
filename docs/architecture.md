@@ -10,7 +10,7 @@ Sentimiento, Dashboard/Mapa Mundial, Diccionario de Términos, Purgado) se
 incorporarán a este documento en versiones sucesivas, conforme se definan
 sus propios ADR.
 
-## 2. Tecnologías aprobadas (ADR-001, ADR-002)
+## 2. Tecnologías aprobadas (ADR-01, ADR-02)
 - Python 3.11 o superior.
 - FastAPI para la API REST.
 - SQLAlchemy 2.x (modo declarativo) + Alembic para migraciones, sobre MySQL.
@@ -22,13 +22,15 @@ sus propios ADR.
 - OpenAPI/Swagger generado automáticamente por FastAPI (/api/docs, /api/redoc).
 - Docker (imagen python:3.11-slim + uvicorn) para contenerización.
 - GitHub Actions para CI/CD, con SonarQube y needs: [test, sonarqube].
-- React 19.2.8 o superior.
 
-
+> Nota: la SPA de frontend (React 19.2.8 o superior) queda **fuera del
+> alcance de este backend** (ver secciones 1 y 10); se lista aquí solo como
+> referencia de la tecnología prevista para el cliente, no como dependencia
+> del módulo de Captura RSS.
 
 ## 3. Estilo arquitectónico
 Arquitectura distribuida/en capas: API, Servicios, Repositorios y
-Persistencia (PDF de especificaciones, sección 6.1; ADR-002, sección 4).
+Persistencia (PDF de especificaciones, sección 6.1; ADR-02).
 
 ## 4. Responsabilidades de cada capa
 - Capa API (routers FastAPI): expone los endpoints, valida entrada con
@@ -41,7 +43,7 @@ Persistencia (PDF de especificaciones, sección 6.1; ADR-002, sección 4).
   CanalNoticias, FuenteRSS y Noticia.
 - Capa Persistencia: MySQL, con migraciones gestionadas por Alembic.
 
-## 5. Modelo de datos vigente (ADR-002)
+## 5. Modelo de datos vigente (ADR-02)
 - CanalNoticias: id, nombre, continente, pais (opcional), descripcion
   (opcional).
 - FuenteRSS: id, canal_id (FK), url, categoria_iptc, activo,
@@ -74,20 +76,18 @@ acordada por el equipo el 2026-08-30) — ver
 
 ## 7. Organización orientativa
 Estructura confirmada en el repositorio (revisión de sesión 2026-08-30):
-`src/app/main.py`, `src/app/core/` (configuración, ADR-001),
+`src/app/main.py`, `src/app/core/` (configuración, ADR-01),
 `src/app/routers/` (capa API: channels, sources, captures, health),
 `src/app/models/` (SQLAlchemy), `src/app/schemas/` (Pydantic),
 `src/app/jobs/` (scheduler APScheduler del cron de captura),
 `src/app/services/`, `src/app/database.py` (motor/sesión SQLAlchemy —
-ver ADR-001) y `tests/`.
+ver ADR-01) y `tests/`.
 
-**Pendiente:** `src/app/repositories/` (capa de Repositorios exigida por
-ADR-002, sección 4) todavía no existe — el scaffold actual (commit
-"scaffold inicial del módulo de captura RSS", Sprint 0) solo define el
-motor/sesión en `database.py`, sin sentencias de acceso a datos por
-entidad. Esta capa debe crearse al implementar HU-RSS-001/HU-RSS-010 vía
-OpenSpec; hasta entonces no debe programarse ninguna sentencia de acceso
-a datos directamente en `services/` ni en `routers/`.
+La capa de Repositorios (`src/app/repositories/`) ya está implementada
+tras el Sprint 1: `repositories/canales.py` y `repositories/fuentes.py`
+concentran todo el acceso a datos de `CanalNoticias` y `FuenteRSS`
+(HU-RSS-001 a 005 y HU-RSS-010). Se mantiene la regla de que ninguna
+sentencia de acceso a datos vaya en `services/` ni en `routers/`.
 
 No hay app/static/ ni app/templates/: el frontend de HumWorld es una SPA
 separada (PDF, sección 6.2), fuera del alcance de este backend.
@@ -105,8 +105,11 @@ separada (PDF, sección 6.2), fuera del alcance de este backend.
 - Los cambios arquitectónicos requieren revisión humana y, si alteran una
   decisión ya tomada, una nueva versión del ADR correspondiente.
 - Los patrones de resiliencia (Timeout explícito, Retry acotado con
-  backoff exponencial, Circuit Breaker por fuente — ADR-002, sección 3)
-  son obligatorios en toda llamada a una fuente RSS externa.
+  backoff exponencial, Circuit Breaker por fuente — exigidos por la
+  sección 13 de las instrucciones del proyecto) son obligatorios en toda
+  llamada a una fuente RSS externa. Esta regla es la fuente de verdad de
+  dicho requisito para todo el sistema (RSS y, por extensión, servicios
+  externos de EPIC-SENT).
 
 ## 9. Errores
 No exponer trazas internas. Utilizar códigos HTTP coherentes con

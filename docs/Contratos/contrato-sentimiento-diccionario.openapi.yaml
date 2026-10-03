@@ -6,8 +6,8 @@ info:
     consulta de sentimiento agregado, el análisis de texto arbitrario y el
     disparo manual de entrenamiento del modelo de ML. Origina en las historias
     de usuario HU-SENT-001, HU-SENT-004, HU-SENT-005 y HU-SENT-006
-    (`HU-SENT-motor-sentimiento.md`), y en `ADR-003-algoritmo-sentimiento.md`
-    (algoritmo de diccionario) y `ADR-004-arquitectura-modelo-ml-sentimiento.md`
+    (`HU-SENT-motor-sentimiento.md`), y en `ADR-03-eleccion-algoritmo-agregacion-sentimiento.md`
+    (algoritmo de diccionario) y `ADR-04-arquitectura-modelo-ml-sentimiento.md`
     (arquitectura del modelo de ML). Fuente funcional: PDF de especificaciones,
     secciones 4.2.2, 4.2.4, 10.2 y 10.4.
 
@@ -39,11 +39,11 @@ tags:
   - name: trainings
     description: >
       Disparo manual del entrenamiento de una nueva versión del modelo de ML.
-      Origina en HU-SENT-006; arquitectura completa en ADR-004. El umbral
+      Origina en HU-SENT-006; arquitectura completa en ADR-04. El umbral
       mínimo de datos de entrenamiento y el timeout de la llamada al servicio
       de embeddings son parámetros configurables con valores propuestos (1.000
       noticias y 3 segundos, respectivamente) pendientes de ratificación por
-      el equipo — ver ADR-004 y HU-SENT-motor-sentimiento.md.
+      el equipo — ver ADR-04 y HU-SENT-motor-sentimiento.md.
 
 paths:
 
@@ -207,7 +207,7 @@ paths:
       description: >
         Origina en HU-SENT-004. Reutiliza CanalNoticias.continente/pais ya
         definidos en EPIC-RSS (join Noticia → FuenteRSS → CanalNoticias, ver
-        ADR-002) en vez de duplicar esos campos en Noticia. Si se informan
+        ADR-02) en vez de duplicar esos campos en Noticia. Si se informan
         "desde" y "hasta", la respuesta incluye además la serie temporal por
         fecha dentro de ese rango. Nunca responde 500 por ausencia de datos
         para el filtro solicitado (Gherkin: "Filtro sin datos disponibles").
@@ -291,7 +291,7 @@ paths:
       description: >
         Origina en HU-SENT-006. Arquitectura completa (tipo de modelo,
         proveedor de embeddings, versionado, criterio de evaluación,
-        patrones de resiliencia) documentada en ADR-004. Sin cuerpo de
+        patrones de resiliencia) documentada en ADR-04. Sin cuerpo de
         solicitud: el entrenamiento usa como datos de entrada el histórico de
         noticias ya evaluadas por el método de diccionario, sin parámetros
         adicionales por parte del administrador.
@@ -305,7 +305,7 @@ paths:
         "409":
           description: >
             El volumen de noticias evaluadas por diccionario no alcanza el
-            umbral mínimo configurado (valor propuesto: 1.000 — ver ADR-004).
+            umbral mínimo configurado (valor propuesto: 1.000 — ver ADR-04).
             El modelo activo previo, si existe, no se ve afectado.
           content:
             application/json:
@@ -315,7 +315,7 @@ paths:
           description: >
             El servicio externo de embeddings (Google Gemini Embedding) falló
             de forma persistente tras agotar los reintentos acotados con
-            backoff exponencial (ver ADR-004). El entrenamiento se cancela
+            backoff exponencial (ver ADR-04). El entrenamiento se cancela
             sin afectar el modelo activo previo. El Gherkin de HU-SENT-006
             no fija un único código entre 502/503 — queda pendiente que el
             equipo confirme cuál usar en la implementación.
@@ -479,7 +479,7 @@ components:
           nullable: true
           description: >
             Indicador complementario de polarización (desviación estándar,
-            ver ADR-003), calculado por el mismo método de HU-SENT-007. No
+            ver ADR-03), calculado por el mismo método de HU-SENT-007. No
             exigido explícitamente por el Gherkin de HU-SENT-005 — se agrega
             por consistencia con HU-SENT-003, a confirmar con el equipo si
             se expone en este endpoint.
@@ -489,7 +489,7 @@ components:
       type: object
       description: >
         Origina en HU-SENT-006. Corresponde a un registro de la tabla de
-        metadatos "modelos_sentimiento" definida en ADR-004. El campo
+        metadatos "modelos_sentimiento" definida en ADR-04. El campo
         ruta_archivo de esa tabla (ubicación interna del .joblib en disco) no
         se expone vía API por no ser información útil para el cliente —
         decisión de diseño de este contrato, a confirmar por el equipo.
@@ -499,13 +499,13 @@ components:
           readOnly: true
         version:
           type: string
-          description: Identificador de versión del modelo (puede ser el propio timestamp de entrenamiento, ver ADR-004).
+          description: Identificador de versión del modelo (puede ser el propio timestamp de entrenamiento, ver ADR-04).
         modelo_embeddings_usado:
           type: string
           description: Nombre y versión del modelo de embeddings de Google usado al entrenar.
         mae_evaluacion:
           type: number
-          description: Métrica de evaluación (MAE, error absoluto medio) contra el método de diccionario — ver limitación metodológica documentada en ADR-004.
+          description: Métrica de evaluación (MAE, error absoluto medio) contra el método de diccionario — ver limitación metodológica documentada en ADR-04.
         fecha_entrenamiento:
           type: string
           format: date-time

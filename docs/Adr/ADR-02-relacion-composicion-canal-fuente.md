@@ -1,9 +1,9 @@
-# ADR-0002: Relación de composición entre CanalNoticias y FuenteRSS
+# ADR-02: Relación de composición entre CanalNoticias y FuenteRSS
 
 - Estado: Aceptado
 - Fecha: 2026-08-19
 - Responsables: Equipo 3 (HumWorld)
-- Relacionado con: PDF de especificaciones, secciones 4.2.1 y 4.3.2; instrucciones del proyecto, sección 8; ADR-0001; HU-RSS-001 a HU-RSS-005, HU-RSS-010
+- Relacionado con: PDF de especificaciones, secciones 4.2.1 y 4.3.2; instrucciones del proyecto, sección 8; ADR-01; HU-RSS-001 a HU-RSS-005, HU-RSS-010
 
 ## Problema, elemento de arquitectura sobre el que decidir
 

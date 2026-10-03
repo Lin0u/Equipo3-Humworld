@@ -1,4 +1,4 @@
-# ADR-0001: Framework de la API backend
+# ADR-01: Framework de la API backend
 
 - Estado: Aceptado
 - Fecha: 2026-08-19
@@ -35,7 +35,7 @@ FastAPI es la única opción que cubre de forma nativa y cohesionada los tres re
 ## Consecuencias
 
 ### Positivas
-Documentación OpenAPI siempre sincronizada con el código; soporte async nativo para los patrones de resiliencia del módulo de captura (ver ADR-0004); menor código repetitivo en los endpoints CRUD.
+Documentación OpenAPI siempre sincronizada con el código; soporte async nativo para los patrones de resiliencia del módulo de captura (ver `docs/architecture.md`, sección 8 — regla de resiliencia obligatoria en llamadas a fuentes RSS); menor código repetitivo en los endpoints CRUD.
 
 ### Negativas y deuda aceptada
 El equipo debe tener o adquirir familiaridad con Python y programación asíncrona; si el perfil real del equipo resultara más orientado a JavaScript/TypeScript, este ADR debería revisarse. La elección de framework determina en cascada herramientas del ecosistema (ORM, validación, cliente HTTP, testing), que no se documentan como decisiones arquitectónicas independientes por ser consecuencia directa de esta elección y no tener alternativas realmente comparadas.

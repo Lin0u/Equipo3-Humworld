@@ -30,7 +30,7 @@ flowchart LR
         UC2(["Calcular el humor de una\nnoticia capturada — HU-SENT-002-v2"])
         UCBarrido(["Ejecutar barrido de\nrespaldo — HU-SENT-002-v2"])
         UCDicc(["Calcular humor por\ndiccionario — HU-SENT-007"])
-        UCML(["Calcular humor con\nmodelo de ML — HU-SENT-006/ADR-004"])
+        UCML(["Calcular humor con\nmodelo de ML — HU-SENT-006/ADR-04"])
     end
 
     Admin --> UC1

@@ -10,7 +10,7 @@
 **Referencias:**
 - Historias de usuario y criterios Gherkin: `docs/Backlog/HU-RSS-captura.md`
 - Arquitectura y reglas de capas: `docs/architecture.md`
-- Decisiones de stack y arquitectura: `docs/Adr/ADR-001-stack-backend.md`, `docs/Adr/ADR-002-arquitectura-captura-rss.md`
+- Decisiones de stack y arquitectura: `docs/Adr/ADR-01-framework-api-backend.md`, `docs/Adr/ADR-02-relacion-composicion-canal-fuente.md`
 - Definition of Done: `docs/Planificación/PLANIFICACION-AGIL-HUMWORLD-ENTREGADO-P3.md` (Paso 5) e instrucciones del proyecto (sección 14)
 - Guía operativa de ejecución: `README-despliegue-captura-rss.md` (sección "Ejecutar las pruebas")
 

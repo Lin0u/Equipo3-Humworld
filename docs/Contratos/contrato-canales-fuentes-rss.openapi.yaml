@@ -4,8 +4,8 @@ info:
   description: >
     Contrato de API (OpenSpec) para la gestión de canales de noticias y fuentes RSS,
     y para el disparo de capturas manuales. Origina en las historias de usuario
-    HU-RSS-001 a HU-RSS-010 (y su versión HU-RSS-003-v2) y en ADR-001 (stack backend)
-    y ADR-002 (arquitectura de captura RSS). Fuente funcional: PDF de especificaciones,
+    HU-RSS-001 a HU-RSS-010 (y su versión HU-RSS-003-v2) y en ADR-01 (framework de la API backend)
+    y ADR-02 (relación de composición CanalNoticias/FuenteRSS). Fuente funcional: PDF de especificaciones,
     secciones 4.2.1, 4.2.3, 10.2 y 10.3.
   version: "1.3.0"
 servers:
@@ -272,8 +272,8 @@ paths:
       summary: Eliminar una fuente RSS
       description: >
         Origina en HU-RSS-005. Política de eliminación en cascada de noticias
-        asociadas pendiente de confirmación por el equipo (ver ADR-002, sección
-        de Consecuencias, y HU-RSS-005, nota de diseño).
+        asociadas pendiente de confirmación por el equipo (ver ADR-02, sección
+        "Negativas y deuda aceptada", y HU-RSS-005, nota de diseño).
       responses:
         "204":
           description: Fuente RSS eliminada exitosamente.
@@ -296,7 +296,7 @@ paths:
           description: >
             Captura ejecutada de forma síncrona; se devuelve el resumen del
             resultado. (Alternativa 202 si se decide procesamiento asíncrono —
-            a definir por el equipo, ver ADR-002).
+            a definir por el equipo, ver `docs/architecture.md`, sección 8).
           content:
             application/json:
               schema:
@@ -360,7 +360,7 @@ components:
   schemas:
     CanalNoticias:
       type: object
-      description: Origina en HU-RSS-001 (alta) y HU-RSS-010 (consulta/listado). Entidad "todo" en la relación de composición con FuenteRSS (ver ADR-002).
+      description: Origina en HU-RSS-001 (alta) y HU-RSS-010 (consulta/listado). Entidad "todo" en la relación de composición con FuenteRSS (ver ADR-02).
       properties:
         id:
           type: integer
@@ -413,7 +413,7 @@ components:
 
     FuenteRSS:
       type: object
-      description: Origina en HU-RSS-002. Entidad "parte" en la relación de composición con CanalNoticias (ver ADR-002).
+      description: Origina en HU-RSS-002. Entidad "parte" en la relación de composición con CanalNoticias (ver ADR-02).
       properties:
         id:
           type: integer
@@ -435,7 +435,7 @@ components:
         estado_circuit_breaker:
           type: string
           enum: [cerrado, abierto, semi_abierto]
-          description: Ver ADR-002, sección 3 (patrones de resiliencia).
+          description: Ver `docs/architecture.md`, sección 8 (regla de resiliencia obligatoria).
       required: [id, canal_id, url, categoria_iptc, activo]
 
     FuenteRSSCrear:
