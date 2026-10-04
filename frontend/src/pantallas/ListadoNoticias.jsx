@@ -3,7 +3,9 @@
 // ("lista de las noticias que más han influido en el cálculo del humor").
 // Historia HU-DASH y ADR del frontend: pendientes de redactar.
 import { useState } from 'react'
+import Carita from '../componentes/Carita.jsx'
 import { noticiasEjemplo } from '../datos/noticiasEjemplo.js'
+import { formatoHumor, tipoHumor } from '../utilidades/humor.js'
 import './ListadoNoticias.css'
 
 const FILTROS = [
@@ -11,19 +13,6 @@ const FILTROS = [
   { id: 'positivas', nombre: 'Positivas' },
   { id: 'negativas', nombre: 'Negativas' },
 ]
-
-// Decide el color según el signo del humor. Es solo presentación:
-// el equipo todavía no define rangos oficiales para "positivo" o "negativo".
-function claseHumor(valor) {
-  if (valor > 0) return 'humor humor-positivo'
-  if (valor < 0) return 'humor humor-negativo'
-  return 'humor humor-neutro'
-}
-
-// Muestra el valor con un decimal y con signo + cuando es positivo.
-function formatoHumor(valor) {
-  return valor > 0 ? `+${valor.toFixed(1)}` : valor.toFixed(1)
-}
 
 // Convierte la fecha técnica (2026-10-02T09:15:00Z) en una fecha legible.
 function formatoFecha(fechaIso) {
@@ -74,12 +63,20 @@ export default function ListadoNoticias() {
       {noticias.length === 0 ? (
         <p className="noticias-vacio">No hay noticias para este filtro.</p>
       ) : (
-        <ul className="noticias-lista">
-          {noticias.map((noticia) => (
-            <li key={noticia.id} className="noticia">
-              <span className={claseHumor(noticia.valor_humor)}>
-                {formatoHumor(noticia.valor_humor)}
-              </span>
+        // La "key" cambia con el filtro para que la animación se repita al filtrar.
+        <ul className="noticias-lista" key={filtro}>
+          {noticias.map((noticia, posicion) => (
+            <li
+              key={noticia.id}
+              className="noticia"
+              style={{ animationDelay: `${posicion * 50}ms` }}
+            >
+              <div className="noticia-humor">
+                <Carita tipo={tipoHumor(noticia.valor_humor)} tamano={38} />
+                <strong className={`texto-${tipoHumor(noticia.valor_humor)}`}>
+                  {formatoHumor(noticia.valor_humor)}
+                </strong>
+              </div>
               <div className="noticia-cuerpo">
                 <a
                   className="noticia-titulo"

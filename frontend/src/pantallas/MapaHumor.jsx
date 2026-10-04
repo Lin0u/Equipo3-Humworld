@@ -2,64 +2,42 @@
 // Origen: PDF del proyecto, "Dashboard de humor" (mapa del mundo con el humor de
 // cada continente en una fecha que el usuario elige) y HU-SENT-004 (consulta del
 // análisis). Historia HU-DASH y ADR del frontend: pendientes de redactar.
-import { useState } from 'react'
-import { CircleMarker, MapContainer, TileLayer, Tooltip } from 'react-leaflet'
+import L from 'leaflet'
+import { MapContainer, Marker, TileLayer, Tooltip } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
-import { humorGlobalEjemplo, humorPorContinenteEjemplo } from '../datos/humorEjemplo.js'
+import Carita from '../componentes/Carita.jsx'
+import CerebroHumor from '../componentes/CerebroHumor.jsx'
 import { buscarContinente } from '../datos/continentes.js'
+import { humorGlobalEjemplo, humorPorContinenteEjemplo } from '../datos/humorEjemplo.js'
+import { caritaComoTexto, datoDeLaFecha, formatoHumor, tipoHumor } from '../utilidades/humor.js'
 import './MapaHumor.css'
 
-// Mismos colores que las variables --humor-* de index.css. Se repiten aquí
-// porque el mapa necesita el código del color, no el nombre de la variable.
-const COLORES = {
-  positivo: '#2a9d8f',
-  negativo: '#d1495b',
-  neutro: '#e3b23c',
-  sinDatos: '#9aa7b2',
-}
-
 // Esquinas del mapa al abrir: [abajo-izquierda, arriba-derecha] en [latitud, longitud].
-const LIMITES_MUNDO = [
+const VISTA_INICIAL = [
   [-55, -150],
   [72, 170],
 ]
 
-// Clasifica el humor según su signo. Es solo presentación: el equipo todavía
-// no define rangos oficiales para "positivo", "neutro" o "negativo".
-function tipoHumor(valor) {
-  if (valor === null || valor === undefined) return 'sinDatos'
-  if (valor > 0) return 'positivo'
-  if (valor < 0) return 'negativo'
-  return 'neutro'
+// Hasta dónde se puede mover el mapa: una sola copia del mundo.
+const LIMITES_MUNDO = [
+  [-85, -180],
+  [85, 180],
+]
+
+// Arma el dibujo que marca un continente: una carita con el valor debajo.
+// Leaflet necesita el dibujo de sus marcadores como texto HTML.
+function marcadorContinente(humor) {
+  return L.divIcon({
+    className: 'marcador-humor',
+    html:
+      caritaComoTexto(tipoHumor(humor), 46) +
+      `<span class="marcador-valor">${formatoHumor(humor)}</span>`,
+    iconSize: [70, 72],
+    iconAnchor: [35, 30],
+  })
 }
 
-// Muestra el valor con un decimal y con signo + cuando es positivo.
-function formatoHumor(valor) {
-  if (valor === null || valor === undefined) return 'Sin datos'
-  return valor > 0 ? `+${valor.toFixed(1)}` : valor.toFixed(1)
-}
-
-// Mientras más lejos de 0 está el humor, más intenso se pinta el círculo.
-// La escala del proyecto va de -10 a +10.
-function intensidad(valor) {
-  if (valor === null || valor === undefined) return 0.35
-  return 0.4 + 0.5 * (Math.min(Math.abs(valor), 10) / 10)
-}
-
-// Busca dentro de la serie temporal el dato de la fecha elegida.
-function datoDeLaFecha(agregado, fecha) {
-  return agregado.serie_temporal.find((dia) => dia.fecha === fecha) ?? null
-}
-
-export default function MapaHumor() {
-  // Rango de fechas con información, tomado de los datos.
-  const fechas = humorGlobalEjemplo.serie_temporal.map((dia) => dia.fecha)
-  const primeraFecha = fechas[0]
-  const ultimaFecha = fechas[fechas.length - 1]
-
-  // Guarda la fecha elegida. Parte en la más reciente.
-  const [fecha, setFecha] = useState(ultimaFecha)
-
+export default function MapaHumor({ fecha, alCambiarFecha, primeraFecha, ultimaFecha }) {
   const global = datoDeLaFecha(humorGlobalEjemplo, fecha)
 
   // Arma, para cada continente, lo que se necesita dibujar en la fecha elegida.
@@ -80,85 +58,86 @@ export default function MapaHumor() {
           <h2>Mapa de humor</h2>
           <p>Humor promedio de cada continente en la fecha elegida. Datos de ejemplo.</p>
         </div>
-        <label className="mapa-fecha">
+        <label className="campo">
           Fecha
           <input
             type="date"
             value={fecha}
             min={primeraFecha}
             max={ultimaFecha}
-            onChange={(evento) => setFecha(evento.target.value)}
+            onChange={(evento) => alCambiarFecha(evento.target.value)}
           />
         </label>
       </div>
 
-      <p className="mapa-global">
+      <div className="mapa-global">
+        <CerebroHumor humor={global ? global.humor_promedio : null} tamano={84} />
         {global ? (
-          <>
-            Humor global:{' '}
-            <strong className={`texto-${tipoHumor(global.humor_promedio)}`}>
+          <p>
+            <span className="mapa-global-titulo">Humor global</span>
+            <strong className={`mapa-global-valor texto-${tipoHumor(global.humor_promedio)}`}>
               {formatoHumor(global.humor_promedio)}
-            </strong>{' '}
-            con {global.cantidad_noticias_evaluadas} noticias evaluadas
-          </>
+            </strong>
+            <span>con {global.cantidad_noticias_evaluadas} noticias evaluadas</span>
+          </p>
         ) : (
-          `No hay datos para esa fecha. Elige una entre ${primeraFecha} y ${ultimaFecha}.`
+          <p>
+            No hay datos para esa fecha. Elige una entre {primeraFecha} y {ultimaFecha}.
+          </p>
         )}
-      </p>
+      </div>
 
       <div className="mapa-contenedor">
         <MapContainer
-          bounds={LIMITES_MUNDO}
+          bounds={VISTA_INICIAL}
+          maxBounds={LIMITES_MUNDO}
+          maxBoundsViscosity={1}
           zoomSnap={0.25}
           minZoom={1}
           maxZoom={5}
           scrollWheelZoom={false}
-          worldCopyJump
         >
           <TileLayer
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+            noWrap
           />
           {continentes
             .filter((continente) => continente.ubicacion)
             .map((continente) => (
-              <CircleMarker
+              <Marker
                 key={continente.nombre}
-                center={continente.ubicacion.centro}
-                radius={30}
-                pathOptions={{
-                  color: COLORES[tipoHumor(continente.humor)],
-                  fillColor: COLORES[tipoHumor(continente.humor)],
-                  fillOpacity: intensidad(continente.humor),
-                  weight: 2,
-                }}
+                position={continente.ubicacion.centro}
+                icon={marcadorContinente(continente.humor)}
+                keyboard={false}
               >
-                <Tooltip permanent direction="center" className="mapa-etiqueta">
-                  {formatoHumor(continente.humor)}
+                <Tooltip direction="top" offset={[0, -26]}>
+                  {continente.nombre}: {continente.noticias} noticias evaluadas
                 </Tooltip>
-              </CircleMarker>
+              </Marker>
             ))}
         </MapContainer>
       </div>
 
-      <ul className="mapa-leyenda" aria-label="Significado de los colores">
-        <li><span className="punto fondo-negativo" /> Negativo</li>
-        <li><span className="punto fondo-neutro" /> Neutro</li>
-        <li><span className="punto fondo-positivo" /> Positivo</li>
-        <li><span className="punto fondo-sinDatos" /> Sin datos</li>
-        <li className="mapa-escala">Escala de -10 a +10</li>
+      <ul className="leyenda" aria-label="Significado de las caritas">
+        <li><Carita tipo="negativo" tamano={20} /> Negativo</li>
+        <li><Carita tipo="neutro" tamano={20} /> Neutro</li>
+        <li><Carita tipo="positivo" tamano={20} /> Positivo</li>
+        <li><Carita tipo="sinDatos" tamano={20} /> Sin datos</li>
+        <li className="leyenda-nota">Escala de -10 a +10</li>
       </ul>
 
       <ul className="continentes">
         {continentes.map((continente) => (
           <li key={continente.nombre} className="continente">
-            <span className="continente-nombre">{continente.nombre}</span>
-            <strong className={`continente-humor texto-${tipoHumor(continente.humor)}`}>
-              {formatoHumor(continente.humor)}
-            </strong>
-            <span className="continente-noticias">
-              {continente.noticias} noticias evaluadas
-            </span>
+            <Carita tipo={tipoHumor(continente.humor)} tamano={40} />
+            <div>
+              <span className="continente-nombre">{continente.nombre}</span>
+              <strong className={`continente-humor texto-${tipoHumor(continente.humor)}`}>
+                {formatoHumor(continente.humor)}
+              </strong>
+              <span className="continente-noticias">{continente.noticias} noticias</span>
+            </div>
           </li>
         ))}
       </ul>

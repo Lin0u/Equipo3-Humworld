@@ -6,19 +6,41 @@
 }
 
 .cabecera {
-  background: var(--tinta);
+  background: var(--acento);
   color: #ffffff;
-  padding: 16px 24px;
+  border-bottom: var(--borde);
+  padding: 14px 24px;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 16px 32px;
+  gap: 14px 28px;
 }
 
 .marca {
-  font-size: 22px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-right: auto;
+}
+
+.marca-nombre {
+  font-family: var(--letra-titulos);
+  font-size: 26px;
   font-weight: 600;
-  letter-spacing: 0.01em;
+  line-height: 1.1;
+}
+
+.marca-frase {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.marca-frase strong {
+  background: #ffffff;
+  border-radius: 999px;
+  padding: 1px 8px;
+  margin-left: 4px;
+  font-variant-numeric: tabular-nums;
 }
 
 .menu {
@@ -30,28 +52,31 @@
 .menu-boton {
   font: inherit;
   font-size: 15px;
-  color: #c9d6e0;
-  background: transparent;
-  border: 1px solid transparent;
-  border-radius: 8px;
-  padding: 8px 14px;
+  font-weight: 700;
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.16);
+  border: 2px solid transparent;
+  border-radius: 999px;
+  padding: 7px 16px;
   cursor: pointer;
-  transition: background 0.15s, color 0.15s;
+  transition: background 0.15s, transform 0.15s;
 }
 
 .menu-boton:hover {
-  color: #ffffff;
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.28);
+  transform: translateY(-1px);
 }
 
 .menu-boton:focus-visible {
-  outline: 2px solid #ffffff;
+  outline: 3px solid var(--amarillo);
   outline-offset: 2px;
 }
 
 .menu-boton.activo {
   color: var(--tinta);
-  background: #ffffff;
+  background: var(--amarillo);
+  border-color: var(--tinta);
+  box-shadow: 2px 2px 0 var(--tinta);
 }
 
 .contenido {
@@ -59,22 +84,75 @@
   width: 100%;
   max-width: 1100px;
   margin: 0 auto;
-  padding: 32px 24px;
+  padding: 28px 24px 40px;
 }
 
 .pantalla {
   background: var(--superficie);
-  border: 1px solid var(--borde);
-  border-radius: 12px;
+  border: var(--borde);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra);
   padding: 24px;
+  animation: entrar 0.35s ease-out both;
 }
 
 .pantalla h2 {
-  font-size: 20px;
+  font-family: var(--letra-titulos);
+  font-size: 24px;
   font-weight: 600;
-  margin-bottom: 8px;
+  margin-bottom: 4px;
 }
 
 .pantalla p {
   color: var(--texto-suave);
+}
+
+/* Campos de formulario compartidos: selector de fecha y de continente. */
+.campo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--texto);
+}
+
+.campo input,
+.campo select {
+  font: inherit;
+  font-weight: 600;
+  color: var(--texto);
+  background: var(--superficie);
+  border: var(--borde);
+  border-radius: 10px;
+  padding: 6px 10px;
+}
+
+.campo input:focus-visible,
+.campo select:focus-visible {
+  outline: 3px solid var(--acento);
+  outline-offset: 2px;
+}
+
+/* Leyendas de colores compartidas. */
+.leyenda {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 18px;
+  margin: 14px 0 0;
+  padding: 0;
+  font-size: 13px;
+  color: var(--texto-suave);
+}
+
+.leyenda li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.leyenda .leyenda-nota {
+  margin-left: auto;
 }

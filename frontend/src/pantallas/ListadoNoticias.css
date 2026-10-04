@@ -5,79 +5,75 @@
   justify-content: space-between;
   align-items: flex-end;
   gap: 16px;
-  margin-bottom: 16px;
+  margin-bottom: 18px;
 }
 
 .filtros {
   display: flex;
-  gap: 6px;
+  gap: 8px;
 }
 
 .filtro {
   font: inherit;
   font-size: 14px;
-  color: var(--texto-suave);
+  font-weight: 700;
+  color: var(--texto);
   background: var(--superficie);
-  border: 1px solid var(--borde);
-  border-radius: 8px;
-  padding: 6px 12px;
+  border: var(--borde);
+  border-radius: 999px;
+  padding: 5px 14px;
   cursor: pointer;
-  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  transition: transform 0.15s, box-shadow 0.15s, background 0.15s;
 }
 
 .filtro:hover {
-  color: var(--texto);
-  border-color: var(--acento);
+  transform: translate(-1px, -1px);
+  box-shadow: 2px 2px 0 var(--tinta);
 }
 
 .filtro:focus-visible {
-  outline: 2px solid var(--acento);
+  outline: 3px solid var(--acento);
   outline-offset: 2px;
 }
 
 .filtro.activo {
-  color: #ffffff;
-  background: var(--tinta);
-  border-color: var(--tinta);
+  background: var(--amarillo);
+  box-shadow: 2px 2px 0 var(--tinta);
 }
 
 .noticias-lista {
   list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
   margin: 0;
   padding: 0;
 }
 
 .noticia {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 16px;
-  padding: 14px 0;
-  border-top: 1px solid var(--borde);
+  border: var(--borde);
+  border-radius: var(--radio);
+  padding: 12px 16px;
+  animation: entrar 0.35s ease-out both;
+  transition: transform 0.15s, box-shadow 0.15s;
 }
 
-.humor {
+.noticia:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: var(--sombra);
+}
+
+.noticia-humor {
   flex: none;
-  min-width: 56px;
-  text-align: center;
+  width: 56px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   font-size: 15px;
-  font-weight: 600;
   font-variant-numeric: tabular-nums;
-  color: #ffffff;
-  border-radius: 8px;
-  padding: 6px 8px;
-}
-
-.humor-positivo {
-  background: var(--humor-positivo);
-}
-
-.humor-negativo {
-  background: var(--humor-negativo);
-}
-
-.humor-neutro {
-  color: var(--texto);
-  background: var(--humor-neutro);
 }
 
 .noticia-cuerpo {
@@ -85,8 +81,8 @@
 }
 
 .noticia-titulo {
-  font-size: 16px;
-  font-weight: 600;
+  font-size: 17px;
+  font-weight: 700;
   color: var(--texto);
   text-decoration: none;
 }
@@ -100,12 +96,11 @@
   display: flex;
   flex-wrap: wrap;
   gap: 4px 16px;
-  margin-top: 4px;
+  margin-top: 2px;
   font-size: 13px;
   color: var(--texto-suave);
 }
 
 .noticias-vacio {
   padding: 24px 0;
-  border-top: 1px solid var(--borde);
 }

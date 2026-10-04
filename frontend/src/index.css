@@ -1,18 +1,36 @@
-/* HumWorld - estilos generales. Los colores se definen una sola vez aquí arriba:
-   para cambiar el aspecto de toda la página basta con cambiar estos valores. */
-:root {
-  --tinta: #12263a;        /* azul profundo de la cabecera */
-  --papel: #f3f6f8;        /* fondo de la página */
-  --superficie: #ffffff;   /* fondo de las tarjetas */
-  --texto: #1b2a38;
-  --texto-suave: #5c6f80;
-  --borde: #d8e0e6;
-  --acento: #3a7ca5;
-  --humor-negativo: #d1495b;
-  --humor-neutro: #e3b23c;
-  --humor-positivo: #2a9d8f;
+/* HumWorld - estilos generales. Estilo "cerebro con cara": colores vivos,
+   bordes gruesos, esquinas redondeadas y sombras duras, como una caricatura.
+   Los colores se definen una sola vez aquí arriba: para cambiar el aspecto de
+   toda la página basta con cambiar estos valores. */
+@import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=Nunito:wght@400;600;700&display=swap');
 
-  font-family: system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+:root {
+  --tinta: #2b2350;          /* violeta casi negro: textos, bordes y sombras */
+  --papel: #fff6e5;          /* crema: fondo de la página */
+  --superficie: #ffffff;     /* fondo de las tarjetas */
+  --texto: #2b2350;
+  --texto-suave: #5a5380;
+  --acento: #6c4df6;         /* violeta de la cabecera */
+  --amarillo: #ffc93c;
+  --rosa: #ff8fb1;
+
+  /* Colores de humor para rellenos (caritas, puntos). */
+  --humor-positivo: #2ec4a0;
+  --humor-negativo: #ff5a5f;
+  --humor-neutro: #ffc93c;
+  --humor-sin-datos: #d9d4ea;
+
+  /* Los mismos colores, más oscuros, para que los números se lean sobre blanco. */
+  --texto-positivo: #14806a;
+  --texto-negativo: #d0343a;
+  --texto-neutro: #946b00;
+
+  --borde: 2px solid var(--tinta);
+  --sombra: 4px 4px 0 var(--tinta);
+  --radio: 16px;
+  --letra-titulos: 'Fredoka', 'Trebuchet MS', system-ui, sans-serif;
+
+  font-family: 'Nunito', system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   color: var(--texto);
   background: var(--papel);
@@ -33,4 +51,42 @@ h1,
 h2,
 p {
   margin: 0;
+}
+
+/* Colores de texto según el tipo de humor (los usan las tres pantallas). */
+.texto-positivo { color: var(--texto-positivo); }
+.texto-negativo { color: var(--texto-negativo); }
+.texto-neutro { color: var(--texto-neutro); }
+.texto-sinDatos { color: var(--texto-suave); }
+
+/* La mascota flota suavemente. */
+.cerebro-animado {
+  animation: flotar 2.6s ease-in-out infinite;
+}
+
+@keyframes flotar {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+/* Cada pantalla aparece subiendo suavemente al entrar. */
+@keyframes entrar {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Respeta a quienes tienen desactivadas las animaciones en su computador. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
 }

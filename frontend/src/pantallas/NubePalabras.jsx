@@ -4,19 +4,14 @@
 // o país). Historia HU-DASH y ADR del frontend: pendientes de redactar.
 // Pendiente: el filtro por país, cuando el equipo defina de dónde salen los países.
 import { useState } from 'react'
+import Carita from '../componentes/Carita.jsx'
 import { palabrasEjemplo } from '../datos/palabrasEjemplo.js'
+import { tipoHumor } from '../utilidades/humor.js'
 import './NubePalabras.css'
 
 // Tamaño de letra de la palabra menos influyente y de la más influyente.
-const TAMANO_MINIMO = 15
-const TAMANO_MAXIMO = 46
-
-// Decide el color según el signo del valor de la palabra en el diccionario.
-function claseValor(valor) {
-  if (valor > 0) return 'palabra palabra-positiva'
-  if (valor < 0) return 'palabra palabra-negativa'
-  return 'palabra palabra-neutra'
-}
+const TAMANO_MINIMO = 16
+const TAMANO_MAXIMO = 50
 
 export default function NubePalabras() {
   // Guarda el continente elegido. La cadena vacía significa "todos".
@@ -43,7 +38,7 @@ export default function NubePalabras() {
           <h2>Nube de palabras</h2>
           <p>Mientras más grande la palabra, más influyó en el humor. Datos de ejemplo.</p>
         </div>
-        <label className="nube-filtro">
+        <label className="campo">
           Continente
           <select value={continente} onChange={(evento) => setContinente(evento.target.value)}>
             <option value="">Todos</option>
@@ -64,7 +59,7 @@ export default function NubePalabras() {
           {palabras.map((item, posicion) => (
             <li
               key={item.palabra}
-              className={claseValor(item.valor)}
+              className={`palabra texto-${tipoHumor(item.valor)}`}
               style={{ fontSize: `${tamano(item.peso)}px`, animationDelay: `${posicion * 40}ms` }}
               title={`Valor en el diccionario: ${item.valor > 0 ? '+' : ''}${item.valor}`}
             >
@@ -74,10 +69,10 @@ export default function NubePalabras() {
         </ul>
       )}
 
-      <ul className="nube-leyenda" aria-label="Significado de los colores">
-        <li><span className="nube-punto nube-punto-negativa" /> Palabra negativa</li>
-        <li><span className="nube-punto nube-punto-positiva" /> Palabra positiva</li>
-        <li className="nube-escala">Pasa el mouse sobre una palabra para ver su valor</li>
+      <ul className="leyenda" aria-label="Significado de los colores">
+        <li><Carita tipo="negativo" tamano={20} /> Palabra negativa</li>
+        <li><Carita tipo="positivo" tamano={20} /> Palabra positiva</li>
+        <li className="leyenda-nota">Pasa el mouse sobre una palabra para ver su valor</li>
       </ul>
     </section>
   )
