@@ -1,0 +1,134 @@
+/* HumWorld - estilos de la pantalla "Mapa de humor". */
+.mapa-encabezado {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.mapa-fecha {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: var(--texto-suave);
+}
+
+.mapa-fecha input {
+  font: inherit;
+  color: var(--texto);
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: 8px;
+  padding: 6px 10px;
+}
+
+.mapa-fecha input:focus-visible {
+  outline: 2px solid var(--acento);
+  outline-offset: 2px;
+}
+
+.pantalla p.mapa-global {
+  font-size: 15px;
+  color: var(--texto);
+  margin-bottom: 12px;
+}
+
+.mapa-contenedor {
+  height: 420px;
+  border: 1px solid var(--borde);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+/* El mapa de Leaflet necesita una altura explícita para poder dibujarse. */
+.mapa-contenedor .leaflet-container {
+  height: 100%;
+  font: inherit;
+  background: #dbe6ee;
+}
+
+/* Etiqueta con el valor de humor encima de cada círculo. */
+.leaflet-tooltip.mapa-etiqueta {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  padding: 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--tinta);
+  text-shadow: 0 0 3px #ffffff, 0 0 3px #ffffff, 0 0 6px #ffffff;
+}
+
+.mapa-leyenda {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+  margin: 12px 0 0;
+  padding: 0;
+  font-size: 13px;
+  color: var(--texto-suave);
+}
+
+.mapa-leyenda li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.mapa-leyenda .mapa-escala {
+  margin-left: auto;
+}
+
+.punto {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+
+.fondo-positivo { background: var(--humor-positivo); }
+.fondo-negativo { background: var(--humor-negativo); }
+.fondo-neutro { background: var(--humor-neutro); }
+.fondo-sinDatos { background: #9aa7b2; }
+
+.texto-positivo { color: var(--humor-positivo); }
+.texto-negativo { color: var(--humor-negativo); }
+.texto-neutro { color: #9a7412; }
+.texto-sinDatos { color: var(--texto-suave); }
+
+.continentes {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 10px;
+  margin: 20px 0 0;
+  padding: 0;
+}
+
+.continente {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  border: 1px solid var(--borde);
+  border-radius: 10px;
+  padding: 12px 14px;
+}
+
+.continente-nombre {
+  font-size: 14px;
+  color: var(--texto-suave);
+}
+
+.continente-humor {
+  font-size: 24px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.continente-noticias {
+  font-size: 13px;
+  color: var(--texto-suave);
+}

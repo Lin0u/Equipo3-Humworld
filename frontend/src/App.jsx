@@ -4,6 +4,7 @@
 import { useState } from 'react'
 import './App.css'
 import ListadoNoticias from './pantallas/ListadoNoticias.jsx'
+import MapaHumor from './pantallas/MapaHumor.jsx'
 
 // Lista de pantallas del menú. Para agregar una pantalla nueva, se suma una línea aquí.
 const PANTALLAS = [
@@ -12,17 +13,8 @@ const PANTALLAS = [
   { id: 'noticias', nombre: 'Noticias' },
 ]
 
-// Pantallas provisorias. Cada una se moverá a su propio archivo cuando la construyamos.
-// La de noticias ya vive en src/pantallas/ListadoNoticias.jsx.
-function MapaHumor() {
-  return (
-    <section className="pantalla">
-      <h2>Mapa de humor</h2>
-      <p>Aquí irá el mapa del mundo con el humor de cada continente.</p>
-    </section>
-  )
-}
-
+// Pantalla provisoria. Se moverá a su propio archivo cuando la construyamos.
+// Las de noticias y mapa ya viven en la carpeta src/pantallas.
 function NubePalabras() {
   return (
     <section className="pantalla">
