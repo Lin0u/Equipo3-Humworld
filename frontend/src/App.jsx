@@ -1,10 +1,12 @@
-// HumWorld - estructura base del frontend (andamiaje, sin lógica de negocio).
+// HumWorld - estructura base del frontend: cabecera, menú y pantalla activa.
+// Cada pantalla vive en su propio archivo dentro de src/pantallas.
 // Origen: vistas de dashboard del PDF del proyecto y Sprint 3 de la planificación.
 // Historias HU-DASH-001 a 003 y ADR del frontend: pendientes de redactar.
 import { useState } from 'react'
 import './App.css'
 import ListadoNoticias from './pantallas/ListadoNoticias.jsx'
 import MapaHumor from './pantallas/MapaHumor.jsx'
+import NubePalabras from './pantallas/NubePalabras.jsx'
 
 // Lista de pantallas del menú. Para agregar una pantalla nueva, se suma una línea aquí.
 const PANTALLAS = [
@@ -12,17 +14,6 @@ const PANTALLAS = [
   { id: 'nube', nombre: 'Nube de palabras' },
   { id: 'noticias', nombre: 'Noticias' },
 ]
-
-// Pantalla provisoria. Se moverá a su propio archivo cuando la construyamos.
-// Las de noticias y mapa ya viven en la carpeta src/pantallas.
-function NubePalabras() {
-  return (
-    <section className="pantalla">
-      <h2>Nube de palabras</h2>
-      <p>Aquí irán las palabras que más influyen en el humor.</p>
-    </section>
-  )
-}
 
 export default function App() {
   // Guarda cuál pantalla se está mostrando. Parte en el mapa.

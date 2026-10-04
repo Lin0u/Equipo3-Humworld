@@ -1,0 +1,116 @@
+/* HumWorld - estilos de la pantalla "Nube de palabras". */
+.nube-encabezado {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 16px;
+  margin-bottom: 8px;
+}
+
+.nube-filtro {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: var(--texto-suave);
+}
+
+.nube-filtro select {
+  font: inherit;
+  color: var(--texto);
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: 8px;
+  padding: 6px 10px;
+}
+
+.nube-filtro select:focus-visible {
+  outline: 2px solid var(--acento);
+  outline-offset: 2px;
+}
+
+.nube {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 4px 22px;
+  min-height: 300px;
+  margin: 0;
+  padding: 32px 16px;
+  border-top: 1px solid var(--borde);
+  border-bottom: 1px solid var(--borde);
+}
+
+.palabra {
+  line-height: 1.15;
+  font-weight: 600;
+  cursor: default;
+  animation: aparecer 0.45s ease-out both;
+  transition: transform 0.15s;
+}
+
+.palabra:hover {
+  transform: scale(1.08);
+}
+
+.palabra-positiva { color: var(--humor-positivo); }
+.palabra-negativa { color: var(--humor-negativo); }
+.palabra-neutra { color: var(--texto-suave); }
+
+/* Cada palabra aparece subiendo suavemente. */
+@keyframes aparecer {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Respeta a quienes tienen desactivadas las animaciones en su computador. */
+@media (prefers-reduced-motion: reduce) {
+  .palabra {
+    animation: none;
+    transition: none;
+  }
+}
+
+.nube-leyenda {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+  margin: 12px 0 0;
+  padding: 0;
+  font-size: 13px;
+  color: var(--texto-suave);
+}
+
+.nube-leyenda li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.nube-leyenda .nube-escala {
+  margin-left: auto;
+}
+
+.nube-punto {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+
+.nube-punto-positiva { background: var(--humor-positivo); }
+.nube-punto-negativa { background: var(--humor-negativo); }
+
+.nube-vacia {
+  padding: 24px 0;
+  border-top: 1px solid var(--borde);
+}
