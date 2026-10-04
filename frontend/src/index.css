@@ -6,7 +6,7 @@
 
 :root {
   --tinta: #2b2350;          /* violeta casi negro: textos, bordes y sombras */
-  --papel: #fff6e5;          /* crema: fondo de la página */
+  --papel: #e5e5e5;          /* gris claro: fondo de la página */
   --superficie: #ffffff;     /* fondo de las tarjetas */
   --texto: #2b2350;
   --texto-suave: #5a5380;
