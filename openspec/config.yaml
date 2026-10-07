@@ -1,0 +1,129 @@
+
+
+schema: spec-driven
+githubCopilot:
+  cloudAgent: true
+context: |
+  Proyecto: HumWorld — Equipo 3.
+  Objetivo:
+    Sistema que analiza noticias en tiempo real capturadas vía RSS
+    para calcular y actualizar el "estado de ánimo" del mundo mediante
+    análisis de sentimiento. Este contexto cubre el módulo de Captura
+    RSS (Sprint 1 / EPIC-RSS).
+  Arquitectura oficial:
+    Consultar docs/architecture.md, ADR-001-stack-backend.md y
+    ADR-002-arquitectura-captura-rss.md antes de proponer, diseñar o
+    implementar cualquier cambio.
+  Tecnologías aprobadas:
+    - Python 3.11 o superior.
+    - FastAPI para la API REST.
+    - SQLAlchemy 2.x + Alembic, sobre MySQL.
+    - Pydantic v2 para validación y serialización.
+    - httpx (async) + feedparser para el consumo de feeds RSS/Atom.
+    - APScheduler para el cron interno de captura.
+    - pytest + pytest-asyncio + pytest-cov + respx/responses para pruebas.
+  Componentes:
+    - API FastAPI (routers).
+    - Capa de servicios (lógica de negocio y patrones de resiliencia).
+    - Capa de repositorios (SQLAlchemy sobre MySQL).
+  Organización prevista:
+    - app/main.py contiene la aplicación FastAPI y el registro de routers.
+    - app/api/ contiene los routers (channels, sources, captures).
+    - app/services/ contiene la lógica de negocio.
+    - app/repositories/ contiene el acceso a datos (SQLAlchemy).
+    - tests/ contiene las pruebas automatizadas.
+  Reglas arquitectónicas:
+    - Los routers no pueden acceder directamente a MySQL.
+    - Las sentencias de acceso a datos deben estar únicamente en
+      app/repositories/.
+    - app/api/ no debe contener SQL ni lógica de negocio.
+    - Todo llamado a una fuente RSS externa debe aplicar Timeout
+      explícito, Retry acotado con backoff exponencial y Circuit Breaker
+      por fuente (ver ADR-002, sección 3). Nunca reintentos infinitos.
+    - No añadir nuevas tecnologías o dependencias sin aprobación humana.
+    - Mantener el desarrollo limitado a las historias aprobadas HU-RSS-* y
+      HU-SENT-001/HU-SENT-002-v2/HU-SENT-003 para este incremento; las demás
+      HU-SENT quedan fuera, salvo campos estrictamente necesarios para estas
+      historias.
+    - Cada historia debe incluir pruebas automatizadas con mocks para
+      llamadas HTTP externas.
+    - Utilizar los términos CanalNoticias y FuenteRSS para las entidades
+      gestionadas (no "canal"/"fuente" a secas en el código).
+    - El actor de las historias de administración es "administrador del
+      sistema".
+    - Los listados paginados (GET /channels, GET /sources) devuelven un
+      objeto con items/pagina/tamanio_pagina/total (default 10, máximo 50).
+  Alcance del incremento actual (HU-RSS-001 + HU-RSS-010 + HU-SENT-001 + HU-SENT-002-v2 + HU-SENT-003):
+    - Dar de alta canales de noticias.
+    - Consultar y listar canales de noticias (con filtro opcional por
+      continente).
+    - Gestionar el CRUD del diccionario de términos de sentimiento,
+      exclusivamente conforme a HU-SENT-001.
+    - Calcular el humor tras cada captura: usar ML si existe un modelo
+      activo y, en otro caso o ante fallo/timeout, usar diccionario conforme
+      a HU-SENT-002-v2.
+    - Ejecutar el barrido periódico de respaldo definido por HU-SENT-002-v2
+      para noticias cuyo valor_humor permanezca NULL.
+    - Persistir junto a Noticia el resultado de humor, método de cálculo y
+      polarización conforme a HU-SENT-003.
+    - Conservar los datos en MySQL.
+  Fuera del alcance:
+    - Modificación y eliminación de canales de noticias.
+    - Gestión de fuentes RSS (HU-RSS-002 a HU-RSS-005 — incrementos
+      posteriores).
+    - Cron de captura, configuración de periodicidad y captura manual
+      (HU-RSS-006 a HU-RSS-008).
+    - Las demás historias de análisis de sentimiento (HU-SENT-004 a
+      HU-SENT-007), dashboard y purgado, salvo campos estrictamente
+      necesarios para HU-SENT-001, HU-SENT-002-v2 y HU-SENT-003.
+    - Autenticación y autorización.
+rules:
+  proposal:
+    - Indicar con claridad el objetivo y el alcance del cambio.
+    - Identificar expresamente las funcionalidades que quedan fuera.
+    - Indicar si el cambio afecta a docs/architecture.md o a algún ADR.
+    - No proponer tecnologías que no estén aprobadas en el contexto.
+  specs:
+    - Escribir los escenarios en formato Given/When/Then (Dado/Cuando/Entonces).
+    - Describir comportamientos observables y verificables, con cifras concretas.
+    - Mantener los requisitos independientes de los detalles de implementación.
+    - Utilizar CanalNoticias/FuenteRSS para las entidades gestionadas.
+    - Utilizar "administrador del sistema" para el actor de las historias
+      administrativas.
+    - Incluir escenarios básicos de funcionamiento correcto y de error.
+  design:
+    - Leer y respetar docs/architecture.md y los ADR vigentes.
+    - Explicar la participación de la capa API, Servicios y Repositorios.
+    - Mantener el acceso a datos únicamente en app/repositories/.
+    - Identificar los ficheros que deberán crearse o modificarse.
+    - No introducir componentes, capas, tecnologías o dependencias
+      adicionales.
+    - Indicar cómo se probará el cambio (con qué mocks).
+    - Justificar cualquier desviación respecto a la arquitectura aprobada.
+  tasks:
+    - Organizar las tareas por componente o fichero.
+    - Dividir la implementación en tareas pequeñas y verificables.
+    - Incluir las tareas necesarias para las pruebas automatizadas.
+    - Incluir la ejecución final de pytest (con cobertura ≥80%).
+    - Incluir una comprobación final de conformidad con docs/architecture.md.
+    - No añadir tareas que estén fuera del alcance aprobado.
+operations:
+  apply:
+    guidance:
+      - Leer docs/architecture.md y los ADR vigentes antes de modificar código.
+      - Leer todos los artefactos OpenSpec del cambio.
+      - Implementar únicamente las tareas aprobadas.
+      - Mantener la separación entre API, Servicios y Repositorios.
+      - Mantener todas las sentencias de acceso a datos en app/repositories/.
+      - No incorporar tecnologías ni dependencias nuevas.
+      - Ejecutar pytest después de implementar el cambio.
+      - No marcar una tarea como completada sin verificarla.
+      - Detener la implementación si la especificación contradice la arquitectura.
+  archive:
+    guidance:
+      - Comprobar que la implementación respeta docs/architecture.md.
+      - Confirmar que todas las tareas aprobadas están completadas.
+      - Confirmar que pytest se ejecuta correctamente con cobertura ≥80%.
+      - Comprobar que no se han añadido funcionalidades fuera del alcance.
+      - Resumir el resultado de la implementación antes de archivar.
+ 

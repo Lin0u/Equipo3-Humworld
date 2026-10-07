@@ -1,0 +1,18 @@
+# Configuración de cobertura del módulo Captura RSS (Sprint 1).
+#
+# La Definition of Done (sección 14 de las instrucciones del proyecto) exige
+# cobertura >= 80% "del módulo" que se está entregando. En este Sprint se
+# entregan HU-RSS-001, 002, 003-v2, 004, 005 y 010 (canales y fuentes RSS).
+#
+# El scaffolding de HU-RSS-007/009 continúa excluido hasta que esas historias
+# se implementen. HU-RSS-006 y HU-RSS-008 ya cuentan con pruebas y se incluyen.
+#
+# pytest-cov lee este archivo automáticamente al ejecutar desde src/, por lo
+# que la misma exclusión aplica en local y en el pipeline de CI sin cambios
+# adicionales en el YAML.
+[run]
+omit =
+    app/jobs/scheduler.py
+
+[report]
+show_missing = True

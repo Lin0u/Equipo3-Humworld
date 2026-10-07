@@ -1,0 +1,551 @@
+openapi: 3.0.3
+info:
+  title: HumWorld API — Módulo Motor de Análisis de Sentimiento
+  description: >
+    Contrato de API (OpenSpec) para la gestión del diccionario de términos, la
+    consulta de sentimiento agregado, el análisis de texto arbitrario y el
+    disparo manual de entrenamiento del modelo de ML. Origina en las historias
+    de usuario HU-SENT-001, HU-SENT-004, HU-SENT-005 y HU-SENT-006
+    (`HU-SENT-motor-sentimiento.md`), y en `ADR-03-eleccion-algoritmo-agregacion-sentimiento.md`
+    (algoritmo de diccionario) y `ADR-04-arquitectura-modelo-ml-sentimiento.md`
+    (arquitectura del modelo de ML). Fuente funcional: PDF de especificaciones,
+    secciones 4.2.2, 4.2.4, 10.2 y 10.4.
+
+    HU-SENT-002-v2, HU-SENT-003 y HU-SENT-007 no exponen endpoint propio (son
+    servicios internos invocados tras la captura de cada noticia o desde los
+    endpoints de este contrato) y por lo tanto no aparecen aquí — ver
+    `HU-SENT-motor-sentimiento.md` para su detalle.
+  version: "1.0.0"
+servers:
+  - url: /api/v1
+    description: Base URL versionada (PDF, sección 10.3), misma convención que contrato-canales-fuentes-rss.openapi.yaml.
+
+tags:
+  - name: dictionary
+    description: >
+      Gestión CRUD del diccionario de términos de sentimiento. Origina en
+      HU-SENT-001. A diferencia de /channels y /sources (EPIC-RSS), el listado
+      no está paginado: la historia de origen solo exige un filtro de
+      búsqueda por coincidencia parcial de palabra, sin criterio de paginación
+      definido — si el volumen de términos lo justifica más adelante, debe
+      añadirse como una nueva versión de HU-SENT-001 y de este contrato.
+  - name: sentiment
+    description: >
+      Consulta de sentimiento agregado (HU-SENT-004) y análisis de un texto
+      arbitrario (HU-SENT-005). El análisis de texto arbitrario usa siempre el
+      método determinista de diccionario (HU-SENT-007), nunca el modelo de ML
+      — esto es una propuesta del agente PO/Arquitecto documentada en
+      HU-SENT-005, pendiente de confirmación por el equipo.
+  - name: trainings
+    description: >
+      Disparo manual del entrenamiento de una nueva versión del modelo de ML.
+      Origina en HU-SENT-006; arquitectura completa en ADR-04. El umbral
+      mínimo de datos de entrenamiento y el timeout de la llamada al servicio
+      de embeddings son parámetros configurables con valores propuestos (1.000
+      noticias y 3 segundos, respectivamente) pendientes de ratificación por
+      el equipo — ver ADR-04 y HU-SENT-motor-sentimiento.md.
+
+paths:
+
+  /dictionary:
+    get:
+      tags: [dictionary]
+      summary: Listar términos del diccionario de sentimiento
+      description: >
+        Origina en HU-SENT-001. Filtro opcional de búsqueda por coincidencia
+        parcial en la palabra (Gherkin: "GET /api/v1/dictionary?busqueda=guerr"
+        devuelve únicamente términos cuya palabra contiene "guerr"). Sin
+        paginación (ver descripción del tag "dictionary").
+      parameters:
+        - name: busqueda
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Filtra términos cuya palabra contiene este texto (coincidencia parcial, no sensible a mayúsculas/minúsculas).
+      responses:
+        "200":
+          description: Listado de términos obtenido correctamente (array simple, sin envoltorio de paginación).
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TerminoDiccionario"
+        "500":
+          $ref: "#/components/responses/ErrorInterno"
+    post:
+      tags: [dictionary]
+      summary: Dar de alta un término del diccionario
+      description: Origina en HU-SENT-001.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TerminoDiccionarioCrear"
+      responses:
+        "201":
+          description: Término creado exitosamente.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TerminoDiccionario"
+        "400":
+          description: Valor fuera del rango -10 a +10 (escala definida en la sección 11 de las instrucciones del proyecto), u otro error de validación.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "409":
+          description: Ya existe un término con la misma palabra y el mismo idioma (clave de unicidad compuesta, HU-SENT-001).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /dictionary/{id}:
+    parameters:
+      - $ref: "#/components/parameters/TerminoId"
+    get:
+      tags: [dictionary]
+      summary: Obtener el detalle de un término del diccionario
+      description: Origina en HU-SENT-001.
+      responses:
+        "200":
+          description: Término encontrado.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TerminoDiccionario"
+        "404":
+          $ref: "#/components/responses/NoEncontrado"
+    put:
+      tags: [dictionary]
+      summary: Actualizar completamente un término (idempotente)
+      description: >
+        Origina en HU-SENT-001 ("Depende de contrato de API" lista PUT junto a
+        PATCH; no hay un escenario Gherkin dedicado a la modificación, por lo
+        que los códigos de respuesta siguen el mismo criterio ya usado en
+        FuenteRSS — ver contrato-canales-fuentes-rss.openapi.yaml).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TerminoDiccionarioActualizar"
+      responses:
+        "200":
+          description: Término actualizado.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TerminoDiccionario"
+        "400":
+          $ref: "#/components/responses/ErrorValidacion"
+        "404":
+          $ref: "#/components/responses/NoEncontrado"
+        "409":
+          description: La combinación palabra+idioma resultante ya pertenece a otro término existente.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    patch:
+      tags: [dictionary]
+      summary: Actualizar parcialmente un término
+      description: Origina en HU-SENT-001.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TerminoDiccionarioActualizarParcial"
+      responses:
+        "200":
+          description: Término actualizado parcialmente.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TerminoDiccionario"
+        "400":
+          $ref: "#/components/responses/ErrorValidacion"
+        "404":
+          $ref: "#/components/responses/NoEncontrado"
+        "409":
+          description: La combinación palabra+idioma resultante ya pertenece a otro término existente.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    delete:
+      tags: [dictionary]
+      summary: Eliminar un término del diccionario
+      description: >
+        Origina en HU-SENT-001 (Gherkin: "Eliminación de un término
+        inexistente" → 404).
+      responses:
+        "204":
+          description: Término eliminado exitosamente.
+        "404":
+          $ref: "#/components/responses/NoEncontrado"
+
+  /sentiment:
+    get:
+      tags: [sentiment]
+      summary: Consultar el humor agregado (global, por continente, por país o timeline)
+      description: >
+        Origina en HU-SENT-004. Reutiliza CanalNoticias.continente/pais ya
+        definidos en EPIC-RSS (join Noticia → FuenteRSS → CanalNoticias, ver
+        ADR-02) en vez de duplicar esos campos en Noticia. Si se informan
+        "desde" y "hasta", la respuesta incluye además la serie temporal por
+        fecha dentro de ese rango. Nunca responde 500 por ausencia de datos
+        para el filtro solicitado (Gherkin: "Filtro sin datos disponibles").
+      parameters:
+        - name: continente
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Filtra por el continente del canal de origen de la noticia.
+        - name: pais
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Filtra por el país del canal de origen de la noticia.
+        - name: desde
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+          description: Fecha inicial (inclusive) del rango para la serie temporal.
+        - name: hasta
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+          description: Fecha final (inclusive) del rango para la serie temporal.
+      responses:
+        "200":
+          description: >
+            Humor agregado obtenido correctamente. Si no hay noticias que
+            cumplan el filtro, humor_promedio es NULL y
+            cantidad_noticias_evaluadas es 0 (nunca 500).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SentimientoAgregado"
+        "400":
+          description: Rango de fechas inválido (p. ej. "desde" posterior a "hasta").
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          $ref: "#/components/responses/ErrorInterno"
+    post:
+      tags: [sentiment]
+      summary: Analizar el sentimiento de un texto arbitrario
+      description: >
+        Origina en HU-SENT-005. Usa siempre el método determinista de
+        diccionario (HU-SENT-007), nunca el modelo de ML — propuesta del
+        agente PO/Arquitecto pendiente de confirmación por el equipo (ver
+        nota de grounding en HU-SENT-005).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AnalisisTextoCrear"
+      responses:
+        "200":
+          description: Texto analizado correctamente (incluye el caso de 0 términos evaluados, con valor_humor NULL).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnalisisTextoResultado"
+        "400":
+          description: Texto vacío.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /trainings:
+    post:
+      tags: [trainings]
+      summary: Disparar manualmente el entrenamiento de una nueva versión del modelo de ML
+      description: >
+        Origina en HU-SENT-006. Arquitectura completa (tipo de modelo,
+        proveedor de embeddings, versionado, criterio de evaluación,
+        patrones de resiliencia) documentada en ADR-04. Sin cuerpo de
+        solicitud: el entrenamiento usa como datos de entrada el histórico de
+        noticias ya evaluadas por el método de diccionario, sin parámetros
+        adicionales por parte del administrador.
+      responses:
+        "201":
+          description: Entrenamiento completado exitosamente; queda registrada una nueva versión del modelo.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ModeloSentimiento"
+        "409":
+          description: >
+            El volumen de noticias evaluadas por diccionario no alcanza el
+            umbral mínimo configurado (valor propuesto: 1.000 — ver ADR-04).
+            El modelo activo previo, si existe, no se ve afectado.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "502":
+          description: >
+            El servicio externo de embeddings (Google Gemini Embedding) falló
+            de forma persistente tras agotar los reintentos acotados con
+            backoff exponencial (ver ADR-04). El entrenamiento se cancela
+            sin afectar el modelo activo previo. El Gherkin de HU-SENT-006
+            no fija un único código entre 502/503 — queda pendiente que el
+            equipo confirme cuál usar en la implementación.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "503":
+          description: Alternativa al 502 anterior para el mismo escenario de fallo persistente del servicio de embeddings — ver nota en la respuesta 502.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+components:
+  parameters:
+    TerminoId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+      description: Identificador único del término del diccionario.
+
+  schemas:
+    Idioma:
+      type: string
+      enum: [es, en]
+      description: >
+        Idiomas soportados por el sistema (PDF, sección 3, Alcance, punto 2):
+        español e inglés. Ver nota de grounding en HU-SENT-001.
+
+    TerminoDiccionario:
+      type: object
+      description: Origina en HU-SENT-001.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        palabra:
+          type: string
+        idioma:
+          $ref: "#/components/schemas/Idioma"
+        valor:
+          type: integer
+          minimum: -10
+          maximum: 10
+          description: Escala -10 (mal humor) a +10 (muy buen humor), sección 11 de las instrucciones del proyecto y PDF §10.4.
+      required: [id, palabra, idioma, valor]
+
+    TerminoDiccionarioCrear:
+      type: object
+      properties:
+        palabra:
+          type: string
+        idioma:
+          $ref: "#/components/schemas/Idioma"
+        valor:
+          type: integer
+          minimum: -10
+          maximum: 10
+      required: [palabra, idioma, valor]
+
+    TerminoDiccionarioActualizar:
+      type: object
+      properties:
+        palabra:
+          type: string
+        idioma:
+          $ref: "#/components/schemas/Idioma"
+        valor:
+          type: integer
+          minimum: -10
+          maximum: 10
+      required: [palabra, idioma, valor]
+
+    TerminoDiccionarioActualizarParcial:
+      type: object
+      description: Todos los campos son opcionales (PATCH); se aplican solo los presentes.
+      properties:
+        palabra:
+          type: string
+        idioma:
+          $ref: "#/components/schemas/Idioma"
+        valor:
+          type: integer
+          minimum: -10
+          maximum: 10
+
+    SentimientoAgregado:
+      type: object
+      description: >
+        Origina en HU-SENT-004. humor_promedio y cantidad_noticias_evaluadas
+        se calculan sobre las noticias que cumplen los filtros aplicados
+        (continente/pais/rango de fechas) y tienen valor_humor no nulo.
+      properties:
+        continente:
+          type: string
+          nullable: true
+          description: Eco del filtro "continente" aplicado a esta consulta, o null si no se filtró.
+        pais:
+          type: string
+          nullable: true
+          description: Eco del filtro "pais" aplicado a esta consulta, o null si no se filtró.
+        desde:
+          type: string
+          format: date
+          nullable: true
+        hasta:
+          type: string
+          format: date
+          nullable: true
+        humor_promedio:
+          type: number
+          nullable: true
+          description: Promedio de valor_humor sobre las noticias que cumplen el filtro. NULL si no hay ninguna noticia con valor_humor no nulo para ese filtro.
+        cantidad_noticias_evaluadas:
+          type: integer
+          description: Cantidad de noticias con valor_humor no nulo que cumplen el filtro aplicado.
+        serie_temporal:
+          type: array
+          nullable: true
+          description: Presente únicamente cuando se informan los parámetros "desde" y "hasta" (Gherkin "Consulta de timeline en un rango de fechas").
+          items:
+            $ref: "#/components/schemas/SentimientoPorFecha"
+      required: [humor_promedio, cantidad_noticias_evaluadas]
+
+    SentimientoPorFecha:
+      type: object
+      properties:
+        fecha:
+          type: string
+          format: date
+        humor_promedio:
+          type: number
+          nullable: true
+        cantidad_noticias_evaluadas:
+          type: integer
+      required: [fecha, humor_promedio, cantidad_noticias_evaluadas]
+
+    AnalisisTextoCrear:
+      type: object
+      properties:
+        texto:
+          type: string
+          minLength: 1
+      required: [texto]
+
+    AnalisisTextoResultado:
+      type: object
+      description: Origina en HU-SENT-005. Calculado siempre mediante el método de diccionario (HU-SENT-007).
+      properties:
+        valor_humor:
+          type: number
+          nullable: true
+          description: NULL si cantidad_terminos_evaluados es 0 (Gherkin "Texto sin términos del diccionario coincidentes").
+        cantidad_terminos_evaluados:
+          type: integer
+        polarizacion_terminos:
+          type: number
+          nullable: true
+          description: >
+            Indicador complementario de polarización (desviación estándar,
+            ver ADR-03), calculado por el mismo método de HU-SENT-007. No
+            exigido explícitamente por el Gherkin de HU-SENT-005 — se agrega
+            por consistencia con HU-SENT-003, a confirmar con el equipo si
+            se expone en este endpoint.
+      required: [valor_humor, cantidad_terminos_evaluados]
+
+    ModeloSentimiento:
+      type: object
+      description: >
+        Origina en HU-SENT-006. Corresponde a un registro de la tabla de
+        metadatos "modelos_sentimiento" definida en ADR-04. El campo
+        ruta_archivo de esa tabla (ubicación interna del .joblib en disco) no
+        se expone vía API por no ser información útil para el cliente —
+        decisión de diseño de este contrato, a confirmar por el equipo.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        version:
+          type: string
+          description: Identificador de versión del modelo (puede ser el propio timestamp de entrenamiento, ver ADR-04).
+        modelo_embeddings_usado:
+          type: string
+          description: Nombre y versión del modelo de embeddings de Google usado al entrenar.
+        mae_evaluacion:
+          type: number
+          description: Métrica de evaluación (MAE, error absoluto medio) contra el método de diccionario — ver limitación metodológica documentada en ADR-04.
+        fecha_entrenamiento:
+          type: string
+          format: date-time
+        activo:
+          type: boolean
+          description: Indica si esta es la versión actualmente en uso por HU-SENT-002-v2.
+      required: [id, version, modelo_embeddings_usado, mae_evaluacion, fecha_entrenamiento, activo]
+
+    Error:
+      type: object
+      properties:
+        codigo:
+          type: string
+        mensaje:
+          type: string
+        detalles:
+          type: array
+          items:
+            type: string
+          nullable: true
+      required: [codigo, mensaje]
+
+  responses:
+    ErrorValidacion:
+      description: Error de validación en la solicitud (400).
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    NoEncontrado:
+      description: Recurso no encontrado (404).
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    ErrorInterno:
+      description: Error interno del servidor (500).
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+
+# Historial de revisión de este contrato
+# v1.0.0 (2026-09-29): versión inicial — HU-SENT-001 (/dictionary, CRUD completo),
+#   HU-SENT-004 (GET /sentiment, agregado global/continente/país/timeline),
+#   HU-SENT-005 (POST /sentiment, análisis de texto arbitrario) y HU-SENT-006
+#   (POST /trainings, entrenamiento manual del modelo de ML). No incluye
+#   HU-SENT-002-v2, HU-SENT-003 ni HU-SENT-007 por no exponer endpoint propio.
+#   puntos marcados explícitamente como pendientes de confirmación del equipo:
+#   paginación de /dictionary (no exigida por HU-SENT-001, a diferencia de
+#   /channels y /sources), exposición de polarizacion_terminos en el resultado
+#   de POST /sentiment, y el código exacto (502 vs 503) para el fallo
+#   persistente del servicio de embeddings en POST /trainings.

@@ -1,0 +1,70 @@
+# Pipeline CI/CD — origina en: instrucciones del proyecto, sección 8 y 14.
+# Jobs dependientes (`needs`): build/despliegue SOLO si test y sonarqube
+# son exitosos.
+#
+# PENDIENTE REAL (acción manual, no verificable desde el código):
+# - Configurar el secret SONAR_TOKEN en GitHub (Settings > Secrets). Si no
+#   está cargado, el job `sonarqube` falla y, por `needs: [test, sonarqube]`,
+#   `build-and-deploy` tampoco corre — aunque `test` pase con cobertura >= 80%.
+# - Ajustar el umbral de cobertura si SonarQube lo re-valida (>= 80%, sección 14).
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Instalar dependencias
+        run: pip install -r src/requirements.txt
+      - name: Ejecutar pruebas con cobertura
+        run: |
+          cd src
+          pytest --cov=app --cov-report=xml --cov-report=term-missing --cov-fail-under=80
+        # Nota: el paso corre desde src/, por lo que recoge automáticamente
+        # src/.coveragerc (excluye el scaffolding de HU-RSS-006/007/008/009 de
+        # la cobertura) y src/pytest.ini. Con HU-RSS-001/002/003-v2/004/005/010
+        # implementadas y probadas, la cobertura del módulo es >= 80%.
+      - name: Subir reporte de cobertura
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: src/coverage.xml
+
+  sonarqube:
+    runs-on: ubuntu-latest
+    needs: [test]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Descargar reporte de cobertura
+        uses: actions/download-artifact@v4
+        with:
+          name: coverage-report
+          path: src/
+      - name: Análisis SonarQube
+        uses:    SonarSource/sonarqube-scan-action@7006c4492b2e0ee0f816d36501671557c97f5995 # v8.1.0
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        # sonar-project.properties ya existe en la raíz del repo (sonar.projectKey
+        # y sonar.organization definidos). Requiere el secret SONAR_TOKEN cargado
+        # en Settings > Secrets (ver PENDIENTE REAL del encabezado).
+
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    needs: [test, sonarqube]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build imagen Docker
+        run: docker build -t humworld-rss-api:${{ github.sha }} .
+      # TODO(equipo): agregar paso de push a registry y despliegue real,
+      # una vez definido el entorno de destino.
