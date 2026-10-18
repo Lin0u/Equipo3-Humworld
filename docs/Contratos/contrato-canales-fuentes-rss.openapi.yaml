@@ -7,7 +7,7 @@ info:
     HU-RSS-001 a HU-RSS-010 (y su versión HU-RSS-003-v2) y en ADR-01 (framework de la API backend)
     y ADR-02 (relación de composición CanalNoticias/FuenteRSS). Fuente funcional: PDF de especificaciones,
     secciones 4.2.1, 4.2.3, 10.2 y 10.3.
-  version: "1.4.0"
+  version: "1.7.0"
 servers:
   - url: /api/v1
     description: Base URL versionada (PDF, sección 10.3)
@@ -623,3 +623,13 @@ components:
 #   canal, alfabético por url. Sin cambios de esquema respecto a v1.2.0.
 # v1.4.0 (2026-10-07): se añade GET/PUT /config para consultar y actualizar
 #   la periodicidad del cron de captura (HU-RSS-007), con un valor positivo.
+# v1.7.0 (2026-10-18): consolidación de dos líneas de versiones que se habían
+#   separado tras v1.3.0. En el repositorio, v1.4.0 (2026-10-07) agregó
+#   GET/PUT /config (HU-RSS-007). En la copia del Proyecto de Claude, v1.4.0 a
+#   v1.6.0 (2026-09-10 a 2026-09-28) confirmaron los dos endpoints de captura
+#   manual síncrona (HU-RSS-008) y agregaron POST /seeds y el esquema
+#   ResultadoSeed (HU-RSS-009). Esta versión toma como base el contrato del
+#   repositorio, que ya incluye /config y /captures, y deja retirado
+#   POST /seeds: HU-RSS-009 fue deprecada en favor de HU-RSS-009-v2, que
+#   realiza la carga inicial con un script interno (python -m scripts.seed)
+#   sin endpoint. /seeds nunca llegó a implementarse en el código.
