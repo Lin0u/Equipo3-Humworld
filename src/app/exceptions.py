@@ -24,3 +24,6 @@ class TerminoDiccionarioNotFoundError(Exception):
 
 class TerminoDiccionarioConflictError(Exception):
     """Indica que la combinación literal palabra+idioma ya existe."""
+
+class RangoFechasInvalidoError(Exception):
+    """El rango de fechas de una consulta no es válido (HU-SENT-004)."""

@@ -1,12 +1,13 @@
 // HumWorld - pantalla "Mapa de humor".
 // Origen: HU-DASH-001-v3 (PDF, sección 4.3.2) y ADR-05. Muestra los datos de
-// GET /api/v1/dashboards/map, que App.jsx pide al backend; esta pantalla no
-// calcula humor. Pendiente: gráfico de evolución temporal (requiere HU-SENT-004).
+// GET /api/v1/dashboards/map, que App.jsx pide al backend, y el gráfico de
+// evolución de GET /api/v1/sentiment (HU-SENT-004). Esta pantalla no calcula humor.
 import L from 'leaflet'
 import { MapContainer, Marker, TileLayer, Tooltip } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 import Carita from '../componentes/Carita.jsx'
 import CerebroHumor from '../componentes/CerebroHumor.jsx'
+import GraficoEvolucion from '../componentes/GraficoEvolucion.jsx'
 import { buscarContinente } from '../datos/continentes.js'
 import { caritaComoTexto, formatoHumor, tipoHumor } from '../utilidades/humor.js'
 import './MapaHumor.css'
@@ -150,6 +151,8 @@ export default function MapaHumor({ mapa, cargando, error, alCambiarFecha }) {
           </li>
         ))}
       </ul>
+
+      <GraficoEvolucion primeraFecha={primeraFecha} ultimaFecha={ultimaFecha} fechaElegida={fecha} />
     </section>
   )
 }

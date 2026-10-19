@@ -21,6 +21,7 @@ from app.routers import (
     dashboards,
     dictionary,
     health,
+    sentiment,
     sources,
 )
 
@@ -79,3 +80,4 @@ app.include_router(captures.router, prefix=api_v1_prefix)
 app.include_router(configuracion.router, prefix=api_v1_prefix)
 app.include_router(dictionary.router, prefix=api_v1_prefix)
 app.include_router(dashboards.router, prefix=api_v1_prefix)
+app.include_router(sentiment.router, prefix=api_v1_prefix)

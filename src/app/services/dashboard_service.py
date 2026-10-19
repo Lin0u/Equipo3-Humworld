@@ -6,34 +6,17 @@ GET /dashboards/map. Los agregados siguen la definición de HU-SENT-004:
 promedio de valor_humor de las noticias con valor_humor no nulo.
 El frontend no calcula humor (ADR-05, Decisión, punto 9).
 """
-import unicodedata
 from datetime import date
 
 from sqlalchemy.orm import Session
 
 from app.repositories.dashboards import DashboardRepository
 from app.schemas.dashboard import Continente, HumorAgregado, HumorContinente, MapaHumor
-
-DECIMALES = 2
-
-
-def _clave(texto: str) -> str:
-    sin_tildes = "".join(
-        c for c in unicodedata.normalize("NFKD", texto) if not unicodedata.combining(c)
-    )
-    return sin_tildes.strip().casefold()
-
+from app.services.agregados_comun import DECIMALES, a_fecha, clave_continente
 
 # "America", "AMÉRICA" o "américa" cuentan como América (mismo criterio que el
 # filtro de HU-RSS-003-v2 y HU-RSS-010).
-_CONTINENTE_POR_CLAVE = {_clave(c.value): c for c in Continente}
-
-
-def _a_fecha(valor) -> date | None:
-    """MySQL devuelve date; SQLite, texto 'AAAA-MM-DD'."""
-    if valor is None or isinstance(valor, date):
-        return valor
-    return date.fromisoformat(str(valor)[:10])
+_CONTINENTE_POR_CLAVE = {clave_continente(c.value): c for c in Continente}
 
 
 def _agregado(suma: float, cantidad: int) -> HumorAgregado:
@@ -47,7 +30,7 @@ def obtener_mapa(
     repository: DashboardRepository | None = None,
 ) -> MapaHumor:
     repositorio = repository or DashboardRepository()
-    minima, maxima = (_a_fecha(v) for v in repositorio.rango_fechas_con_datos(db))
+    minima, maxima = (a_fecha(v) for v in repositorio.rango_fechas_con_datos(db))
     dia = fecha or maxima
 
     sumas = {c: 0.0 for c in Continente}
@@ -57,7 +40,7 @@ def obtener_mapa(
         for nombre, promedio, cantidad in repositorio.humor_por_continente(db, dia):
             suma_global += promedio * cantidad
             cantidad_global += cantidad
-            continente = _CONTINENTE_POR_CLAVE.get(_clave(nombre))
+            continente = _CONTINENTE_POR_CLAVE.get(clave_continente(nombre))
             if continente is not None:
                 sumas[continente] += promedio * cantidad
                 cantidades[continente] += cantidad

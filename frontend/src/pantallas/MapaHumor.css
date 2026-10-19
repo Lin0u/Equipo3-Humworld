@@ -143,3 +143,27 @@
   border-color: var(--humor-negativo);
   color: var(--humor-negativo);
 }
+
+/* Gráfico de evolución temporal (HU-DASH-001-v3). */
+.grafico-evolucion {
+  margin-top: 20px;
+  padding: 14px 18px;
+  border: var(--borde);
+  border-radius: var(--radio);
+  background: var(--superficie);
+}
+
+.grafico-evolucion h3 {
+  margin: 0 0 4px;
+  font-family: var(--letra-titulos);
+}
+
+.grafico-evolucion p {
+  margin: 0 0 10px;
+  color: var(--texto-suave);
+}
+
+.grafico-lienzo {
+  position: relative;
+  height: 260px;
+}

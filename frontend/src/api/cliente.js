@@ -35,3 +35,9 @@ export function obtenerMapa(fecha) {
   const consulta = fecha ? `?fecha=${encodeURIComponent(fecha)}` : ''
   return obtenerJson(`/dashboards/map${consulta}`)
 }
+
+// GET /sentiment con rango: humor global día por día (HU-SENT-004).
+export function obtenerSerieGlobal(desde, hasta) {
+  const consulta = new URLSearchParams({ desde, hasta })
+  return obtenerJson(`/sentiment?${consulta}`)
+}
