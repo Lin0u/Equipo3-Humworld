@@ -27,3 +27,7 @@ class TerminoDiccionarioConflictError(Exception):
 
 class RangoFechasInvalidoError(Exception):
     """El rango de fechas de una consulta no es válido (HU-SENT-004)."""
+
+
+class NoticiaNotFoundError(Exception):
+    """La noticia solicitada no existe (HU-DASH-002-v2)."""

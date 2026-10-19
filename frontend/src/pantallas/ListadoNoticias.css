@@ -104,3 +104,26 @@
 .noticias-vacio {
   padding: 24px 0;
 }
+
+/* Filtro por continente junto a los botones de signo (HU-DASH-002-v2). */
+.noticias-controles {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px;
+}
+
+/* Paginación del listado. */
+.paginacion {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 14px;
+  margin-top: 16px;
+  color: var(--texto-suave);
+}
+
+.paginacion button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}

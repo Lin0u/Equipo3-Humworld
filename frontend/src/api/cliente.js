@@ -47,3 +47,15 @@ export function obtenerNubePalabras(continente) {
   const consulta = continente ? `?continente=${encodeURIComponent(continente)}` : ''
   return obtenerJson(`/dashboards/word-cloud${consulta}`)
 }
+
+// GET /news (HU-DASH-002-v2): noticias más influyentes, paginadas y filtradas.
+export function obtenerNoticias({ signo = 'todas', continente = '', pagina = 1, tamanioPagina = 10 }) {
+  const consulta = new URLSearchParams({
+    orden: 'influencia',
+    signo,
+    pagina: String(pagina),
+    tamanio_pagina: String(tamanioPagina),
+  })
+  if (continente) consulta.set('continente', continente)
+  return obtenerJson(`/news?${consulta}`)
+}

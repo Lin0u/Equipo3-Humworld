@@ -1,0 +1,243 @@
+openapi: 3.0.3
+info:
+  title: HumWorld API — Módulo Noticias
+  description: >
+    Contrato de API (OpenSpec) para el listado y el detalle de noticias.
+    Origina en HU-DASH-002-v2 (listado de noticias más influyentes, ver
+    `HU-DASH-dashboards.md`). Fuente funcional: PDF de especificaciones,
+    secciones 4.3.2 ("lista de las noticias que más han influido en el cálculo
+    del humor") y 10.2 ("/news: GET (lista, detalle, filtros, influyentes)").
+
+    Definiciones (propuesta de Valentín García con los ajustes de la PO,
+    2026-10-19):
+    - Influencia de una noticia = valor absoluto de valor_humor.
+    - Solo se listan noticias con valor_humor calculado (no nulo).
+    - Día de referencia = COALESCE(fecha_publicacion, fecha_registro), en UTC
+      (la misma regla que GET /dashboards/map y GET /sentiment).
+    - Desempate estable por id, para que la paginación no repita ni salte
+      noticias.
+
+    Implementado en el backend (FastAPI) el 2026-10-19. Estado: Propuesto,
+    pendiente de ratificación del equipo.
+  version: "1.0.0"
+servers:
+  - url: /api/v1
+    description: Base URL versionada (PDF, sección 10.3), misma convención que los demás contratos del proyecto.
+
+tags:
+  - name: news
+    description: >
+      Lectura de noticias capturadas (EPIC-RSS) con su humor calculado
+      (EPIC-SENT). Paginación con la misma convención que /channels y
+      /sources (items, pagina, tamanio_pagina, total). El frontend no ordena
+      ni filtra: lo hace el backend.
+
+paths:
+
+  /news:
+    get:
+      tags: [news]
+      summary: Listar noticias con humor calculado (lista, filtros e influyentes)
+      description: >
+        Origina en HU-DASH-002-v2. Con orden=influencia devuelve las noticias
+        más influyentes; con orden=fecha (por defecto), las más recientes.
+        Nunca responde 500 por ausencia de datos.
+      parameters:
+        - name: orden
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [fecha, influencia]
+            default: fecha
+          description: >
+            fecha: día de referencia descendente, luego id descendente.
+            influencia: |valor_humor| descendente, luego día de referencia
+            descendente, luego id descendente.
+        - name: signo
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [todas, positivas, negativas]
+            default: todas
+          description: positivas = valor_humor > 0; negativas = valor_humor < 0. Las noticias con valor_humor = 0 solo aparecen en "todas".
+        - name: continente
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/Continente"
+        - name: pais
+          in: query
+          required: false
+          schema:
+            type: string
+          description: País del canal de origen, sin distinguir mayúsculas.
+        - name: fecha
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+          description: Día de referencia de la noticia.
+        - name: pagina
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: tamanio_pagina
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 10
+          description: 10 por defecto y máximo 50 (propuesta de Valentín García).
+      responses:
+        "200":
+          description: Listado obtenido correctamente. Sin resultados, "items" es un array vacío y "total" es 0.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NoticiaListado"
+        "400":
+          description: Parámetro inválido (valor fuera del enum, fecha mal formada, página o tamaño fuera de rango).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          $ref: "#/components/responses/ErrorInterno"
+
+  /news/{id}:
+    get:
+      tags: [news]
+      summary: Obtener el detalle de una noticia
+      description: Origina en HU-DASH-002-v2 (PDF §10.2, "detalle"). Devuelve la noticia aunque su humor no esté calculado.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        "200":
+          description: Noticia encontrada.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NoticiaDetalle"
+        "404":
+          description: La noticia no existe (codigo NOTICIA_NO_ENCONTRADA).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          $ref: "#/components/responses/ErrorInterno"
+
+components:
+  schemas:
+    Continente:
+      type: string
+      enum: [América, Europa, Asia, África, Oceanía]
+      description: Mismo enum que `contrato-dashboards.openapi.yaml` (HU-RSS-009-v2).
+
+    NoticiaResumen:
+      type: object
+      properties:
+        id:
+          type: integer
+        titulo:
+          type: string
+        enlace_original:
+          type: string
+        canal:
+          type: string
+          description: Nombre del CanalNoticias de origen (FuenteRSS solo tiene url; hallazgo H-6 de la revisión de EPIC-DASH).
+        continente:
+          type: string
+        pais:
+          type: string
+          nullable: true
+        categoria_iptc:
+          type: string
+          nullable: true
+          description: Código IPTC Media Topics de primer nivel, heredado de la fuente.
+        fecha_publicacion:
+          type: string
+          format: date-time
+          nullable: true
+          description: Fecha del ítem RSS, en UTC. Null si el feed no la informa.
+        fecha_registro:
+          type: string
+          format: date-time
+          description: Momento de la captura.
+        valor_humor:
+          type: number
+          nullable: true
+          description: Escala -10 a +10 (HU-SENT-002-v3).
+        metodo_calculo:
+          type: string
+          nullable: true
+          enum: [diccionario, ml, null]
+      required: [id, titulo, enlace_original, canal, continente, fecha_registro]
+
+    NoticiaDetalle:
+      allOf:
+        - $ref: "#/components/schemas/NoticiaResumen"
+        - type: object
+          properties:
+            contenido:
+              type: string
+              nullable: true
+            cantidad_terminos_evaluados:
+              type: integer
+              nullable: true
+
+    NoticiaListado:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/NoticiaResumen"
+        pagina:
+          type: integer
+        tamanio_pagina:
+          type: integer
+        total:
+          type: integer
+      required: [items, pagina, tamanio_pagina, total]
+
+    Error:
+      type: object
+      properties:
+        codigo:
+          type: string
+        mensaje:
+          type: string
+        detalles:
+          type: array
+          items:
+            type: string
+          nullable: true
+      required: [codigo, mensaje]
+
+  responses:
+    ErrorInterno:
+      description: Error interno del servidor (500).
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+
+# Historial de revisión de este contrato
+# v1.0.0 (2026-10-19): versión inicial — GET /news y GET /news/{id}
+#   (HU-DASH-002-v2). Influencia = |valor_humor|, paginación 10/50 (propuesta
+#   de Valentín García); día de referencia COALESCE(fecha_publicacion,
+#   fecha_registro), desempate por id y parámetro orden (ajustes de la PO).
