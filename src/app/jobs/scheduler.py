@@ -1,5 +1,6 @@
 """Scheduler interno APScheduler para la captura automática de RSS."""
 
+import logging
 from datetime import datetime, timedelta, timezone
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
@@ -10,8 +11,12 @@ from app.core.config import settings
 from app.database import SessionLocal
 from app.services.captura_service import ejecutar_captura_todas_las_activas
 from app.services.configuracion_service import consultar_configuracion
+from app.services.sentimiento_service import procesar_pendientes
+
+logger = logging.getLogger(__name__)
 
 CAPTURA_JOB_ID = "captura-rss-automatica"
+BARRIDO_HUMOR_JOB_ID = "barrido-humor-pendiente"  # HU-SENT-002-v2
 scheduler: AsyncIOScheduler = AsyncIOScheduler()
 
 
@@ -29,6 +34,17 @@ async def _ejecutar_captura_automatica() -> None:
     db: Session = SessionLocal()
     try:
         await ejecutar_captura_todas_las_activas(db)
+    finally:
+        db.close()
+
+
+def _ejecutar_barrido_humor() -> None:
+    """Barrido de respaldo de HU-SENT-002-v2: noticias sin humor calculado."""
+    db: Session = SessionLocal()
+    try:
+        procesar_pendientes(db)
+    except SQLAlchemyError:
+        logger.exception("El barrido de humor no pudo leer las noticias pendientes")
     finally:
         db.close()
 
@@ -52,6 +68,17 @@ def iniciar_scheduler() -> None:
         trigger="interval",
         minutes=minutos,
         next_run_time=datetime.now(timezone.utc) + timedelta(minutes=minutos),
+        max_instances=1,
+        coalesce=True,
+    )
+    # Primera ejecución 1 minuto después de arrancar, para retomar noticias
+    # pendientes (p. ej., capturadas antes de existir el cálculo de humor).
+    scheduler.add_job(
+        _ejecutar_barrido_humor,
+        id=BARRIDO_HUMOR_JOB_ID,
+        trigger="interval",
+        minutes=settings.sentimiento_barrido_minutos,
+        next_run_time=datetime.now(timezone.utc) + timedelta(minutes=1),
         max_instances=1,
         coalesce=True,
     )

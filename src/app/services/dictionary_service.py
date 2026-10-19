@@ -1,3 +1,6 @@
+import logging
+
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from app.exceptions import (
@@ -6,6 +9,9 @@ from app.exceptions import (
 )
 from app.models.termino_diccionario import TerminoDiccionario
 from app.repositories.dictionary import TerminoDiccionarioRepository
+from app.services.sentimiento_service import invalidar_calculos_diccionario
+
+logger = logging.getLogger(__name__)
 
 IDIOMAS_SOPORTADOS = frozenset({"es", "en"})
 VALOR_MINIMO = -10
@@ -19,6 +25,18 @@ def _validar_campos(palabra: str, idioma: str, valor: int) -> None:
         raise ValueError("El idioma debe ser 'es' o 'en'.")
     if type(valor) is not int or not VALOR_MINIMO <= valor <= VALOR_MAXIMO:
         raise ValueError("El valor debe ser un entero entre -10 y 10.")
+
+
+def _marcar_noticias_para_recalculo(db: Session) -> None:
+    """HU-SENT-002-v2: un cambio en el diccionario cambia el humor calculado.
+
+    El cambio del término ya quedó confirmado; si marcar las noticias falla,
+    se registra y no se revierte la operación del diccionario.
+    """
+    try:
+        invalidar_calculos_diccionario(db)
+    except SQLAlchemyError:
+        logger.exception("No se pudieron marcar las noticias para recálculo")
 
 
 def listar_terminos(
@@ -53,10 +71,12 @@ def crear_termino(
     termino_repository = repository or TerminoDiccionarioRepository()
     if termino_repository.buscar_por_palabra_idioma(db, palabra, idioma):
         raise TerminoDiccionarioConflictError
-    return termino_repository.crear(
+    termino = termino_repository.crear(
         db,
         TerminoDiccionario(palabra=palabra, idioma=idioma, valor=valor),
     )
+    _marcar_noticias_para_recalculo(db)
+    return termino
 
 
 def actualizar_termino(
@@ -82,7 +102,9 @@ def actualizar_termino(
         raise TerminoDiccionarioConflictError
 
     cambios_validos = cambios if parcial else valores
-    return termino_repository.actualizar(db, termino, cambios_validos)
+    actualizado = termino_repository.actualizar(db, termino, cambios_validos)
+    _marcar_noticias_para_recalculo(db)
+    return actualizado
 
 
 def eliminar_termino(
@@ -93,3 +115,4 @@ def eliminar_termino(
     termino_repository = repository or TerminoDiccionarioRepository()
     termino = obtener_termino(db, termino_id, termino_repository)
     termino_repository.eliminar(db, termino)
+    _marcar_noticias_para_recalculo(db)

@@ -36,7 +36,14 @@ class Noticia(Base):
     idioma_detectado = Column(String(10), nullable=True)
     categoria_iptc = Column(String(100), nullable=True)
 
-    # Fuera de alcance de Sprint 1 / EPIC-RSS — poblado por EPIC-SENT.
+    # Poblados por EPIC-SENT (HU-SENT-002-v2, cálculo híbrido de humor).
+    # valor_humor: promedio de términos únicos (ADR-03, HU-SENT-007); NULL si no
+    # hubo términos evaluables.
     valor_humor = Column(Float, nullable=True)
+    # "diccionario" o "ml". NULL = la noticia aún no fue procesada; es la marca
+    # que usa el barrido de respaldo (no valor_humor, que también es NULL
+    # cuando hubo 0 coincidencias).
+    metodo_calculo = Column(String(20), nullable=True, index=True)
+    cantidad_terminos_evaluados = Column(Integer, nullable=True)
 
     fuente = relationship("FuenteRSS", back_populates="noticias")

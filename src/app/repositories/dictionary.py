@@ -27,6 +27,18 @@ class TerminoDiccionarioRepository:
             )
         ).scalar_one_or_none()
 
+    def listar_por_idiomas(
+        self, db: Session, idiomas: tuple[str, ...]
+    ) -> list[TerminoDiccionario]:
+        """Términos de los idiomas indicados (HU-SENT-007, ADR-03 punto 1)."""
+        return list(
+            db.execute(
+                select(TerminoDiccionario)
+                .where(TerminoDiccionario.idioma.in_(idiomas))
+                .order_by(TerminoDiccionario.id)
+            ).scalars().all()
+        )
+
     def listar(self, db: Session, busqueda: str | None = None) -> list[TerminoDiccionario]:
         consulta = select(TerminoDiccionario)
         if busqueda:
@@ -67,4 +79,4 @@ class TerminoDiccionarioRepository:
 
     def eliminar(self, db: Session, termino: TerminoDiccionario) -> None:
         db.delete(termino)
-        db.commit()
+        db.commit()

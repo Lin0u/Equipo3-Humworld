@@ -25,6 +25,12 @@ class Settings(BaseSettings):
     captura_concurrencia_maxima: int = 10  # TODO(equipo): validar límite de semáforo
     circuit_breaker_umbral_fallos: int = 5  # TODO(equipo): validar umbral
 
+    # Cálculo de humor (HU-SENT-002-v2, ADR-04). Valores PROPUESTOS en el
+    # backlog, pendientes de ratificación del equipo.
+    sentimiento_timeout_ml_segundos: float = 3.0  # TODO(equipo): ratificar
+    sentimiento_barrido_minutos: int = 30  # TODO(equipo): ratificar
+    sentimiento_barrido_lote: int = 500  # noticias por ejecución del barrido
+
     # CORS (ADR-05, stack de frontend): orígenes autorizados a llamar a la API
     # desde el navegador, separados por coma. Por defecto, el servidor de
     # desarrollo de Vite. TODO(equipo): agregar el origen del frontend desplegado.

@@ -1,4 +1,4 @@
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
@@ -38,3 +38,56 @@ class NoticiaRepository:
         except SQLAlchemyError:
             db.rollback()
             raise
+
+    def listar_pendientes_humor(self, db: Session, limite: int) -> list[Noticia]:
+        """Noticias sin procesar por el cálculo de humor (HU-SENT-002-v2, barrido).
+
+        La marca es metodo_calculo IS NULL y no valor_humor IS NULL: una noticia
+        sin términos evaluables también queda con valor_humor NULL y no debe
+        reprocesarse en cada barrido.
+        """
+        return list(
+            db.execute(
+                select(Noticia)
+                .where(Noticia.metodo_calculo.is_(None))
+                .order_by(Noticia.id)
+                .limit(limite)
+            ).scalars().all()
+        )
+
+    def guardar_resultado_humor(
+        self,
+        db: Session,
+        noticia: Noticia,
+        valor_humor: float | None,
+        metodo_calculo: str,
+        cantidad_terminos_evaluados: int,
+    ) -> None:
+        """Persiste el resultado en una transacción propia (HU-SENT-002-v2)."""
+        noticia.valor_humor = valor_humor
+        noticia.metodo_calculo = metodo_calculo
+        noticia.cantidad_terminos_evaluados = cantidad_terminos_evaluados
+        try:
+            db.commit()
+        except SQLAlchemyError:
+            db.rollback()
+            raise
+
+    def marcar_para_recalculo(self, db: Session, metodo_calculo: str) -> int:
+        """Vuelve pendientes las noticias calculadas con ese método.
+
+        Solo borra metodo_calculo: valor_humor se conserva hasta que el
+        barrido lo recalcule, para que los dashboards nunca queden vacíos.
+        """
+        try:
+            resultado = db.execute(
+                update(Noticia)
+                .where(Noticia.metodo_calculo == metodo_calculo)
+                .values(metodo_calculo=None)
+                .execution_options(synchronize_session=False)
+            )
+            db.commit()
+        except SQLAlchemyError:
+            db.rollback()
+            raise
+        return resultado.rowcount

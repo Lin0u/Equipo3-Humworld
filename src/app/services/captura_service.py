@@ -16,6 +16,7 @@ from app.models.noticia import Noticia
 from app.repositories.fuentes import FuenteRSSRepository
 from app.repositories.noticias import NoticiaRepository
 from app.schemas.captura import EstadoResultadoCaptura, ResultadoCaptura
+from app.services.sentimiento_service import procesar_noticias
 
 logger = logging.getLogger(__name__)
 
@@ -113,10 +114,18 @@ async def _persistir_captura(
         fuente.fecha_ultima_captura_exitosa = fecha_registro
         fuente.estado_circuit_breaker = EstadoCircuitBreaker.CERRADO
         db.commit()
-        return len(noticias), True
     except IntegrityError:
         db.rollback()
         return 0, False
+
+    # HU-SENT-002-v2: cálculo síncrono del humor DESPUÉS de confirmar la
+    # captura, en transacciones propias. Un fallo aquí no revierte las
+    # noticias; quedan sin metodo_calculo y las retoma el barrido.
+    try:
+        procesar_noticias(db, noticias)
+    except Exception:  # noqa: BLE001
+        logger.exception("Fallo del cálculo de humor fuente_id=%s", fuente.id)
+    return len(noticias), True
 
 
 async def ejecutar_captura(fuente_id: int, db: Session) -> ResultadoCaptura:

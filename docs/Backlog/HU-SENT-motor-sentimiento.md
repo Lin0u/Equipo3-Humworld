@@ -3,7 +3,7 @@
 **Proyecto:** HumWorld — Equipo 3
 **Origen:** PDF de especificaciones (`0 PROYECTO_FINAL_HUMWORLD 260714.pdf`), secciones 4.2.2 (Diccionario de palabras evaluables), 4.2.4 (Procesado de la información), 10.2 (Endpoints mínimos obligatorios: `/dictionary`, `/sentiment`) y 10.4 (Posible algoritmo para cálculo del humor). Algoritmo de agregación decidido y justificado en `ADR-03-eleccion-algoritmo-agregacion-sentimiento.md`, conforme a la sección 11 de las instrucciones del proyecto.
 **Estado general:** Propuesto — historias generadas a partir de los títulos ya oficializados en la hoja "Backlog" de `HumWorld_Anexo_I_Planificacion_actualizado.xlsx` (entregable P3) y de la estimación en puntos ya realizada en Planning Poker (P3, `Anexo-I-Planificacion-entregado-P3.md`, Sprint 2 = 18 puntos). Pendiente de revisión crítica del equipo antes de iniciar Sprint 2.
-**Versión del documento:** v1.5. Ver la Tabla de control de versiones al final del documento para el historial completo.
+**Versión del documento:** v1.7. Ver la Tabla de control de versiones al final del documento para el historial completo.
  
 > **Nota de grounding general:** el PDF exige un algoritmo de análisis de sentimiento "basado en diccionario, LLM u otro método justificado" (Objetivos específicos, punto 2) y ofrece un algoritmo posible (§10.4) como referencia no vinculante ("Esta es solo una posible solución. Cada equipo puede determinar otra manera"). El backlog ya oficializado por el equipo (hoja Excel) eligió un enfoque **híbrido diccionario + ML** (HU-SENT-002-v2, HU-SENT-006, HU-SENT-007). Este documento formaliza esa elección ya tomada por el equipo; no la introduce de nuevo. La parte de diccionario está completamente grounded en el PDF y en la sección 11 de las instrucciones del proyecto (ver `ADR-03-eleccion-algoritmo-agregacion-sentimiento.md`); la parte de ML no estaba especificada en ningún documento fuente más allá del título de la historia — el equipo definió esa arquitectura, documentada en `ADR-04-arquitectura-modelo-ml-sentimiento.md`.
  
@@ -63,6 +63,8 @@ Escenario: Eliminación de un término inexistente
  
 ## HU-SENT-002-v2 — Cálculo híbrido de humor (diccionario + ML)
  
+**Estado:** **Deprecada (2026-10-18)** — reemplazada por **HU-SENT-002-v3** (ver más abajo), que cambia la marca de "pendiente" del barrido y agrega el recálculo tras cambios del diccionario. Se conserva este bloque íntegro como registro histórico, conforme a la sección 3 de las instrucciones del proyecto.
+
 **Tipo:** Historia Técnica / Enabler Story *(el actor es el propio sistema, según sección 4 de las instrucciones del proyecto)*
 **Como** sistema HumWorld,
 **quiero** calcular el valor de humor de cada noticia capturada usando el modelo de ML entrenado y versionado (HU-SENT-006) cuando esté disponible, o el método determinista de diccionario (HU-SENT-007) en caso contrario,
@@ -126,6 +128,103 @@ Escenario: Barrido de respaldo sobre noticias sin humor calculado
 - Prueba del job de barrido: dado un fixture con noticias `valor_humor = NULL`, tras ejecutar el job todas quedan con un valor calculado (mock del método de cálculo, sin llamadas reales).
 ---
  
+## HU-SENT-002-v3 — Cálculo híbrido de humor (diccionario + ML)
+
+**Tipo:** Historia Técnica / Enabler Story *(el actor es el propio sistema)*
+**Como** sistema HumWorld,
+**quiero** calcular el valor de humor de cada noticia capturada usando el modelo de ML entrenado y versionado (HU-SENT-006) cuando esté disponible, o el método determinista de diccionario (HU-SENT-007) en caso contrario, y mantenerlo coherente con el diccionario vigente,
+**para** asignar automáticamente un valor de sentimiento a toda noticia nueva sin intervención manual, sin reprocesos innecesarios y sin que los dashboards mezclen resultados de distintas versiones del diccionario.
+
+**Prioridad:** Alta
+**Estimación (Planning Poker P3):** 5 puntos *(heredada de HU-SENT-002-v2; el recálculo tras cambios del diccionario agrega poco esfuerzo, pero el equipo debe revalidar la cifra: es un punto de partida, no un valor definitivo)*
+**Depende de contrato de API:** No expone endpoint propio. Se dispara tras cada captura (HU-RSS-006/HU-RSS-008) y tras cada alta, modificación o baja de un término (`/api/v1/dictionary`, HU-SENT-001). Las respuestas de `/dictionary` no cambian: `contrato-sentimiento-diccionario.openapi.yaml` no requiere una nueva versión.
+**Variante del algoritmo:** promedio simple de términos únicos (HU-SENT-007, `ADR-03-eleccion-algoritmo-agregacion-sentimiento.md`) en el camino de diccionario; regresor sobre embeddings (`ADR-04-arquitectura-modelo-ml-sentimiento.md`) en el camino de ML.
+**OpenSpec:** `openspec/changes/Cálculo híbrido de humor` (spec.md actualizado el 2026-10-18).
+
+**Qué cambia respecto de HU-SENT-002-v2** (decisiones de equipo del 2026-10-18):
+
+1. **Marca de "pendiente" del barrido: `metodo_calculo IS NULL`**, en vez de `valor_humor IS NULL`. Con la regla anterior, una noticia ya procesada sin términos coincidentes (resultado correcto: `valor_humor = NULL`) era indistinguible de una pendiente, y el barrido la habría recalculado en cada ejecución, indefinidamente. `metodo_calculo` ya existía en esta historia, por lo que no se agrega ningún campo de estado.
+2. **Recálculo tras cambios del diccionario.** Toda alta, modificación o baja de un término marca como pendientes las noticias calculadas con `metodo_calculo = "diccionario"`; el barrido las recalcula en su próxima ejecución. Se conserva `valor_humor` mientras tanto, para que los dashboards nunca muestren un hueco, y varios cambios seguidos se resuelven con un único recálculo. Las noticias calculadas con ML no se marcan, porque no dependen del diccionario. Un fallo al marcar se registra y no revierte el cambio del diccionario. Cierra el punto pendiente 2 de HU-SENT-008.
+
+Se mantienen sin cambios el resto de las decisiones de HU-SENT-002-v2: mecanismo síncrono con Timeout explícito y fallback a diccionario, barrido de respaldo sobre el scheduler de `ADR-02`, descarte de una cola de mensajes, y los patrones de resiliencia de `ADR-04-arquitectura-modelo-ml-sentimiento.md` para el servicio de embeddings.
+
+**Valores propuestos, pendientes de validación del equipo:**
+- Timeout de la llamada a Google Gemini Embedding: **3 segundos**.
+- Periodicidad del job de barrido: **cada 30 minutos**. La primera ejecución ocurre 1 minuto después de arrancar la API.
+- Noticias procesadas por ejecución del barrido: **500**. Con más noticias pendientes, el recálculo completo tras un cambio del diccionario toma varias ejecuciones.
+
+### Criterios de aceptación (Gherkin)
+
+```gherkin
+Escenario: Cálculo con modelo de ML disponible
+  Dado que existe un modelo de ML entrenado y versionado (ver HU-SENT-006)
+  Cuando se captura una noticia nueva
+  Entonces el sistema calcula su valor de humor usando ese modelo, dentro del timeout configurado
+  Y persiste el resultado (HU-SENT-003) con metodo_calculo="ml" y el identificador de versión del modelo usado
+
+Escenario: Cálculo sin modelo de ML disponible (fallback)
+  Dado que no existe todavía un modelo de ML entrenado
+  Cuando se captura una noticia nueva
+  Entonces el sistema calcula su valor de humor usando el método determinista de diccionario (HU-SENT-007)
+  Y persiste el resultado con metodo_calculo="diccionario"
+
+Escenario: Fallo del modelo de ML durante el cálculo
+  Dado que existe un modelo de ML disponible pero su ejecución lanza un error
+  Cuando el sistema intenta calcular el humor de una noticia con ese modelo
+  Entonces el sistema recae automáticamente en el método de diccionario para esa noticia
+  Y el incidente queda registrado en el log del sistema
+
+Escenario: Timeout excedido durante el cálculo con ML
+  Dado que existe un modelo de ML disponible pero no responde dentro del timeout configurado
+  Cuando el sistema intenta calcular el humor de una noticia con ese modelo
+  Entonces el sistema no espera más allá del timeout configurado
+  Y recae automáticamente en el método de diccionario para esa noticia
+  Y el incidente (timeout excedido) queda registrado en el log del sistema
+
+Escenario: Fallo del cálculo sin pérdida de la noticia capturada
+  Dado que el cálculo de humor de una noticia recién capturada falla por un error inesperado
+  Cuando termina el flujo de captura
+  Entonces la noticia queda persistida con metodo_calculo = NULL
+  Y el fallo no impide persistir ni calcular las demás noticias de la captura
+
+Escenario: Barrido de respaldo sobre noticias pendientes
+  Dado que existe al menos 1 noticia con metodo_calculo = NULL
+  Cuando se ejecuta el job periódico de barrido
+  Entonces el sistema calcula y persiste el humor de esa noticia (usando ML si está disponible, o diccionario en caso contrario)
+  Y registra su metodo_calculo
+
+Escenario: Noticia sin términos coincidentes no se reprocesa
+  Dado que una noticia fue procesada con metodo_calculo = "diccionario" y 0 términos coincidentes (valor_humor = NULL)
+  Cuando se ejecuta el job periódico de barrido
+  Entonces la noticia no se vuelve a calcular
+
+Escenario: Recálculo tras el alta de un término
+  Dado una noticia calculada por diccionario con "guerra" (es, -8), cuyo texto también contiene "crisis", y valor_humor = -8.0
+  Cuando se da de alta el término "crisis" (es, -6) mediante POST /api/v1/dictionary
+  Entonces la noticia queda con metodo_calculo = NULL y conserva valor_humor = -8.0
+  Y tras el siguiente barrido queda con valor_humor = -7.0 y cantidad_terminos_evaluados = 2
+
+Escenario: Recálculo tras la baja del único término coincidente
+  Dado una noticia calculada por diccionario cuyo único término coincidente es "guerra" (es, -8)
+  Cuando se elimina "guerra" mediante DELETE /api/v1/dictionary/{id} y se ejecuta el barrido
+  Entonces la noticia queda con valor_humor = NULL, cantidad_terminos_evaluados = 0 y metodo_calculo = "diccionario"
+
+Escenario: Noticias calculadas con ML no se recalculan por cambios del diccionario
+  Dado una noticia con metodo_calculo = "ml"
+  Cuando se modifica cualquier término del diccionario
+  Entonces la noticia conserva su metodo_calculo y su valor_humor
+```
+
+### Definition of Done
+(Bloque general DoD, sección 14.) Adicionalmente:
+- Pruebas unitarias del fallback con el modelo de ML **mockeado**, incluidos el fallo forzado y el timeout forzado; nunca se carga un modelo real.
+- Pruebas del barrido: procesa solo noticias con `metodo_calculo = NULL`, respeta el límite por ejecución y aísla el fallo de una noticia.
+- Pruebas del recálculo tras alta, modificación y baja de un término, y de que un fallo al marcar no revierte el cambio del diccionario.
+- Migración de MySQL para `metodo_calculo` y `cantidad_terminos_evaluados`, encadenada después de `b7d41e2a9c3f`.
+- Revisión del equipo de la lógica del algoritmo (sección 12 de las instrucciones del proyecto).
+
+---
+
 ## HU-SENT-003 — Persistencia del resultado de humor y polarización
  
 **Tipo:** Historia Técnica / Enabler Story *(el actor es el propio sistema)*
@@ -141,7 +240,7 @@ Escenario: Barrido de respaldo sobre noticias sin humor calculado
  
 ```gherkin
 Escenario: Persistencia exitosa tras el cálculo
-  Dado que HU-SENT-002-v2 calculó un valor de humor y un valor de polarización para una noticia
+  Dado que HU-SENT-002-v3 calculó un valor de humor y un valor de polarización para una noticia
   Cuando el sistema persiste el resultado
   Entonces el valor_humor almacenado coincide exactamente con el valor calculado
   Y el indicador de polarización almacenado coincide exactamente con el valor calculado
@@ -156,7 +255,7 @@ Escenario: Noticia sin términos evaluables coincidentes
  
 **Nota de grounding:** el PDF (sección 4.2.4) exige explícitamente que "la información de valor de 'humor' de cada RSS se persistirá junto con el propio RSS" — esta historia formaliza ese requisito para el caso de diccionario ("En el caso de utilizar diccionario de palabras", texto literal del PDF).
  
-**Nota de uso adicional:** `valor_humor = NULL` no solo representa "noticia sin términos evaluables" (este escenario) — también se usa como indicador de "pendiente de cálculo" para el job de barrido de respaldo definido en HU-SENT-002-v2. Ambos casos son indistinguibles a nivel de dato (`NULL`); si en el futuro el equipo necesita diferenciarlos, requeriría un campo adicional de estado — no contemplado por ahora, para no sobre-diseñar sin una necesidad concreta identificada.
+**Nota de uso adicional:** `valor_humor = NULL` representa solo "noticia sin términos evaluables". El indicador de "pendiente de cálculo" del barrido de respaldo es `metodo_calculo = NULL` (HU-SENT-002-v3, decisión de equipo del 2026-10-18), por lo que ambos casos ya se distinguen sin un campo de estado adicional.
  
 ### Definition of Done
 (Bloque general DoD, sección 14.) Adicionalmente:
@@ -237,7 +336,7 @@ Escenario: Texto sin términos del diccionario coincidentes
   Y el valor_humor devuelto es NULL, con un indicador explícito de "0 términos evaluados" en la respuesta
 ```
  
-**Nota de grounding (alcance del método):** a diferencia de HU-SENT-002-v2 (que puede usar ML), este endpoint de análisis puntual usa siempre el método determinista de diccionario (HU-SENT-007) — el PDF no exige que el análisis de texto arbitrario pase por el camino de ML, y usar siempre diccionario aquí da una respuesta instantánea y 100% reproducible para pruebas. **Esto es una propuesta del agente PO/Arquitecto, no una decisión ya tomada por el equipo — a confirmar.**
+**Nota de grounding (alcance del método):** a diferencia de HU-SENT-002-v3 (que puede usar ML), este endpoint de análisis puntual usa siempre el método determinista de diccionario (HU-SENT-007) — el PDF no exige que el análisis de texto arbitrario pase por el camino de ML, y usar siempre diccionario aquí da una respuesta instantánea y 100% reproducible para pruebas. **Esto es una propuesta del agente PO/Arquitecto, no una decisión ya tomada por el equipo — a confirmar.**
  
 ### Definition of Done
 (Bloque general DoD, sección 14.)
@@ -300,14 +399,16 @@ Escenario: Fallo del servicio externo de embeddings durante el entrenamiento
  
 ## HU-SENT-007 — Fallback determinista con diccionario
  
+**Estado:** **Deprecada (2026-10-18)** — reemplazada por **HU-SENT-007-v2** (ver más abajo), que fija cómo se compara cada término con el texto. Se conserva este bloque íntegro como registro histórico, conforme a la sección 3 de las instrucciones del proyecto.
+
 **Tipo:** Historia Técnica / Enabler Story *(el actor es el propio sistema)*
 **Como** sistema HumWorld,
 **quiero** calcular el humor de una noticia mediante el método determinista de diccionario — promedio simple de los valores de los términos evaluables coincidentes, más un indicador de polarización — según lo definido en `ADR-03-eleccion-algoritmo-agregacion-sentimiento.md`,
-**para** disponer siempre de un valor de humor calculable, incluso cuando el modelo de ML no esté disponible, no esté entrenado todavía, o falle (ver HU-SENT-002-v2).
+**para** disponer siempre de un valor de humor calculable, incluso cuando el modelo de ML no esté disponible, no esté entrenado todavía, o falle (ver HU-SENT-002-v3).
  
 **Prioridad:** Alta
 **Estimación (Planning Poker P3):** 2 puntos
-**Depende de contrato de API:** No expone endpoint propio — es un servicio interno invocado por HU-SENT-002-v2 (cálculo automático tras captura) y por HU-SENT-005 (endpoint de análisis de texto arbitrario).
+**Depende de contrato de API:** No expone endpoint propio — es un servicio interno invocado por HU-SENT-002-v3 (cálculo automático tras captura) y por HU-SENT-005 (endpoint de análisis de texto arbitrario).
  
 ### Criterios de aceptación (Gherkin)
  
@@ -351,17 +452,90 @@ Escenario: Término que aparece más de una vez en el mismo texto
 - Prueba del caso de término repetido varias veces en el mismo texto (ver Escenario 4): confirma que se cuenta como término único (n=1), no por cantidad de apariciones.
 ---
  
+## HU-SENT-007-v2 — Fallback determinista con diccionario
+
+**Tipo:** Historia Técnica / Enabler Story *(el actor es el propio sistema)*
+**Como** sistema HumWorld,
+**quiero** calcular el humor de una noticia mediante el método determinista de diccionario — promedio simple de los valores de los términos evaluables coincidentes, más un indicador de polarización — según lo definido en `ADR-03-eleccion-algoritmo-agregacion-sentimiento.md`, con una regla explícita para decidir cuándo un término coincide con el texto,
+**para** disponer siempre de un valor de humor calculable y reproducible, incluso cuando el modelo de ML no esté disponible, no esté entrenado todavía, o falle (ver HU-SENT-002-v3).
+
+**Prioridad:** Alta
+**Estimación (Planning Poker P3):** 2 puntos *(heredada de HU-SENT-007; la regla de comparación agrega poco esfuerzo, pero el equipo debe revalidar la cifra: es un punto de partida, no un valor definitivo)*
+**Depende de contrato de API:** No expone endpoint propio — es un servicio interno invocado por HU-SENT-002-v3 (cálculo automático tras captura) y por HU-SENT-005 (endpoint de análisis de texto arbitrario).
+**Variante del algoritmo:** promedio simple de términos únicos (`ADR-03-eleccion-algoritmo-agregacion-sentimiento.md`).
+
+**Qué cambia respecto de HU-SENT-007** (decisión de equipo del 2026-10-18): HU-SENT-007 no fijaba cómo se decide que un término "aparece" en el texto. Se fija así:
+
+1. **Palabra o frase completa.** "guerra" no coincide con "guerrilla" ni con "posguerra"; en inglés, "war" no coincide con "award" ni "toward". Se admiten términos de varias palabras ("acuerdo de paz").
+2. **Sin distinguir mayúsculas.** Los títulos de los feeds en inglés usan mayúscula en cada palabra.
+3. **Sin distinguir tildes, conservando la ñ.** "POLITICA" coincide con "política"; "pena" no coincide con "peña".
+4. **Sin lematización.** Singular y plural son términos distintos: para contar "guerras" hay que cargarlo en el diccionario además de "guerra". Se descartó un lematizador (spaCy o NLTK) porque agrega una dependencia fuera del stack aprobado y requeriría su propio ADR.
+5. **Texto evaluado:** título y contenido de la noticia, sin etiquetas HTML.
+6. **Términos iguales al normalizar.** El diccionario permite cargar "política" y "politica" por separado (HU-SENT-001 compara la palabra literal). Si ambos existen en el mismo idioma, solo cuenta el de menor id, para no contar dos veces la misma palabra del texto.
+
+### Criterios de aceptación (Gherkin)
+
+Se mantienen los 4 escenarios de HU-SENT-007 (signos opuestos, sin coincidencias, un único término y término repetido) y se agregan:
+
+```gherkin
+Escenario: Palabra contenida dentro de otra
+  Dado que el diccionario contiene "guerra" (es, -8)
+  Y una noticia cuyo texto contiene "guerrilla" y no contiene "guerra"
+  Cuando el sistema calcula su humor
+  Entonces valor_humor = NULL y cantidad_terminos_evaluados = 0
+
+Escenario: Mayúsculas y tildes
+  Dado que el diccionario contiene "política" (es, -2) y "crisis económica" (es, -7)
+  Y una noticia cuyo texto contiene "POLITICA y Crisis Economica"
+  Cuando el sistema calcula su humor
+  Entonces valor_humor = -4.5 y cantidad_terminos_evaluados = 2
+
+Escenario: La ñ distingue palabras
+  Dado que el diccionario contiene "peña" (es, 3)
+  Y una noticia cuyo texto contiene "pena" y no contiene "peña"
+  Cuando el sistema calcula su humor
+  Entonces valor_humor = NULL
+
+Escenario: Plural no cargado en el diccionario
+  Dado que el diccionario contiene "guerra" (es, -8) pero no "guerras"
+  Y una noticia cuyo texto contiene "guerras" y ningún otro término
+  Cuando el sistema calcula su humor
+  Entonces valor_humor = NULL
+
+Escenario: Términos que resultan iguales al normalizar
+  Dado que el diccionario contiene "política" (es, -2, creado primero) y "politica" (es, -4)
+  Y una noticia cuyo texto contiene "política"
+  Cuando el sistema calcula su humor
+  Entonces valor_humor = -2.0 y cantidad_terminos_evaluados = 1
+
+Escenario: Etiquetas HTML en el resumen del feed
+  Dado que el diccionario contiene "acuerdo de paz" (es, 7)
+  Y una noticia cuyo contenido es "<p>Hubo un <b>acuerdo de paz</b> histórico</p>"
+  Cuando el sistema calcula su humor
+  Entonces valor_humor = 7.0
+```
+
+**Nota de grounding:** la fórmula y el divisor `n` (términos únicos) no cambian; siguen `ADR-03-eleccion-algoritmo-agregacion-sentimiento.md` y la sección 11 de las instrucciones del proyecto. El indicador de polarización sigue a cargo de HU-SENT-003.
+
+### Definition of Done
+(Bloque general DoD, sección 14.) Adicionalmente:
+- Las pruebas de HU-SENT-007 (escenario numérico -1.0 / 7.0, cero coincidencias, término repetido) siguen pasando.
+- Una prueba unitaria por cada escenario nuevo, sin mocks de red ni de modelo ML.
+- La carga del diccionario real incluye las formas plurales que el equipo considere necesarias.
+
+---
+
 ## Resumen de trazabilidad
  
 | ID | Tipo | Prioridad | Puntos (P3) | Endpoint / mecanismo | Referencia PDF |
 |---|---|---|---|---|---|
 | HU-SENT-001 | Historia de Usuario | Alta | 5 | `/api/v1/dictionary` (CRUD) — ver `contrato-sentimiento-diccionario.openapi.yaml` | §4.2.2, §10.2 |
-| HU-SENT-002-v2 | Enabler Story | Alta | 5 | Interno — síncrono + Timeout explícito (propuesto: 3s) + fallback a diccionario + job de barrido de respaldo (propuesto: cada 30 min) | §4.2.4, Objetivos específicos #2 |
+| HU-SENT-002-v3 | Enabler Story | Alta | 5 | Interno — síncrono + Timeout explícito (propuesto: 3s) + fallback a diccionario + job de barrido de respaldo (propuesto: cada 30 min) sobre `metodo_calculo IS NULL` + recálculo tras cambios del diccionario | §4.2.4, Objetivos específicos #2 |
 | HU-SENT-003 | Enabler Story | Alta | 3 | Extiende modelo `Noticia` | §4.2.4 |
 | HU-SENT-004 | Historia de Usuario | Alta | 1 | `GET /api/v1/sentiment` — ver `contrato-sentimiento-diccionario.openapi.yaml` | §4.1, §10.2 |
 | HU-SENT-005 | Historia de Usuario | Media | 2 | `POST /api/v1/sentiment` — ver `contrato-sentimiento-diccionario.openapi.yaml` | §10.2 |
 | HU-SENT-006 | Historia de Usuario | Media | 5 | `POST /api/v1/trainings` — ver `contrato-sentimiento-diccionario.openapi.yaml` — embeddings externos (Google Gemini Embedding) + regresor local scikit-learn, disparo manual, umbral propuesto: 1.000 noticias (ver ADR-04) | Objetivos específicos #2 (no detallado) |
-| HU-SENT-007 | Enabler Story | Alta | 2 | Interno (servicio compartido) — n = términos únicos | §10.4, sección 11 instrucciones proyecto |
+| HU-SENT-007-v2 | Enabler Story | Alta | 2 | Interno (servicio compartido) — n = términos únicos; palabra completa, sin mayúsculas ni tildes (conserva ñ), sin lematización | §10.4, sección 11 instrucciones proyecto |
  
 ## Tabla de control de versiones
  
@@ -373,3 +547,5 @@ Escenario: Término que aparece más de una vez en el mismo texto
 | HU-SENT-002-v2, HU-SENT-006 | v1.3 | 2026-09-28 (cuarta sesión del día) | Se fijan **valores propuestos** (no definitivos) para los 3 parámetros de configuración que quedaban abiertos desde v1.2, a partir de la estimación del equipo de ~50 fuentes RSS activas y de heurísticas generales de ingeniería (no de ningún dato del PDF): **HU-SENT-002-v2** → timeout de la llamada a Google Gemini Embedding = 3 segundos, periodicidad del job de barrido = cada 30 minutos; **HU-SENT-006** → umbral mínimo de entrenamiento = 1.000 noticias evaluadas por diccionario. Los tres valores quedan pendientes de ratificación por el equipo, con el mismo tratamiento que una estimación de Planning Poker (punto de partida, no valor definitivo). Actualizados en espejo en `ADR-04-arquitectura-modelo-ml-sentimiento.md` (v1.1) y `HU-RSS-captura.md` (v1.9, periodicidad del cron de captura). |
 | Todas (HU-SENT-002-v2, HU-SENT-003, HU-SENT-006, HU-SENT-007) | v1.4 (editorial) | 2026-09-29 | Limpieza editorial: se retiran los bloques de comentario en formato cita ("— CONFIRMADO/A (decisión del equipo, sesión...)", "Valores propuestos (PO/Arquitecto, sesión..., pendientes de ratificación)", "Actualización (sesión...)") y se integra su contenido técnico como texto normal del documento, sin narrar el proceso de decisión turno a turno. No cambia ninguna decisión, valor propuesto, criterio de aceptación ni alcance — solo la forma en que se presenta. El historial de sesiones/fechas queda concentrado en esta tabla, que es donde la sección 3 de las instrucciones del proyecto exige la trazabilidad. |
 | HU-SENT-001, HU-SENT-004, HU-SENT-005, HU-SENT-006 | v1.5 | 2026-09-29 | Se crea `contrato-sentimiento-diccionario.openapi.yaml` (v1.0.0), el primer contrato OpenSpec de EPIC-SENT. Se actualizan los campos "Depende de contrato de API" de estas 4 historias y la tabla de "Resumen de trazabilidad", que dejan de decir "recurso nuevo, no existe todavía en ningún contrato" y pasan a referenciar el contrato ya creado. Sin cambios en el alcance, los criterios de aceptación ni los valores propuestos de ninguna historia. |
+| HU-SENT-002-v2 → HU-SENT-002-v3, HU-SENT-003 | v1.6 | 2026-10-18 | Decisiones de equipo durante la implementación del OpenSpec "Cálculo híbrido de humor": (1) el barrido usa `metodo_calculo IS NULL` como marca de pendiente, porque con `valor_humor IS NULL` reprocesaría indefinidamente las noticias sin términos coincidentes; (2) toda alta, modificación o baja de un término marca para recálculo las noticias calculadas por diccionario (cierra el punto pendiente 2 de HU-SENT-008). HU-SENT-002-v2 queda Deprecada y se crea HU-SENT-002-v3 con 5 escenarios nuevos. Se corrige la nota de uso adicional de HU-SENT-003 y se actualizan las referencias de HU-SENT-003 a HU-SENT-007 y de la tabla de trazabilidad. Sin cambios en el contrato de `/dictionary`. |
+| HU-SENT-007 → HU-SENT-007-v2 | v1.7 | 2026-10-18 | Decisión de equipo: se fija la regla de comparación de términos que HU-SENT-007 no definía (palabra o frase completa; sin distinguir mayúsculas ni tildes, conservando la ñ; sin lematización; texto sin HTML; términos iguales al normalizar cuentan una vez). HU-SENT-007 queda Deprecada y se crea HU-SENT-007-v2 con 6 escenarios nuevos. Sin cambios en la fórmula ni en el divisor n. |

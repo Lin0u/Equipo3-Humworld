@@ -70,7 +70,7 @@ El cálculo por diccionario SHALL usar el promedio simple de los valores de tér
 
 ### Requirement: Barrido periódico de respaldo
 
-El sistema SHALL disponer de un job APScheduler configurable que vuelva a intentar calcular noticias cuyo procesamiento de sentimiento quedó pendiente (`valor_humor IS NULL` por interrupción o fallo no recuperado). El job SHALL reutilizar el mismo selector ML/diccionario, timeout y fallback del flujo de captura, procesar las noticias sin impedir el trabajo RSS y evitar reintentos infinitos. La periodicidad propuesta por el backlog es 30 minutos y queda configurable y pendiente de validación del equipo.
+El sistema SHALL disponer de un job APScheduler configurable que vuelva a intentar calcular noticias cuyo procesamiento de sentimiento quedó pendiente (`metodo_calculo IS NULL`: por interrupción, fallo no recuperado o un cambio posterior del diccionario). Una noticia procesada sin términos coincidentes (`valor_humor=NULL`, `metodo_calculo=diccionario`) NO es pendiente y no se reprocesa en cada ejecución. El job SHALL reutilizar el mismo selector ML/diccionario, timeout y fallback del flujo de captura, procesar las noticias sin impedir el trabajo RSS y evitar reintentos infinitos. La periodicidad propuesta por el backlog es 30 minutos y queda configurable y pendiente de validación del equipo.
 
 #### Scenario: Barrido repara cálculo interrumpido
 - **Dado** que una noticia quedó con `valor_humor=NULL` porque el cálculo se interrumpió antes de finalizar
@@ -83,3 +83,42 @@ El sistema SHALL disponer de un job APScheduler configurable que vuelva a intent
 - **Cuando** el job procesa el conjunto de noticias pendientes
 - **Entonces** registra el fallo de esa noticia
 - **Y** continúa con las demás noticias pendientes y ejecuciones de captura RSS
+
+#### Scenario: Noticia sin coincidencias no se reprocesa
+- **Dado** que una noticia fue procesada con `metodo_calculo=diccionario` y 0 términos coincidentes
+- **Cuando** se ejecuta el job periódico de respaldo
+- **Entonces** la noticia no se vuelve a calcular
+
+### Requirement: Recálculo tras cambios en el diccionario
+
+Toda alta, modificación o eliminación de un término del diccionario (HU-SENT-001) SHALL marcar como pendientes (`metodo_calculo=NULL`) las noticias calculadas con `metodo_calculo=diccionario`, conservando su `valor_humor` hasta que el barrido las recalcule. Las noticias calculadas con ML SHALL NOT marcarse. Un fallo al marcar SHALL NOT revertir el cambio del diccionario. Decisión de equipo del 2026-10-18.
+
+#### Scenario: Alta de un término que aparece en noticias ya calculadas
+- **Dado** una noticia calculada por diccionario con `guerra=-8` y `valor_humor=-8.0`, cuyo texto también contiene "crisis"
+- **Cuando** se agrega el término `crisis=-6` al diccionario
+- **Entonces** la noticia queda con `metodo_calculo=NULL` y conserva `valor_humor=-8.0`
+- **Y** tras el siguiente barrido persiste `valor_humor=-7.0` y `cantidad_terminos_evaluados=2`
+
+#### Scenario: Noticias calculadas con ML
+- **Dado** una noticia con `metodo_calculo=ml`
+- **Cuando** se modifica cualquier término del diccionario
+- **Entonces** la noticia conserva `metodo_calculo=ml` y su valor
+
+### Requirement: Comparación de términos con el texto
+
+El cálculo por diccionario SHALL comparar cada término con el título y el contenido de la noticia como palabra o frase completa, sin distinguir mayúsculas ni tildes, conservando la ñ, y tras quitar las etiquetas HTML. SHALL NOT aplicar lematización: las formas singular y plural son términos distintos del diccionario. Si dos términos del mismo idioma resultan iguales al normalizar, SHALL contarse solo el de menor id. Decisión de equipo del 2026-10-18.
+
+#### Scenario: Palabra contenida en otra
+- **Dado** que el diccionario contiene `guerra=-8`
+- **Cuando** el texto contiene "guerrilla" y no "guerra"
+- **Entonces** no hay coincidencia
+
+#### Scenario: Mayúsculas y tildes
+- **Dado** que el diccionario contiene `política=-2`
+- **Cuando** el texto contiene "POLITICA"
+- **Entonces** el término coincide
+
+#### Scenario: La ñ distingue palabras
+- **Dado** que el diccionario contiene `peña=3`
+- **Cuando** el texto contiene "pena" y no "peña"
+- **Entonces** no hay coincidencia
