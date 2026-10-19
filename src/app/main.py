@@ -14,7 +14,15 @@ from fastapi.responses import JSONResponse
 
 from app.core.config import settings
 from app.schemas.common import Error
-from app.routers import captures, channels, configuracion, dictionary, health, sources
+from app.routers import (
+    captures,
+    channels,
+    configuracion,
+    dashboards,
+    dictionary,
+    health,
+    sources,
+)
 
 
 @asynccontextmanager
@@ -70,3 +78,4 @@ app.include_router(sources.router, prefix=api_v1_prefix)
 app.include_router(captures.router, prefix=api_v1_prefix)
 app.include_router(configuracion.router, prefix=api_v1_prefix)
 app.include_router(dictionary.router, prefix=api_v1_prefix)
+app.include_router(dashboards.router, prefix=api_v1_prefix)

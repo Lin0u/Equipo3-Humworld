@@ -1,0 +1,53 @@
+/* HumWorld - estilos de la pantalla "Nube de palabras". */
+.nube-encabezado {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.nube {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 4px 24px;
+  min-height: 320px;
+  margin: 0;
+  padding: 32px 16px;
+  background: var(--papel);
+  border: var(--borde);
+  border-radius: var(--radio);
+}
+
+.palabra {
+  font-family: var(--letra-titulos);
+  line-height: 1.15;
+  font-weight: 600;
+  cursor: default;
+  animation: saltar 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  transition: transform 0.15s;
+}
+
+.palabra:hover {
+  transform: scale(1.12) rotate(-2deg);
+}
+
+/* Cada palabra aparece con un pequeño rebote. */
+@keyframes saltar {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.nube-vacia {
+  padding: 24px 0;
+}

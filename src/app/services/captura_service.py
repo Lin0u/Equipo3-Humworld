@@ -28,6 +28,22 @@ def _identificador_item(item: dict) -> str | None:
     return str(identificador).strip() or None
 
 
+def _fecha_publicacion(item: dict) -> datetime | None:
+    """Fecha del propio ítem RSS (pubDate/updated), en UTC.
+
+    feedparser entrega published_parsed/updated_parsed ya convertidas a UTC
+    como struct_time. Si el feed no la trae o es inválida, queda None y los
+    dashboards usan fecha_registro (fecha de referencia).
+    """
+    fecha = item.get("published_parsed") or item.get("updated_parsed")
+    if not fecha:
+        return None
+    try:
+        return datetime(*fecha[:6], tzinfo=timezone.utc)
+    except (TypeError, ValueError):
+        return None
+
+
 def _mapear_item(item: dict, fuente: FuenteRSS, fecha_registro: datetime) -> Noticia | None:
     identificador = _identificador_item(item)
     titulo = str(item.get("title") or "").strip()
@@ -47,10 +63,12 @@ def _mapear_item(item: dict, fuente: FuenteRSS, fecha_registro: datetime) -> Not
         titulo=titulo,
         contenido=contenido,
         enlace_original=enlace,
-        fecha_publicacion=None,
+        fecha_publicacion=_fecha_publicacion(item),
         fecha_registro=fecha_registro,
         idioma_detectado=None,
-        categoria_iptc=None,
+        # La noticia hereda la categoría IPTC de su fuente (HU-RSS-002; dataset
+        # de HU-RSS-009-v2: solo feeds de sección, una categoría por fuente).
+        categoria_iptc=fuente.categoria_iptc,
     )
 
 
