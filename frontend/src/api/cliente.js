@@ -42,20 +42,58 @@ export function obtenerSerieGlobal(desde, hasta) {
   return obtenerJson(`/sentiment?${consulta}`)
 }
 
-// GET /dashboards/word-cloud (HU-DASH-003-v2). Sin continente: todo el mundo.
-export function obtenerNubePalabras(continente) {
-  const consulta = continente ? `?continente=${encodeURIComponent(continente)}` : ''
-  return obtenerJson(`/dashboards/word-cloud${consulta}`)
+// Agrega a la consulta solo los filtros con valor (vacío = "todos").
+function agregarFiltros(consulta, filtros) {
+  for (const [clave, valor] of Object.entries(filtros)) {
+    if (valor) consulta.set(clave, valor)
+  }
+  return consulta
+}
+
+// GET /dashboards/word-cloud (HU-DASH-003-v2, PDF §4.3.1: filtro por continente o
+// país). Sin filtros: todo el mundo.
+export function obtenerNubePalabras(continente = '', pais = '') {
+  const consulta = agregarFiltros(new URLSearchParams(), { continente, pais }).toString()
+  return obtenerJson(`/dashboards/word-cloud${consulta ? `?${consulta}` : ''}`)
+}
+
+// Máximo de canales por página que acepta GET /channels (HU-RSS-010).
+const CANALES_POR_PAGINA = 50
+
+// Países con canales registrados, para el filtro por país. Salen del campo "pais"
+// de los canales (GET /channels, HU-RSS-010): es el mismo dato con el que el
+// backend filtra la nube y las noticias. Recorre todas las páginas.
+export async function obtenerPaises(continente = '') {
+  const paises = new Set()
+  let pagina = 1
+  let total = Infinity
+  while ((pagina - 1) * CANALES_POR_PAGINA < total) {
+    const consulta = agregarFiltros(
+      new URLSearchParams({ pagina: String(pagina), tamanio_pagina: String(CANALES_POR_PAGINA) }),
+      { continente },
+    )
+    const datos = await obtenerJson(`/channels?${consulta}`)
+    datos.items.forEach((canal) => canal.pais && paises.add(canal.pais))
+    total = datos.total
+    pagina += 1
+  }
+  return [...paises].sort((a, b) => a.localeCompare(b, 'es'))
 }
 
 // GET /news (HU-DASH-002-v2): noticias más influyentes, paginadas y filtradas.
-export function obtenerNoticias({ signo = 'todas', continente = '', pagina = 1, tamanioPagina = 10 }) {
+export function obtenerNoticias({
+  signo = 'todas',
+  continente = '',
+  pais = '',
+  pagina = 1,
+  tamanioPagina = 10,
+}) {
   const consulta = new URLSearchParams({
     orden: 'influencia',
     signo,
     pagina: String(pagina),
     tamanio_pagina: String(tamanioPagina),
   })
-  if (continente) consulta.set('continente', continente)
+  agregarFiltros(consulta, { continente, pais })
   return obtenerJson(`/news?${consulta}`)
 }

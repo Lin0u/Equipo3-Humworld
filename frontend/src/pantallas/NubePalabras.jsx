@@ -3,10 +3,11 @@
 // GET /api/v1/dashboards/word-cloud: términos del diccionario con más noticias
 // que los contienen (HU-SENT-008). El peso lo calcula el backend; aquí solo
 // define el tamaño de la letra.
-// Pendiente: el filtro por país, cuando el equipo defina de dónde salen los países.
+// Filtros: continente o país (PDF §4.3.1). Los países salen de los canales registrados.
 import { useEffect, useState } from 'react'
 import { obtenerNubePalabras } from '../api/cliente.js'
 import Carita from '../componentes/Carita.jsx'
+import SelectorPais from '../componentes/SelectorPais.jsx'
 import { tipoHumor } from '../utilidades/humor.js'
 import './NubePalabras.css'
 
@@ -27,12 +28,13 @@ function ordenAlfabetico(a, b) {
 export default function NubePalabras() {
   // Continente elegido. La cadena vacía significa "todos".
   const [continente, setContinente] = useState('')
+  const [pais, setPais] = useState('')
   const [palabras, setPalabras] = useState(null)
   const [error, setError] = useState(null)
 
   useEffect(() => {
     let vigente = true
-    obtenerNubePalabras(continente)
+    obtenerNubePalabras(continente, pais)
       .then((datos) => {
         if (vigente) {
           setPalabras([...datos.items].sort(ordenAlfabetico))
@@ -43,11 +45,18 @@ export default function NubePalabras() {
     return () => {
       vigente = false
     }
-  }, [continente])
+  }, [continente, pais])
 
+  // Cambiar de continente borra el país: podría no pertenecer al nuevo continente.
   function cambiarContinente(nuevo) {
     setPalabras(null)
+    setPais('')
     setContinente(nuevo)
+  }
+
+  function cambiarPais(nuevo) {
+    setPalabras(null)
+    setPais(nuevo)
   }
 
   // La palabra con más peso define el tamaño máximo; las demás se escalan.
@@ -69,8 +78,8 @@ export default function NubePalabras() {
     contenido = <p className="nube-vacia">No hay palabras para este filtro.</p>
   } else {
     contenido = (
-      // La "key" cambia con el continente para que la animación se repita al filtrar.
-      <ul className="nube" key={continente}>
+      // La "key" cambia con los filtros para que la animación se repita al filtrar.
+      <ul className="nube" key={`${continente}-${pais}`}>
         {lista.map((item, posicion) => (
           <li
             key={item.termino_id}
@@ -92,17 +101,20 @@ export default function NubePalabras() {
           <h2>Nube de palabras</h2>
           <p>Mientras más grande la palabra, en más noticias apareció.</p>
         </div>
-        <label className="campo">
-          Continente
-          <select value={continente} onChange={(evento) => cambiarContinente(evento.target.value)}>
-            <option value="">Todos</option>
-            {CONTINENTES.map((nombre) => (
-              <option key={nombre} value={nombre}>
-                {nombre}
-              </option>
-            ))}
-          </select>
-        </label>
+        <div className="filtros-lugar">
+          <label className="campo">
+            Continente
+            <select value={continente} onChange={(evento) => cambiarContinente(evento.target.value)}>
+              <option value="">Todos</option>
+              {CONTINENTES.map((nombre) => (
+                <option key={nombre} value={nombre}>
+                  {nombre}
+                </option>
+              ))}
+            </select>
+          </label>
+          <SelectorPais continente={continente} valor={pais} onCambio={cambiarPais} />
+        </div>
       </div>
 
       {contenido}
