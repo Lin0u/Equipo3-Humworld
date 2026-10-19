@@ -1,35 +1,133 @@
-"""
-Scheduler del cron de captura automática.
+"""Scheduler interno APScheduler para la captura automática de RSS."""
 
-Origina en: HU-RSS-006 (cron automático), HU-RSS-007 (periodicidad configurable).
-Decisión de arquitectura: ADR-002, sección 2 — scheduler interno con
-APScheduler (AsyncIOScheduler) en lugar de crontab del sistema operativo,
-para permitir cambiar la periodicidad en caliente vía `/api/v1/config` sin
-reiniciar el contenedor.
+import logging
+from datetime import datetime, timedelta, timezone
 
-TODO(equipo):
-1. Instanciar un AsyncIOScheduler al arrancar la aplicación (ver app/main.py,
-   evento "startup").
-2. Registrar el job `captura_service.ejecutar_captura_todas_las_activas`
-   con la periodicidad leída desde `settings.captura_periodicidad_minutos`
-   (o, una vez implementada HU-RSS-007, desde la tabla de configuración).
-3. Exponer una función para reprogramar el job cuando `/api/v1/config`
-   reciba un PUT con una nueva periodicidad (HU-RSS-007) — actualmente NO
-   implementado porque el router/modelo de configuración todavía no existe
-   en este scaffold (fuera del contrato OpenAPI ya generado; a definir).
-"""
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.orm import Session
 
-scheduler = AsyncIOScheduler()
+from app.core.config import settings
+from app.database import SessionLocal
+from app.services.captura_service import ejecutar_captura_todas_las_activas
+from app.services.configuracion_service import consultar_configuracion
+from app.services.purgado_service import purgar_por_caducidad
+from app.services.sentimiento_service import procesar_pendientes
+
+logger = logging.getLogger(__name__)
+
+CAPTURA_JOB_ID = "captura-rss-automatica"
+BARRIDO_HUMOR_JOB_ID = "barrido-humor-pendiente"  # HU-SENT-002-v2
+PURGADO_JOB_ID = "purgado-noticias-caducadas"  # HU-ADMIN-002
+scheduler: AsyncIOScheduler = AsyncIOScheduler()
+
+
+def _obtener_periodicidad_actual() -> int:
+    db = SessionLocal()
+    try:
+        return consultar_configuracion(db)
+    except (SQLAlchemyError, ValueError):
+        return settings.captura_periodicidad_minutos
+    finally:
+        db.close()
+
+
+async def _ejecutar_captura_automatica() -> None:
+    db: Session = SessionLocal()
+    try:
+        await ejecutar_captura_todas_las_activas(db)
+    finally:
+        db.close()
+
+
+def _ejecutar_barrido_humor() -> None:
+    """Barrido de respaldo de HU-SENT-002-v2: noticias sin humor calculado."""
+    db: Session = SessionLocal()
+    try:
+        procesar_pendientes(db)
+    except SQLAlchemyError:
+        logger.exception("El barrido de humor no pudo leer las noticias pendientes")
+    finally:
+        db.close()
+
+
+def _ejecutar_purgado() -> None:
+    """Purgado automático de HU-ADMIN-002 (PDF §4.2.5)."""
+    db: Session = SessionLocal()
+    try:
+        purgar_por_caducidad(db)
+    except SQLAlchemyError:
+        logger.exception("El purgado automático de noticias falló")
+    finally:
+        db.close()
+
+
+def _event_loop_closed() -> bool:
+    event_loop = getattr(scheduler, "_eventloop", None)
+    return event_loop is not None and event_loop.is_closed()
 
 
 def iniciar_scheduler() -> None:
-    """Arranca el scheduler. Se invoca desde el evento startup de FastAPI."""
-    # TODO(equipo): registrar el job de captura con la periodicidad configurada
-    # scheduler.add_job(func=..., trigger="interval", minutes=settings.captura_periodicidad_minutos)
-    raise NotImplementedError("Scheduler de captura pendiente de implementación — HU-RSS-006")
+    """Registra y arranca el job de captura sin ejecución inmediata."""
+    global scheduler
+    if scheduler.running and not _event_loop_closed():
+        return
+
+    scheduler = AsyncIOScheduler()
+    minutos = _obtener_periodicidad_actual()
+    scheduler.add_job(
+        _ejecutar_captura_automatica,
+        id=CAPTURA_JOB_ID,
+        trigger="interval",
+        minutes=minutos,
+        next_run_time=datetime.now(timezone.utc) + timedelta(minutes=minutos),
+        max_instances=1,
+        coalesce=True,
+    )
+    # Primera ejecución 1 minuto después de arrancar, para retomar noticias
+    # pendientes (p. ej., capturadas antes de existir el cálculo de humor).
+    scheduler.add_job(
+        _ejecutar_barrido_humor,
+        id=BARRIDO_HUMOR_JOB_ID,
+        trigger="interval",
+        minutes=settings.sentimiento_barrido_minutos,
+        next_run_time=datetime.now(timezone.utc) + timedelta(minutes=1),
+        max_instances=1,
+        coalesce=True,
+    )
+    # HU-ADMIN-002: primera ejecución 5 minutos después de arrancar y luego
+    # cada purgado_intervalo_horas (valor propuesto: 24 h).
+    scheduler.add_job(
+        _ejecutar_purgado,
+        id=PURGADO_JOB_ID,
+        trigger="interval",
+        hours=settings.purgado_intervalo_horas,
+        next_run_time=datetime.now(timezone.utc) + timedelta(minutes=5),
+        max_instances=1,
+        coalesce=True,
+    )
+    scheduler.start()
+
+
+def detener_scheduler() -> None:
+    """Detiene las tareas del scheduler y libera sus recursos."""
+    global scheduler
+    if scheduler.running and not _event_loop_closed():
+        scheduler.shutdown(wait=True)
+    scheduler = AsyncIOScheduler()
 
 
 def reprogramar_periodicidad(minutos: int) -> None:
     """Reprograma el job de captura con una nueva periodicidad (HU-RSS-007)."""
-    raise NotImplementedError("Reprogramación de periodicidad pendiente — HU-RSS-007")
+    if minutos <= 0:
+        raise ValueError("La periodicidad debe ser un entero positivo.")
+
+    if scheduler.running and not _event_loop_closed():
+        scheduler.modify_job(
+            CAPTURA_JOB_ID,
+            trigger="interval",
+            minutes=minutos,
+            next_run_time=datetime.now(timezone.utc) + timedelta(minutes=minutos),
+            max_instances=1,
+            coalesce=True,
+        )

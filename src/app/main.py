@@ -9,23 +9,35 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
+from app.core.config import settings
 from app.schemas.common import Error
-from app.routers import captures, channels, health, sources
+from app.routers import (
+    captures,
+    channels,
+    configuracion,
+    dashboards,
+    dictionary,
+    health,
+    news,
+    sentiment,
+    sources,
+    trainings,
+)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """
-    TODO(equipo): descomentar cuando el scheduler (HU-RSS-006) esté
-    implementado — se deja deshabilitado por defecto para que el resto de
-    endpoints y el health check funcionen sin depender de él.
+    """Inicia y detiene el scheduler interno de captura RSS."""
+    from app.jobs.scheduler import detener_scheduler, iniciar_scheduler
 
-    from app.jobs.scheduler import iniciar_scheduler
     iniciar_scheduler()
-    """
-    yield
+    try:
+        yield
+    finally:
+        detener_scheduler()
 
 
 app = FastAPI(
@@ -36,6 +48,17 @@ app = FastAPI(
     redoc_url="/api/redoc",
     openapi_url="/api/openapi.json",
     lifespan=lifespan,
+)
+
+# CORS: el frontend (ADR-005, React + Vite) corre en otro origen y el navegador
+# bloquea sus llamadas a la API sin estas cabeceras. Solo orígenes listados en
+# CORS_ORIGENES; sin credenciales, porque la API no usa cookies.
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.cors_origenes_lista,
+    allow_credentials=False,
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE"],
+    allow_headers=["Content-Type"],
 )
 
 
@@ -56,3 +79,9 @@ app.include_router(health.router, prefix=api_v1_prefix)
 app.include_router(channels.router, prefix=api_v1_prefix)
 app.include_router(sources.router, prefix=api_v1_prefix)
 app.include_router(captures.router, prefix=api_v1_prefix)
+app.include_router(configuracion.router, prefix=api_v1_prefix)
+app.include_router(dictionary.router, prefix=api_v1_prefix)
+app.include_router(dashboards.router, prefix=api_v1_prefix)
+app.include_router(sentiment.router, prefix=api_v1_prefix)
+app.include_router(news.router, prefix=api_v1_prefix)
+app.include_router(trainings.router, prefix=api_v1_prefix)

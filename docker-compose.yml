@@ -16,7 +16,11 @@ services:
     volumes:
       - db_data:/var/lib/mysql
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      # -h 127.0.0.1 fuerza una conexión TCP. Con "localhost" el ping usa el
+      # socket y responde también durante la inicialización temporal de MySQL
+      # (que no escucha en el puerto 3306), por lo que la API arrancaba antes
+      # de tiempo y fallaba con "Connection refused" en la primera ejecución.
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-u", "root", "-pchangeme"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -27,11 +31,23 @@ services:
       dockerfile: Dockerfile
     environment:
       DATABASE_URL: mysql+pymysql://humworld:changeme@db:3306/humworld  # TODO(equipo)
+      # HU-SENT-006 / ADR-004: clave de Google Gemini Embedding. Se toma del
+      # entorno o de un archivo .env local (nunca se versiona). Vacía = ML
+      # desactivado y humor 100% por diccionario.
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      ML_DIRECTORIO_MODELOS: /app/modelos
+    volumes:
+      # Regresores entrenados (.joblib); sobreviven a la recreación del contenedor.
+      - modelos_ml:/app/modelos
     ports:
       - "8000:8000"
     depends_on:
       db:
         condition: service_healthy
+    # Si las migraciones fallan por un corte transitorio de la base, el
+    # contenedor se reintenta en vez de quedar detenido.
+    restart: on-failure
 
 volumes:
   db_data:
+  modelos_ml:

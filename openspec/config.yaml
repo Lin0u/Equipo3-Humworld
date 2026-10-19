@@ -11,8 +11,8 @@ context: |
     análisis de sentimiento. Este contexto cubre el módulo de Captura
     RSS (Sprint 1 / EPIC-RSS).
   Arquitectura oficial:
-    Consultar docs/architecture.md, ADR-001-stack-backend.md y
-    ADR-002-arquitectura-captura-rss.md antes de proponer, diseñar o
+    Consultar docs/architecture.md, docs/Adr/ADR-001-framework-api-backend.md y
+    docs/Adr/ADR-002-relacion-composicion-canal-fuente.md antes de proponer, diseñar o
     implementar cualquier cambio.
   Tecnologías aprobadas:
     - Python 3.11 o superior.
@@ -41,7 +41,10 @@ context: |
       explícito, Retry acotado con backoff exponencial y Circuit Breaker
       por fuente (ver ADR-002, sección 3). Nunca reintentos infinitos.
     - No añadir nuevas tecnologías o dependencias sin aprobación humana.
-    - Mantener el desarrollo limitado a las historias aprobadas (HU-RSS-*).
+    - Mantener el desarrollo limitado a las historias aprobadas HU-RSS-* y
+      HU-SENT-001/HU-SENT-002-v2/HU-SENT-003 para este incremento; las demás
+      HU-SENT quedan fuera, salvo campos estrictamente necesarios para estas
+      historias.
     - Cada historia debe incluir pruebas automatizadas con mocks para
       llamadas HTTP externas.
     - Utilizar los términos CanalNoticias y FuenteRSS para las entidades
@@ -50,10 +53,19 @@ context: |
       sistema".
     - Los listados paginados (GET /channels, GET /sources) devuelven un
       objeto con items/pagina/tamanio_pagina/total (default 10, máximo 50).
-  Alcance del incremento actual (HU-RSS-001 + HU-RSS-010):
+  Alcance del incremento actual (HU-RSS-001 + HU-RSS-010 + HU-SENT-001 + HU-SENT-002-v2 + HU-SENT-003):
     - Dar de alta canales de noticias.
     - Consultar y listar canales de noticias (con filtro opcional por
       continente).
+    - Gestionar el CRUD del diccionario de términos de sentimiento,
+      exclusivamente conforme a HU-SENT-001.
+    - Calcular el humor tras cada captura: usar ML si existe un modelo
+      activo y, en otro caso o ante fallo/timeout, usar diccionario conforme
+      a HU-SENT-002-v2.
+    - Ejecutar el barrido periódico de respaldo definido por HU-SENT-002-v2
+      para noticias cuyo valor_humor permanezca NULL.
+    - Persistir junto a Noticia el resultado de humor, método de cálculo y
+      polarización conforme a HU-SENT-003.
     - Conservar los datos en MySQL.
   Fuera del alcance:
     - Modificación y eliminación de canales de noticias.
@@ -61,7 +73,9 @@ context: |
       posteriores).
     - Cron de captura, configuración de periodicidad y captura manual
       (HU-RSS-006 a HU-RSS-008).
-    - Análisis de sentimiento, dashboard, diccionario de términos, purgado.
+    - Las demás historias de análisis de sentimiento (HU-SENT-004 a
+      HU-SENT-007), dashboard y purgado, salvo campos estrictamente
+      necesarios para HU-SENT-001, HU-SENT-002-v2 y HU-SENT-003.
     - Autenticación y autorización.
 rules:
   proposal:

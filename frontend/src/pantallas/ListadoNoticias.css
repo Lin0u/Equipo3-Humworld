@@ -1,0 +1,129 @@
+/* HumWorld - estilos de la pantalla "Listado de noticias". */
+.noticias-encabezado {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.filtros {
+  display: flex;
+  gap: 8px;
+}
+
+.filtro {
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--texto);
+  background: var(--superficie);
+  border: var(--borde);
+  border-radius: 999px;
+  padding: 5px 14px;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s, background 0.15s;
+}
+
+.filtro:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 2px 2px 0 var(--tinta);
+}
+
+.filtro:focus-visible {
+  outline: 3px solid var(--acento);
+  outline-offset: 2px;
+}
+
+.filtro.activo {
+  background: var(--amarillo);
+  box-shadow: 2px 2px 0 var(--tinta);
+}
+
+.noticias-lista {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+}
+
+.noticia {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  border: var(--borde);
+  border-radius: var(--radio);
+  padding: 12px 16px;
+  animation: entrar 0.35s ease-out both;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.noticia:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: var(--sombra);
+}
+
+.noticia-humor {
+  flex: none;
+  width: 56px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
+}
+
+.noticia-cuerpo {
+  min-width: 0;
+}
+
+.noticia-titulo {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--texto);
+  text-decoration: none;
+}
+
+.noticia-titulo:hover {
+  color: var(--acento);
+  text-decoration: underline;
+}
+
+.noticia-datos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  margin-top: 2px;
+  font-size: 13px;
+  color: var(--texto-suave);
+}
+
+.noticias-vacio {
+  padding: 24px 0;
+}
+
+/* Filtro por continente junto a los botones de signo (HU-DASH-002-v2). */
+.noticias-controles {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px;
+}
+
+/* Paginación del listado. */
+.paginacion {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 14px;
+  margin-top: 16px;
+  color: var(--texto-suave);
+}
+
+.paginacion button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}

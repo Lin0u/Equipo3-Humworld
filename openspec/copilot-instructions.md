@@ -2,7 +2,7 @@
 
 Antes de proponer, diseñar, implementar o revisar:
 1. Lee docs/architecture.md.
-2. Lee ADR-001-stack-backend.md y ADR-002-arquitectura-captura-rss.md.
+2. Lee docs/Adr/ADR-001-framework-api-backend.md y docs/Adr/ADR-002-relacion-composicion-canal-fuente.md.
 3. Lee los artefactos OpenSpec del cambio.
 4. Comprueba que la petición no contradice la arquitectura ni los ADR vigentes.
 5. Si existe una contradicción, detente e informa antes de modificar código.
@@ -34,7 +34,10 @@ Antes de proponer, diseñar, implementar o revisar:
 ## Desarrollo con OpenSpec
 - No implementar sin especificación revisada.
 - Seguir proposal.md, spec.md, design.md y tasks.md.
-- No añadir funcionalidades fuera de alcance (ver HU-RSS-* vigentes).
+  - El incremento actual incluye HU-SENT-001, HU-SENT-002-v2 y HU-SENT-003
+    además de las historias HU-RSS-* aprobadas; las demás HU-SENT-* quedan
+    fuera, salvo campos estrictamente necesarios para estas historias.
+- No añadir funcionalidades fuera del alcance aprobado.
 - No cambiar la especificación sin informar al equipo.
 - Marcar tareas solo después de verificarlas.
 

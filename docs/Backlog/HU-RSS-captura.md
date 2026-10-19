@@ -3,7 +3,7 @@
 **Proyecto:** HumWorld — Equipo 3
 **Módulo:** Captura RSS (gestión de canales/fuentes, cron de captura, actualización manual)
 **Fuente:** `0 PROYECTO_FINAL_HUMWORLD 260714.pdf`, secciones 4.2.1 (Orígenes de Información, pág. 5), 4.2.3 (Captura de Información, pág. 5), 4.2.4 (Procesado de la información, pág. 6) y 10.2 (Endpoints mínimos obligatorios, pág. 13).
-**Versión del documento:** v1.10. Fija un valor propuesto para la periodicidad por defecto del cron de captura (HU-RSS-007) y retira los bloques de comentario en formato cita que narraban el proceso de decisión, integrando su contenido como texto normal del documento. Ver la Tabla de control de versiones para el historial completo.
+**Versión del documento:** v1.12. HU-RSS-009 pasa a Deprecada y se crea HU-RSS-009-v2: la carga inicial deja de exponerse como endpoint (`POST /api/v1/seeds`) y pasa a ser un script interno idempotente (Historia Técnica/Enabler Story). Ver la Tabla de control de versiones para el historial completo.
 **Estado general:** Propuesto (pendiente de revisión crítica y Planning Poker por el equipo, según Práctica P3, Paso 2 y Paso 4)
  
 **Nota de alcance (grounding):** la tabla de endpoints mínimos obligatorios (sección 10.2) solo lista `/sources` (Fuentes RSS) como categoría de endpoint explícita. La gestión de **canales** (medios de comunicación) está exigida funcionalmente en la sección 4.2.1 ("El sistema permitirá dar de alta canales (medios) y fuentes RSS dentro de cada canal"), pero no aparece como categoría separada en la tabla de mínimos. Dado que la tabla se define como "mínimos obligatorios" (piso, no techo) y la funcionalidad de canales está explícitamente descrita en el cuerpo del documento, se incluye un recurso `/channels` adicional — interpretación confirmada por el equipo al formalizar **HU-RSS-010** (ver más abajo), que documenta con criterios Gherkin propios el listado de canales (`GET /api/v1/channels`, `GET /api/v1/channels/{id}`).
@@ -26,11 +26,15 @@ El equipo decidió además paginar tanto el listado de Canales (HU-RSS-010) como
 | HU-RSS-003-v2 | v1 (completada) | 2026-08-30 | Se define el criterio de orden que quedaba pendiente: ordenar por `canal_id` ascendente (agrupando las fuentes de un mismo canal/medio) y, dentro de un mismo canal, alfabéticamente por `url`. |
 | HU-RSS-010 | v1 (editorial) | 2026-08-31 | Se acorta la nota de grounding de la historia (quedaba redundante con esta misma tabla, fila 2026-08-26) a una referencia breve. No cambia alcance, criterios ni prioridad/estimación. |
 | HU-RSS-001, HU-RSS-002, HU-RSS-003-v2, HU-RSS-004, HU-RSS-005, HU-RSS-010 | v1 (evidencia DoD) | 2026-09-06 | Se documenta evidencia de verificación del pipeline CI/CD en GitHub Actions (workflow `CI`, run #16, commit `7a5c18b`, rama `main`, verde) para los criterios de DoD "cobertura ≥80% verificada en GitHub Actions" y "build y despliegue exitosos (`needs: [test, sonarqube]`)", sección 14. Ver sección "Evidencia de verificación de DoD" más abajo. No modifica alcance, criterios de aceptación ni prioridad/estimación de ninguna historia — no aplica el proceso de deprecación de la sección 3. |
-| HU-RSS-008 | v1 (completada) | 2026-09-10 | Se completan los criterios que quedaban abiertos desde su creación (no se trata de una historia ya publicada/ratificada, por lo que no aplica el proceso de deprecación de la sección 3): (1) se confirman **dos** endpoints del recurso `captures` — `POST /api/v1/sources/{id}/captures` (una fuente puntual) y `POST /api/v1/captures` con body `{"fuente_ids": [...]}` (lote) —, y (2) se define el procesamiento como **síncrono** (HTTP 201), descartando para el alcance de este curso la alternativa asíncrona (202), por la infraestructura adicional que implicaría (cola de tareas, tabla de estado de trabajos, endpoint de consulta de estado) sin un sistema de colas aprobado en ADR-01/ADR-02. Se actualiza en consecuencia `contrato-canales-fuentes-rss.openapi.yaml` (v1.4.0). |
+| HU-RSS-008 | v1 (completada) | 2026-09-10 | Se completan los criterios que quedaban abiertos desde su creación (no se trata de una historia ya publicada/ratificada, por lo que no aplica el proceso de deprecación de la sección 3): (1) se confirman **dos** endpoints del recurso `captures` — `POST /api/v1/sources/{id}/captures` (una fuente puntual) y `POST /api/v1/captures` con body `{"fuente_ids": [...]}` (lote) —, y (2) se define el procesamiento como **síncrono** (HTTP 201), descartando para el alcance de este curso la alternativa asíncrona (202), por la infraestructura adicional que implicaría (cola de tareas, tabla de estado de trabajos, endpoint de consulta de estado) sin un sistema de colas aprobado en ADR-001/ADR-002. Se actualiza en consecuencia `contrato-canales-fuentes-rss.openapi.yaml` (v1.4.0). |
 | HU-RSS-009 | v1 (completada parcial) | 2026-09-10 | Se cambia el actor de "equipo de desarrollo" a "administrador del sistema" (no se trata de una historia ya publicada/ratificada, por lo que no aplica el proceso de deprecación de la sección 3): la historia deja de ser Enabler Story y pasa a ser Historia de Usuario clásica, disparada manualmente vía el nuevo endpoint `POST /api/v1/seeds` (propuesta, aún no incorporada al contrato OpenSpec) en vez de un script/migración. Quedan **todavía pendientes** de decisión del equipo: continentes contemplados, listado real de fuentes RSS por continente y campo exacto de clave de idempotencia. |
 | HU-RSS-009 | v1 (completada) | 2026-09-28 | Se confirman 2 de los 3 puntos pendientes desde la sesión 2026-09-10: (1) **continentes contemplados** = los 5 continentes habitados (América, Europa, Asia, África, Oceanía) — decisión del equipo, sin especificación en el PDF; (2) **clave de idempotencia** confirmada tal como estaba propuesta (`nombre` para Canales, `url` para Fuentes). **Sigue pendiente:** el listado real de fuentes RSS por continente (URLs verificadas) — no es una decisión de alcance sino datos concretos que el equipo debe investigar y verificar, por lo que el agente PO/Arquitecto no los propone para evitar el riesgo de inventar fuentes inexistentes o desactualizadas. Se actualiza en consecuencia `contrato-canales-fuentes-rss.openapi.yaml` (v1.6.0). |
 | HU-RSS-007 | v1 (valor propuesto) | 2026-09-28 (cuarta sesión del día) | Se fija un **valor propuesto** (no definitivo) para el parámetro `periodicidad_cron_minutos`, que quedaba abierto desde la creación de la historia por no estar fijado en el PDF: **30 minutos**, a partir de heurísticas generales de agregadores RSS (no de un dato del proyecto) y de la estimación del equipo de ~50 fuentes activas. Queda marcado explícitamente como propuesta del PO/Arquitecto pendiente de ratificación por el equipo. Se actualiza en espejo la nota de grounding de periodicidad en HU-RSS-006. |
 | Todas | v1 (editorial) | 2026-09-29 | Limpieza editorial: se retiran los bloques de comentario en formato cita ("— CONFIRMADO/A (decisión del equipo, sesión...)", "Nota de grounding (decisión del equipo, sesión...)", "Actualización (sesión...)") y se integra su contenido como texto normal del documento, sin narrar el proceso de decisión turno a turno. No cambia ninguna decisión, valor propuesto, criterio de aceptación ni alcance — solo la forma en que se presenta. El historial de sesiones/fechas queda concentrado en esta tabla. |
+| HU-RSS-009 | v1 → **Deprecada** | 2026-10-18 | Se depreca en favor de **HU-RSS-009-v2**. Motivo: el PDF (sección 4.2.1) exige que exista una carga inicial de fuentes por continente, pero no que se dispare vía API; la carga se ejecuta una sola vez al preparar la base; el sistema no contempla autenticación (PDF, sección 3, Limitaciones, punto 3), por lo que `POST /api/v1/seeds` habría quedado como una operación de escritura pública sin propósito funcional; y el script interno requiere menos código y pruebas con el mismo resultado. Decisión de la sesión del 2026-10-18, que adopta el enfoque ya diseñado en la propuesta OpenSpec `Carga-inicial-de-fuentes-RSS-por-continente`. Se actualiza en consecuencia `contrato-canales-fuentes-rss.openapi.yaml` (v1.7.0). |
+| HU-RSS-009-v2 | v1 | 2026-10-18 | Creación. Historia Técnica/Enabler Story: carga inicial mediante script interno (`python -m scripts.seed`), con la lógica en la capa de Servicios para que un endpoint pueda agregarse más adelante sin rehacerla. Conserva los dos puntos ya confirmados de HU-RSS-009 (5 continentes; idempotencia por `nombre` de canal y `url` de fuente). Se propone un dataset de 20 fuentes verificadas en `Dataset-fuentes-RSS-seed-HU-RSS-009.md`, pendiente de aprobación del equipo. |
+| HU-RSS-009-v2, HU-RSS-003-v2, HU-RSS-010 | v1 (editorial) | 2026-10-18 | Decisión de equipo: los continentes se almacenan con tilde ("América", "Europa", "Asia", "África", "Oceanía"). Se cierra el punto pendiente de HU-RSS-009-v2. HU-RSS-003-v2 y HU-RSS-010 no se versionan: sus escenarios usan "America" como valor de consulta, y el filtro implementado no distingue mayúsculas ni tildes, por lo que su comportamiento no cambia. |
+| HU-RSS-009-v2 | v1 (editorial) | 2026-10-18 | Decisión de equipo: el dataset usa solo feeds de sección, para que cada fuente tenga una categoría IPTC de primer nivel exacta sin modificar HU-RSS-002 ni su validación. Se actualiza la referencia al dataset (v2.0: 20 fuentes en 11 canales). Sin cambios en los criterios de aceptación. |
  
 ---
  
@@ -432,7 +436,7 @@ Escenario: Rechazo de valor inválido
 - `POST /api/v1/captures` con body `{"fuente_ids": [...]}` — captura de un lote de fuentes.
 Ambos respetan la convención de sustantivos en plural sin verbos en la URL (sección 6 de las instrucciones del proyecto). El endpoint individual puede implementarse internamente reutilizando el mismo servicio que el de lote (invocándolo con una lista de un único id), para no duplicar lógica — decisión de diseño de la capa de Servicios, no cambia el contrato expuesto.
  
-**Nota de grounding (procesamiento síncrono):** ambos endpoints son **síncronos**: el sistema espera a que la captura termine (aplicando los patrones de resiliencia exigidos como regla en `docs/architecture.md`, sección 8 — Timeout explícito, Retry acotado con backoff exponencial, Circuit Breaker — que acotan el tiempo máximo de espera por fuente) y devuelve el resultado en la misma respuesta HTTP. Se descarta, para el alcance de este curso, el procesamiento asíncrono (202 + endpoint de consulta de estado), por la complejidad de infraestructura adicional que implicaría (cola de tareas, tabla de estado de trabajos, endpoint nuevo) sin un sistema de colas aprobado en ADR-01/ADR-02. Si el volumen de uso creciera significativamente, esta decisión podría revisarse en un ADR posterior — está fuera del alcance actual.
+**Nota de grounding (procesamiento síncrono):** ambos endpoints son **síncronos**: el sistema espera a que la captura termine (aplicando los patrones de resiliencia exigidos como regla en `docs/architecture.md`, sección 8 — Timeout explícito, Retry acotado con backoff exponencial, Circuit Breaker — que acotan el tiempo máximo de espera por fuente) y devuelve el resultado en la misma respuesta HTTP. Se descarta, para el alcance de este curso, el procesamiento asíncrono (202 + endpoint de consulta de estado), por la complejidad de infraestructura adicional que implicaría (cola de tareas, tabla de estado de trabajos, endpoint nuevo) sin un sistema de colas aprobado en ADR-001/ADR-002. Si el volumen de uso creciera significativamente, esta decisión podría revisarse en un ADR posterior — está fuera del alcance actual.
  
 ### Criterios de aceptación (Gherkin)
  
@@ -464,6 +468,8 @@ Escenario: Captura manual sobre fuente inactiva
 ---
  
 ## HU-RSS-009 — Carga inicial de fuentes RSS por continente (seed)
+
+**Estado:** **Deprecada (2026-10-18)** — reemplazada por **HU-RSS-009-v2** (ver más abajo), que reemplaza el endpoint `POST /api/v1/seeds` por un script interno. Se conserva este bloque íntegro como registro histórico, conforme a la sección 3 de las instrucciones del proyecto.
  
 **Tipo:** Historia de Usuario *(el actor es el administrador del sistema, no el propio sistema, por lo que no se clasifica como Enabler Story — ver Tabla de control de versiones para el historial de este cambio)*
 **Como** administrador del sistema,
@@ -507,6 +513,76 @@ Escenario: Ejecución repetida de la carga inicial
  
 ---
  
+## HU-RSS-009-v2 — Carga inicial de fuentes RSS por continente (script interno)
+
+**Reemplaza a:** HU-RSS-009 (Deprecada). **Qué cambió:** la carga deja de dispararse con `POST /api/v1/seeds` y pasa a ejecutarse con un script interno; en consecuencia cambia el actor y la historia vuelve a clasificarse como Enabler Story. **Por qué:** ver la Tabla de control de versiones (2026-10-18). Se conservan sin cambios las dos decisiones ya confirmadas de HU-RSS-009: los 5 continentes contemplados y la clave de idempotencia.
+
+**Tipo:** Historia Técnica / Enabler Story *(el actor es el proceso de preparación del entorno, no una persona que use la aplicación — sección 4 de las instrucciones del proyecto)*
+**Como** sistema HumWorld, al preparar su base de datos,
+**quiero** cargar de forma idempotente un conjunto aprobado de canales y fuentes RSS reales agrupados por continente,
+**para** disponer desde el primer arranque de fuentes que el cron (HU-RSS-006) pueda capturar, cumpliendo el requisito de "carga inicial de fuentes RSS por continente" (PDF, sección 4.2.1).
+
+**Prioridad:** Alta *(sin fuentes cargadas el cron no captura noticias, no se calcula humor y los dashboards de EPIC-DASH quedan sin datos)*
+**Estimación relativa:** S *(punto de partida orientativo, sujeto a Planning Poker; el mecanismo ya está diseñado en la propuesta OpenSpec del equipo)*
+**Depende de contrato de API:** No — no expone endpoint. Se ejecuta con `python -m scripts.seed` desde `src/`. Internamente reutiliza los servicios de alta de `CanalNoticias` y `FuenteRSS` (HU-RSS-001 y HU-RSS-002), para no duplicar validaciones.
+
+**Diseño:** la lógica de carga vive en la capa de Servicios como un caso de uso idempotente; `src/scripts/seed.py` solo contiene el dataset aprobado y lo invoca, sin SQL ni acceso directo a modelos ORM. Si más adelante se requiere un endpoint, basta un router que llame al mismo caso de uso. Detalle de capas, transaccionalidad y pruebas en `openspec/changes/Carga-inicial-de-fuentes-RSS-por-continente/design.md`.
+
+**Datos de la carga:** dataset propuesto de 20 fuentes de sección en 11 canales, 4 por continente, cada una con una categoría IPTC exacta, verificadas el 2026-10-18 — ver `Dataset-fuentes-RSS-seed-HU-RSS-009.md` (v2.0). **Pendiente de aprobación del equipo.**
+
+### Criterios de aceptación (Gherkin)
+
+```gherkin
+Escenario: Carga inicial en una base de datos vacía
+  Dado que la base de datos no contiene canales ni fuentes RSS
+  Y que el dataset aprobado incluye fuentes de los 5 continentes (América, Europa, Asia, África, Oceanía)
+  Cuando se ejecuta python -m scripts.seed
+  Entonces se crea al menos 1 canal y 1 fuente RSS por cada uno de los 5 continentes
+  Y cada fuente creada queda asociada a un canal válido
+  Y el script informa la cantidad de canales y de fuentes creados
+  Y el script termina con código de salida 0
+
+Escenario: Ejecución repetida
+  Dado que la base de datos ya contiene todos los canales y fuentes del dataset
+  Cuando se ejecuta python -m scripts.seed nuevamente
+  Entonces no se crea ningún registro duplicado por nombre de canal ni por url de fuente
+  Y el script informa 0 canales y 0 fuentes creados
+
+Escenario: Canal existente con una fuente faltante
+  Dado que ya existe un canal con el nombre de un canal del dataset, pero falta 1 de sus fuentes
+  Cuando se ejecuta python -m scripts.seed
+  Entonces se reutiliza el canal existente
+  Y se crea exactamente 1 fuente nueva asociada a ese canal
+
+Escenario: Dataset sin cobertura de algún continente
+  Dado que el dataset no incluye ninguna fuente para al menos 1 de los 5 continentes
+  Cuando se ejecuta python -m scripts.seed
+  Entonces no se crea ningún registro
+  Y el script termina con un código de salida distinto de 0 indicando el continente faltante
+
+Escenario: Fallo de persistencia durante la carga
+  Dado que la inserción de una fuente del dataset falla por un error de base de datos
+  Cuando se ejecuta python -m scripts.seed
+  Entonces la transacción se revierte y no queda ningún registro de esa ejecución en la base de datos
+
+Escenario: La carga no consulta los feeds
+  Cuando se ejecuta python -m scripts.seed
+  Entonces el script no realiza ninguna solicitud HTTP a las URLs del dataset
+```
+
+**Nota (propuesta del agente PO/Arquitecto, a confirmar):** el escenario "Dataset sin cobertura de algún continente" convierte en un criterio verificable la regla ya escrita en la especificación OpenSpec del equipo ("el seed no se considera listo" si falta un continente). Si el equipo prefiere solo una advertencia en lugar de abortar la carga, el escenario debe ajustarse.
+
+**Literales de continente: resuelto (2026-10-18).** Los valores que se almacenan en `CanalNoticias.continente` son "América", "Europa", "Asia", "África" y "Oceanía", con tilde. Los ejemplos "America" de los escenarios de HU-RSS-003-v2 y HU-RSS-010 siguen siendo válidos: el filtro implementado en `src/app/repositories/canales.py` compara sin distinguir mayúsculas ni tildes, y la prueba "Filtrado por continente insensible a diacríticos" de `src/tests/test_channels.py` lo verifica.
+
+### Definition of Done
+(Bloque general DoD, sección 14 — adaptado: no aplica "validado visualmente" ni documentación Swagger, porque no hay UI ni endpoint.) Adicionalmente:
+- Pruebas sobre SQLite con un dataset sintético de URLs bajo `example.test`, cubriendo los 6 escenarios Gherkin; ninguna prueba realiza solicitudes HTTP reales.
+- `src/scripts/seed.py` sin sentencias SQL; todo acceso a datos en `app/repositories/`.
+- Dataset real aprobado por el equipo y re-verificado (cada URL responde con un feed válido y con ítems recientes) en la semana de la ejecución.
+- Instrucción de ejecución del seed documentada en el README de despliegue.
+
+---
+
 ## HU-RSS-010 — Consulta y listado de Canales de Noticias
  
 **Tipo:** Historia de Usuario
@@ -596,7 +672,8 @@ Escenario: Consulta de detalle de un canal inexistente
 | HU-RSS-006 | Enabler Story | Alta | (interno — scheduler) | 4.2.3, 4.2.4 |
 | HU-RSS-007 | Historia de Usuario | Media | `GET`/`PUT /api/v1/config` | 4.2.3, 10.2 |
 | HU-RSS-008 | Historia de Usuario | Media | `POST /api/v1/sources/{id}/captures` (individual, síncrono), `POST /api/v1/captures` (lote, síncrono) | 4.2.3 |
-| HU-RSS-009 | Historia de Usuario | Alta | `POST /api/v1/seeds` (confirmado; continentes y clave de idempotencia definidos, listado real de fuentes aún pendiente) | 4.2.1 |
+| HU-RSS-009 | **Deprecada** (ver HU-RSS-009-v2) | Alta | `POST /api/v1/seeds` (retirado del contrato en v1.7.0) | 4.2.1 |
+| HU-RSS-009-v2 | Enabler Story | Alta | (interno — script `python -m scripts.seed`, sin endpoint) | 4.2.1 |
 | HU-RSS-010 | Historia de Usuario | Alta | `GET /api/v1/channels` (paginado, orden alfabético por `nombre`), `GET /api/v1/channels/{id}` | 4.2.1 |
  
 **Recordatorio:** todas las estimaciones (S/M/L) son un punto de partida orientativo generado por el agente Product Owner/Arquitecto, sujetas a validación mediante Planning Poker real por el equipo (sección 4 de las instrucciones del proyecto).

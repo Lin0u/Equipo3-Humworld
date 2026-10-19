@@ -8,3 +8,7 @@ __pycache__/
 .coverage
 coverage.xml
 htmlcov/
+
+# Modelos de ML entrenados (HU-SENT-006)
+modelos/
+*.joblib

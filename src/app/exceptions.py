@@ -12,3 +12,26 @@ class CanalNoticiasNotFoundError(Exception):
 
 class FuenteRSSNotFoundError(Exception):
     """Indica que la FuenteRSS solicitada no existe."""
+
+
+class FuenteRSSInactiveError(Exception):
+    """Indica que la FuenteRSS existe, pero está inactiva."""
+
+
+class TerminoDiccionarioNotFoundError(Exception):
+    """Indica que el término solicitado no existe."""
+
+
+class TerminoDiccionarioConflictError(Exception):
+    """Indica que la combinación literal palabra+idioma ya existe."""
+
+class RangoFechasInvalidoError(Exception):
+    """El rango de fechas de una consulta no es válido (HU-SENT-004)."""
+
+
+class NoticiaNotFoundError(Exception):
+    """La noticia solicitada no existe (HU-DASH-002-v2)."""
+
+
+class FechaPurgadoInvalidaError(Exception):
+    """La fecha límite de un purgado manual es posterior a hoy (HU-ADMIN-003)."""
