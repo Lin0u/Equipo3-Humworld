@@ -47,7 +47,7 @@ Se quitaron también las formas que, al ignorar tildes (HU-SENT-007-v2), quedaba
 - **Valores moderados:** la mayoría de los términos vale entre -6 y +6; solo 21 llegan a ±10. El humor de una noticia rara vez será extremo.
 - **El español es más chico (418 frente a 3.380)** y sin validación humana todavía. Con 4 de las 20 fuentes en español, es el punto que más conviene revisar.
 - **Sin lematización:** solo se cuentan las formas listadas (HU-SENT-007-v2).
-- **Sin contexto:** el método cuenta palabras, no entiende frases. Caso real del 2026-10-19: "Banco Santander se alía con Nvidia para impulsar el despliegue de la IA en la entidad" obtuvo -8.0 porque su resumen menciona "fraude" (la IA se usa para detectarlo) y fue el único término encontrado. Es la limitación conocida del método de diccionario (ADR-03); la polarización (HU-SENT-003) y la cantidad de términos evaluados ayudan a leer estos casos, y el modelo de ML (HU-SENT-006) debería mejorarlos.
+- **Sin contexto:** el método cuenta palabras, no entiende frases. Caso real del 2026-10-19: "Banco Santander se alía con Nvidia para impulsar el despliegue de la IA en la entidad" obtuvo -8.0 porque su resumen menciona "fraude" (la IA se usa para detectarlo) y fue el único término encontrado. Es la limitación conocida del método de diccionario (ADR-003); la polarización (HU-SENT-003) y la cantidad de términos evaluados ayudan a leer estos casos, y el modelo de ML (HU-SENT-006) debería mejorarlos.
 
 ## 5. Cómo revisar la traducción
 

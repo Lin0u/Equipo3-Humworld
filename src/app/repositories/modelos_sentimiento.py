@@ -1,4 +1,4 @@
-"""Repositorio de versiones del modelo de ML (HU-SENT-006, ADR-04 punto 5)."""
+"""Repositorio de versiones del modelo de ML (HU-SENT-006, ADR-004 punto 5)."""
 
 from sqlalchemy import func, select, update
 from sqlalchemy.exc import SQLAlchemyError
@@ -51,6 +51,6 @@ class ModeloSentimientoRepository:
 
 
 def _filtro_entrenamiento():
-    # ADR-04 (HU-SENT-003): solo noticias evaluadas por diccionario y con valor,
+    # ADR-004 (HU-SENT-003): solo noticias evaluadas por diccionario y con valor,
     # para no entrenar un modelo sobre las predicciones de otro modelo.
     return (Noticia.metodo_calculo == "diccionario", Noticia.valor_humor.is_not(None))

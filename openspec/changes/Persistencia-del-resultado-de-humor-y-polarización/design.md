@@ -1,6 +1,6 @@
 ## Context
 
-Ver [proposal.md](proposal.md) para motivación y alcance y [spec.md](specs/persistencia-resultado-humor/spec.md) para el contrato observable. `Noticia` ya contiene `valor_humor FLOAT NULL`. `metodo_calculo` y `cantidad_terminos_evaluados` los crea la migración de HU-SENT-002-v2 (decisión de equipo del 2026-10-18), que debe aplicarse antes que este cambio; `polarizacion_terminos` es el único campo nuevo de esta historia. El ADR-03 define polarización como desviación estándar poblacional de los términos coincidentes y el diagrama UML actual refleja solo los campos de EPIC-RSS.
+Ver [proposal.md](proposal.md) para motivación y alcance y [spec.md](specs/persistencia-resultado-humor/spec.md) para el contrato observable. `Noticia` ya contiene `valor_humor FLOAT NULL`. `metodo_calculo` y `cantidad_terminos_evaluados` los crea la migración de HU-SENT-002-v2 (decisión de equipo del 2026-10-18), que debe aplicarse antes que este cambio; `polarizacion_terminos` es el único campo nuevo de esta historia. El ADR-003 define polarización como desviación estándar poblacional de los términos coincidentes y el diagrama UML actual refleja solo los campos de EPIC-RSS.
 
 ## Goals / Non-Goals
 

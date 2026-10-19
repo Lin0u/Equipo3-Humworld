@@ -37,7 +37,7 @@ class Noticia(Base):
     categoria_iptc = Column(String(100), nullable=True)
 
     # Poblados por EPIC-SENT (HU-SENT-002-v2, cálculo híbrido de humor).
-    # valor_humor: promedio de términos únicos (ADR-03, HU-SENT-007); NULL si no
+    # valor_humor: promedio de términos únicos (ADR-003, HU-SENT-007); NULL si no
     # hubo términos evaluables.
     valor_humor = Column(Float, nullable=True)
     # "diccionario" o "ml". NULL = la noticia aún no fue procesada; es la marca
@@ -45,7 +45,7 @@ class Noticia(Base):
     # cuando hubo 0 coincidencias).
     metodo_calculo = Column(String(20), nullable=True, index=True)
     cantidad_terminos_evaluados = Column(Integer, nullable=True)
-    # HU-SENT-003 / ADR-03: desviación estándar poblacional de los valores de
+    # HU-SENT-003 / ADR-003: desviación estándar poblacional de los valores de
     # los términos coincidentes. NULL si no hubo términos; 0.0 con un solo término.
     polarizacion_terminos = Column(Float, nullable=True)
     # HU-SENT-002-v3 / HU-SENT-006: versión del modelo usada cuando

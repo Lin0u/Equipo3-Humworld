@@ -1,5 +1,5 @@
 // HumWorld - gráfico de evolución temporal del humor global.
-// Origen: HU-DASH-001-v3 (gráfico temporal) y ADR-05 (Chart.js). Consume
+// Origen: HU-DASH-001-v3 (gráfico temporal) y ADR-005 (Chart.js). Consume
 // serie_temporal de GET /api/v1/sentiment (HU-SENT-004); no calcula humor.
 import {
   CategoryScale,

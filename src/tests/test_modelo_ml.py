@@ -1,6 +1,6 @@
 """
 Pruebas del modelo de ML de humor (HU-SENT-006) y de su uso en el cálculo
-híbrido (HU-SENT-002-v3). ADR-04.
+híbrido (HU-SENT-002-v3). ADR-004.
 
 DoD de HU-SENT-006: el servicio de embeddings siempre está mockeado (cliente
 falso o respx); nunca hay llamadas reales a Google Gemini. SQLite en memoria y

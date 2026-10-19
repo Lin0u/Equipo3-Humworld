@@ -1,8 +1,8 @@
-# ADR-05: Stack tecnológico y arquitectura de la capa de presentación (frontend de dashboards)
+# ADR-005: Stack tecnológico y arquitectura de la capa de presentación (frontend de dashboards)
 
 ## Estado
 
-**Propuesto** — pendiente de revisión y ratificación del equipo, análogo al proceso seguido con ADR-02, ADR-03 y ADR-04.
+**Propuesto** — pendiente de revisión y ratificación del equipo, análogo al proceso seguido con ADR-002, ADR-003 y ADR-004.
 
 Antecedentes de aprobación informal, que este ADR formaliza pero no sustituye: la líder del equipo dio el visto bueno por chat al uso de React, Leaflet y Chart.js (2026-10-02), y el responsable de DevOps aceptó la carpeta `frontend/` en la raíz del repositorio (2026-10-03). Ninguna de las dos conversaciones constituye una ratificación formal de este documento.
 
@@ -24,7 +24,7 @@ Este ADR existe además por una regla del propio proyecto: `openspec/config.yaml
 - **Plazo académico fijo:** verificación formal del sistema el 2 de noviembre de 2026. El Sprint 3 termina el 4 de octubre de 2026 y el backend de sentimiento del que dependen los dashboards (Sprint 2) no está terminado a la fecha de este documento.
 - **Capacidad del equipo:** hay un único integrante con rol de Frontend, con experiencia básica de programación y sin experiencia previa en frameworks de frontend. La tecnología elegida debe poder aprenderse y mantenerse en ese contexto.
 - **Asistentes de programación:** Visual Studio Code con GitHub Copilot como herramienta principal (instrucciones del proyecto, sección 8), además de Claude Code (PDF, sección 6.2). Conviene un stack con documentación y ejemplos abundantes, donde la asistencia por IA sea fiable.
-- **Backend ya decidido:** API REST en FastAPI bajo `/api/v1`, con JSON como formato de intercambio (ADR-01; PDF, sección 10.3). El frontend consume esa API; no accede a MySQL.
+- **Backend ya decidido:** API REST en FastAPI bajo `/api/v1`, con JSON como formato de intercambio (ADR-001; PDF, sección 10.3). El frontend consume esa API; no accede a MySQL.
 - **Calidad exigida:** cobertura de pruebas ≥ 80% y SonarQube sin issues críticos (PDF, sección 7; instrucciones del proyecto, sección 14). El PDF pide además pruebas de integración "Frontend ↔ API".
 - **Infraestructura existente:** el pipeline de GitHub Actions (`.github/workflows/ci.yml`) y `docker-compose.yml` cubren hoy solo el backend en Python y MySQL. No existe ningún job ni contenedor para un proyecto de frontend.
 - **Estado actual:** existe una maqueta navegable de las tres vistas en la rama `feature/frontend-dashboards`, construida con el stack que este ADR propone y con datos de ejemplo. Se construyó antes de ratificar este ADR para tener una validación visual temprana; el equipo puede rechazar la decisión y la maqueta se descartaría.
@@ -89,7 +89,7 @@ El frontend depende de tres servicios que pueden fallar o demorarse: la API prop
 
 - **Timeout explícito — se adopta** para toda llamada a la API propia, como salvaguarda mínima. Sin timeout, una API que no responde dejaría la vista en estado de carga indefinido, lo que contradice el escenario Gherkin de error de HU-DASH-001-v3. El valor concreto del timeout no se fija aquí: debe proponerse y validarse con mediciones reales una vez integrado el backend.
 - **Retry con backoff exponencial y límite — se adopta solo para peticiones `GET`**, que son idempotentes, y con un número máximo de reintentos acotado. Nunca reintento infinito y nunca sobre `POST`. El número máximo de reintentos queda pendiente de validación del equipo.
-- **Circuit Breaker — no se adopta en el frontend.** El patrón protege a un proceso de larga vida que hace muchas llamadas concurrentes a un servicio caído. Una sesión de navegador hace pocas llamadas y ya está protegida por el timeout y el límite de reintentos. El backend ya aplica Circuit Breaker donde sí corresponde (fuentes RSS, `docs/architecture.md`, sección 8; proveedor de embeddings, ADR-04).
+- **Circuit Breaker — no se adopta en el frontend.** El patrón protege a un proceso de larga vida que hace muchas llamadas concurrentes a un servicio caído. Una sesión de navegador hace pocas llamadas y ya está protegida por el timeout y el límite de reintentos. El backend ya aplica Circuit Breaker donde sí corresponde (fuentes RSS, `docs/architecture.md`, sección 8; proveedor de embeddings, ADR-004).
 - **Bulkhead — no se adopta.** El aislamiento de recursos entre servicios lo provee el propio navegador, que limita las conexiones por origen. No hay un recurso compartido del frontend que un servicio caído pueda agotar.
 - **Degradación controlada ante los servicios externos:** si las teselas de OpenStreetMap no cargan, los marcadores y las tarjetas de continentes siguen mostrando los datos de humor, porque no dependen de la imagen de fondo. Si Google Fonts no responde, la página usa las tipografías del sistema declaradas como alternativa en CSS. Ninguno de los dos fallos bloquea la consulta de datos.
 
@@ -148,7 +148,7 @@ Usar un framework de estilos utilitario o una librería de componentes prefabric
 - El frontend puede desarrollarse con datos de ejemplo que respetan la forma del contrato, sin esperar a que el backend esté terminado. Esto ya permitió tener una maqueta de las tres vistas mientras el Sprint 2 sigue abierto.
 - El resultado de `npm run build` son archivos estáticos, lo que simplifica el despliegue: basta un servidor web o un contenedor mínimo, sin proceso Node.js en producción.
 - Todas las dependencias son de código abierto y no requieren cuentas, tokens ni credenciales, por lo que no agregan secretos que gestionar.
-- La regla de que el frontend no calcula humor mantiene una única fuente de verdad para el algoritmo (backend, ADR-03 y ADR-04) y evita que una misma fórmula exista en dos lenguajes.
+- La regla de que el frontend no calcula humor mantiene una única fuente de verdad para el algoritmo (backend, ADR-003 y ADR-004) y evita que una misma fórmula exista en dos lenguajes.
 
 ### Negativas / riesgos a mitigar
 
@@ -181,7 +181,7 @@ HU-DASH-001-v3, HU-DASH-002, HU-DASH-003-v2 *(ver `HU-DASH-dashboards.md`)*; HU-
 | Versión | Fecha/Sesión | Motivo del cambio |
 |---|---|---|
 | v1.0 | 2026-10-03 | Creación inicial. Formaliza el stack de la capa de presentación (React 19 con Vite, Leaflet, Chart.js, CSS plano, `fetch` nativo) ya usado en la maqueta de la rama `feature/frontend-dashboards`, evalúa ocho alternativas y los cuatro patrones de resiliencia de la sección 13 de las instrucciones del proyecto, y deja explícitamente sin decidir la herramienta de pruebas del frontend. |
-| v1.1 (editorial) | 2026-10-05 | Renumerado de ADR-05 a ADR-05 y normalización de las referencias a ADR-01 a ADR-04 con tres dígitos, según la convención del Proyecto. Sin cambios en la Decisión, las Alternativas ni las Consecuencias. Hallazgos de la revisión cruzada en `Revision-consistencia-EPIC-DASH-2026-10-05.md`, no aplicados aquí. |
+| v1.1 (editorial) | 2026-10-05 | Renumerado de ADR-005 a ADR-005 y normalización de las referencias a ADR-001 a ADR-004 con tres dígitos, según la convención del Proyecto. Sin cambios en la Decisión, las Alternativas ni las Consecuencias. Hallazgos de la revisión cruzada en `Revision-consistencia-EPIC-DASH-2026-10-05.md`, no aplicados aquí. |
 | v1.2 | 2026-10-05 | Actualización de referencias: HU-DASH-001 fue deprecada y reemplazada por HU-DASH-001-v2 (lista de 5 continentes, según HU-RSS-009). Sin cambios en la Decisión, las Alternativas ni las Consecuencias. |
 | v1.3 | 2026-10-05 | Chart.js queda respaldado por una historia (gráfico de evolución temporal de HU-DASH-001-v3). Referencias actualizadas a HU-DASH-001-v3, HU-DASH-003-v2 y HU-SENT-008, y al nuevo `contrato-dashboards.openapi.yaml`. Sin cambios en el stack decidido ni en las Alternativas. |
-| v1.4 (editorial) | 2026-10-18 | Copia para el repositorio: se mantiene el número ADR-05 y las referencias de dos dígitos de `docs/Adr/`, dejando sin efecto la renumeración a tres dígitos de la v1.1. Sin cambios en la Decisión, las Alternativas ni las Consecuencias. |
+| v1.4 (editorial) | 2026-10-18 | Copia para el repositorio: se mantiene el número ADR-005 y las referencias de dos dígitos de `docs/Adr/`, dejando sin efecto la renumeración a tres dígitos de la v1.1. Sin cambios en la Decisión, las Alternativas ni las Consecuencias. |

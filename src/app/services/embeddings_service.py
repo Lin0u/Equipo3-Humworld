@@ -1,9 +1,9 @@
 """
 Cliente del servicio externo de embeddings (Google Gemini Embedding).
 
-Origina en: HU-SENT-006 y HU-SENT-002-v3; ADR-04, puntos 1, 2 y 7.
+Origina en: HU-SENT-006 y HU-SENT-002-v3; ADR-004, puntos 1, 2 y 7.
 
-Patrones de resiliencia (ADR-04, punto 7; misma regla que las fuentes RSS en
+Patrones de resiliencia (ADR-004, punto 7; misma regla que las fuentes RSS en
 docs/architecture.md, sección 8):
 - Timeout explícito en cada llamada (embeddings_timeout_segundos, propuesto 3 s).
 - Retry acotado con backoff exponencial ante fallos transitorios (timeout,
@@ -12,7 +12,7 @@ docs/architecture.md, sección 8):
 - Circuit Breaker en el camino de predicción (alta frecuencia): tras N fallos
   seguidos deja de llamar al servicio durante una ventana y el cálculo de humor
   cae directamente al diccionario.
-- Bulkhead: no aplica (ADR-04: un único servicio externo de este tipo).
+- Bulkhead: no aplica (ADR-004: un único servicio externo de este tipo).
 
 La clave de API se envía en la cabecera x-goog-api-key, nunca en la URL, para
 que no quede en logs.

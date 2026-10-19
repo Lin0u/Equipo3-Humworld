@@ -1,5 +1,5 @@
 // HumWorld - pantalla "Nube de palabras".
-// Origen: HU-DASH-003-v2 (PDF, sección 4.3.1) y ADR-05. Muestra los datos de
+// Origen: HU-DASH-003-v2 (PDF, sección 4.3.1) y ADR-005. Muestra los datos de
 // GET /api/v1/dashboards/word-cloud: términos del diccionario con más noticias
 // que los contienen (HU-SENT-008). El peso lo calcula el backend; aquí solo
 // define el tamaño de la letra.

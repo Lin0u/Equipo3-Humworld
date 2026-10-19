@@ -70,7 +70,7 @@ def _noticia(db, titulo):
     return noticia
 
 
-# --- HU-SENT-003 / ADR-03 ---------------------------------------------------
+# --- HU-SENT-003 / ADR-003 ---------------------------------------------------
 
 def test_polarizacion_formula():
     assert polarizacion([-8, 6]) == 7.0

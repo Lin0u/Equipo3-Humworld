@@ -21,7 +21,7 @@
 - [x] 4.1 Añadir pruebas unitarias con servicio ML mockeado para ausencia de modelo, éxito futuro, error y timeout; verificar fallback a diccionario, método/versión solo cuando el contrato ML exista y ausencia de llamadas reales a Google.
 - [x] 4.2 Añadir pruebas de integración captura→cálculo→persistencia y barrido con SQLite; verificar idioma es/en, idioma desconocido consulta ambos, `metodo_calculo`, cantidad evaluada y preservación de noticias ante fallos.
 - [x] 4.3 Ejecutar `pytest` y `pytest-cov`; verificar suite completa y cobertura mínima del 80% sin dependencias externas reales ni carga de modelo.
-- [ ] 4.4 Revisar conformidad con `docs/architecture.md`, `openspec/config.yaml`, `.github/copilot-instructions.md`, ADR-03 y ADR-04; verificar separación de capas, ausencia de endpoints/colas y que no se implementan HU-SENT-003/006/007 fuera de las dependencias autorizadas.
+- [ ] 4.4 Revisar conformidad con `docs/architecture.md`, `openspec/config.yaml`, `.github/copilot-instructions.md`, ADR-003 y ADR-004; verificar separación de capas, ausencia de endpoints/colas y que no se implementan HU-SENT-003/006/007 fuera de las dependencias autorizadas.
 
 ## Notas de implementación (2026-10-18)
 

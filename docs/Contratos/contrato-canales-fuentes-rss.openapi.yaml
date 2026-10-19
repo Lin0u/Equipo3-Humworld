@@ -4,8 +4,8 @@ info:
   description: >
     Contrato de API (OpenSpec) para la gestión de canales de noticias y fuentes RSS,
     y para el disparo de capturas manuales. Origina en las historias de usuario
-    HU-RSS-001 a HU-RSS-010 (y su versión HU-RSS-003-v2) y en ADR-01 (framework de la API backend)
-    y ADR-02 (relación de composición CanalNoticias/FuenteRSS). Fuente funcional: PDF de especificaciones,
+    HU-RSS-001 a HU-RSS-010 (y su versión HU-RSS-003-v2) y en ADR-001 (framework de la API backend)
+    y ADR-002 (relación de composición CanalNoticias/FuenteRSS). Fuente funcional: PDF de especificaciones,
     secciones 4.2.1, 4.2.3, 10.2 y 10.3.
   version: "1.8.0"
 servers:
@@ -319,7 +319,7 @@ paths:
       summary: Eliminar una fuente RSS
       description: >
         Origina en HU-RSS-005. Política de eliminación en cascada de noticias
-        asociadas pendiente de confirmación por el equipo (ver ADR-02, sección
+        asociadas pendiente de confirmación por el equipo (ver ADR-002, sección
         "Negativas y deuda aceptada", y HU-RSS-005, nota de diseño).
       responses:
         "204":
@@ -434,7 +434,7 @@ components:
 
     CanalNoticias:
       type: object
-      description: Origina en HU-RSS-001 (alta) y HU-RSS-010 (consulta/listado). Entidad "todo" en la relación de composición con FuenteRSS (ver ADR-02).
+      description: Origina en HU-RSS-001 (alta) y HU-RSS-010 (consulta/listado). Entidad "todo" en la relación de composición con FuenteRSS (ver ADR-002).
       properties:
         id:
           type: integer
@@ -487,7 +487,7 @@ components:
 
     FuenteRSS:
       type: object
-      description: Origina en HU-RSS-002. Entidad "parte" en la relación de composición con CanalNoticias (ver ADR-02).
+      description: Origina en HU-RSS-002. Entidad "parte" en la relación de composición con CanalNoticias (ver ADR-002).
       properties:
         id:
           type: integer

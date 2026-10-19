@@ -11,8 +11,8 @@ context: |
     análisis de sentimiento. Este contexto cubre el módulo de Captura
     RSS (Sprint 1 / EPIC-RSS).
   Arquitectura oficial:
-    Consultar docs/architecture.md, ADR-001-stack-backend.md y
-    ADR-002-arquitectura-captura-rss.md antes de proponer, diseñar o
+    Consultar docs/architecture.md, docs/Adr/ADR-001-framework-api-backend.md y
+    docs/Adr/ADR-002-relacion-composicion-canal-fuente.md antes de proponer, diseñar o
     implementar cualquier cambio.
   Tecnologías aprobadas:
     - Python 3.11 o superior.

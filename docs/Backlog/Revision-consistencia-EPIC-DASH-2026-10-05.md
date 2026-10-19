@@ -1,9 +1,9 @@
-# Revisión de consistencia — EPIC-DASH (HU-DASH-001 a 003 y ADR-05)
+# Revisión de consistencia — EPIC-DASH (HU-DASH-001 a 003 y ADR-005)
 
 **Proyecto:** HumWorld — Equipo 3
 **Fecha:** 2026-10-05
-**Documentos revisados:** `HU-DASH-dashboards.md` (v1.0) y `ADR-05-stack-frontend-dashboards.md` (v1.0, recibido como `ADR-05`).
-**Contrastados contra:** `HU-SENT-motor-sentimiento.md` (v1.5), `ADR-01`, `ADR-03`, `ADR-04`, `contrato-sentimiento-diccionario.openapi.yaml` (v1.0.0), `contrato-canales-fuentes-rss.openapi.yaml` (v1.6.0), `diagrama-clases.md`, `diagrama-clases-sentimiento.md` (v1.1), `HU-RSS-captura.md` (HU-RSS-009) y `Anexo-I-Planificacion-entregado-P3.md`.
+**Documentos revisados:** `HU-DASH-dashboards.md` (v1.0) y `ADR-005-stack-frontend-dashboards.md` (v1.0, recibido como `ADR-005`).
+**Contrastados contra:** `HU-SENT-motor-sentimiento.md` (v1.5), `ADR-001`, `ADR-003`, `ADR-004`, `contrato-sentimiento-diccionario.openapi.yaml` (v1.0.0), `contrato-canales-fuentes-rss.openapi.yaml` (v1.6.0), `diagrama-clases.md`, `diagrama-clases-sentimiento.md` (v1.1), `HU-RSS-captura.md` (HU-RSS-009) y `Anexo-I-Planificacion-entregado-P3.md`.
 
 **Alcance de lo aplicado:** solo se normalizó la nomenclatura (v1.1 editorial de ambos documentos). Ningún hallazgo de fondo fue corregido en los documentos: todos requieren decisión del equipo.
 
@@ -15,7 +15,7 @@
 
 ### H-1. Lista de continentes: 6 en HU-DASH-001, 5 ya confirmados en EPIC-RSS (Alta)
 
-> **Resuelto el 2026-10-05:** el equipo optó por alinear el mapa a 5 continentes. HU-DASH-001 quedó Deprecada y se creó HU-DASH-001-v2 (`HU-DASH-dashboards.md` v1.2; referencias actualizadas en ADR-05 v1.2). Queda pendiente ajustar la maqueta y convertir `continente` en `enum` en los contratos.
+> **Resuelto el 2026-10-05:** el equipo optó por alinear el mapa a 5 continentes. HU-DASH-001 quedó Deprecada y se creó HU-DASH-001-v2 (`HU-DASH-dashboards.md` v1.2; referencias actualizadas en ADR-005 v1.2). Queda pendiente ajustar la maqueta y convertir `continente` en `enum` en los contratos.
 
 HU-DASH-001 afirma que la carga inicial "aún no fija la lista definitiva" y asume seis continentes (América del Norte y América del Sur separadas). El equipo ya confirmó el 2026-09-28 **cinco**: América, Europa, Asia, África y Oceanía (`HU-RSS-captura.md`, HU-RSS-009; `contrato-canales-fuentes-rss.openapi.yaml` v1.6.0).
 
@@ -37,7 +37,7 @@ Resolución: se necesita trabajo nuevo en EPIC-SENT (extensión de HU-SENT-007 o
 
 > **Resuelto el 2026-10-05:** peso = cantidad de noticias que contienen el término (HU-DASH-003-v2, `contrato-dashboards.openapi.yaml`).
 
-HU-DASH-003 propone como ejemplo de peso la "frecuencia de aparición". HU-SENT-007 y ADR-03 fijaron que cada término cuenta una sola vez por noticia (`n` = términos únicos) y descartaron ponderar por repeticiones. Para no contradecirlo, la frecuencia debe definirse como **cantidad de noticias en que aparece el término**, no como apariciones totales en el texto.
+HU-DASH-003 propone como ejemplo de peso la "frecuencia de aparición". HU-SENT-007 y ADR-003 fijaron que cada término cuenta una sola vez por noticia (`n` = términos únicos) y descartaron ponderar por repeticiones. Para no contradecirlo, la frecuencia debe definirse como **cantidad de noticias en que aparece el término**, no como apariciones totales en el texto.
 
 ## 2. Vacíos y ambigüedades
 
@@ -45,7 +45,7 @@ HU-DASH-003 propone como ejemplo de peso la "frecuencia de aparición". HU-SENT-
 
 > **Resuelto el 2026-10-05:** se agregó el gráfico de evolución temporal en HU-DASH-001-v3, que debe reestimarse.
 
-ADR-05 adopta Chart.js para la serie temporal de humor, pero ningún escenario de HU-DASH-001 a 003 pide un gráfico ni consume `serie_temporal`. Es una dependencia aprobada sin requisito. Opciones: agregar un escenario de evolución temporal a HU-DASH-001 (nueva versión, reestimación) o retirar Chart.js del ADR.
+ADR-005 adopta Chart.js para la serie temporal de humor, pero ningún escenario de HU-DASH-001 a 003 pide un gráfico ni consume `serie_temporal`. Es una dependencia aprobada sin requisito. Opciones: agregar un escenario de evolución temporal a HU-DASH-001 (nueva versión, reestimación) o retirar Chart.js del ADR.
 
 ### H-5. Fecha única frente a rango `desde`/`hasta` (Baja)
 
@@ -63,15 +63,15 @@ Los términos son únicos por `palabra + idioma` (HU-SENT-001). HU-DASH-003 no i
 
 ### H-8. Polarización no considerada en "influyente" (Informativo)
 
-ADR-03 anticipó que `polarizacion_terminos` permitiría destacar noticias controversiales en el listado de influyentes. HU-DASH-002 define influencia solo por valor absoluto de `valor_humor`. No es un error; es una opción que el equipo debería descartar o adoptar explícitamente al ratificar el punto pendiente 1.
+ADR-003 anticipó que `polarizacion_terminos` permitiría destacar noticias controversiales en el listado de influyentes. HU-DASH-002 define influencia solo por valor absoluto de `valor_humor`. No es un error; es una opción que el equipo debería descartar o adoptar explícitamente al ratificar el punto pendiente 1.
 
 ### H-9. Google Fonts aparece como dependencia sin estar decidida (Baja)
 
-ADR-05 la evalúa en resiliencia y consecuencias, pero la Decisión (punto 7, estilos) no la menciona. Debe figurar en la Decisión o eliminarse alojando las tipografías localmente.
+ADR-005 la evalúa en resiliencia y consecuencias, pero la Decisión (punto 7, estilos) no la menciona. Debe figurar en la Decisión o eliminarse alojando las tipografías localmente.
 
 ### H-10. Stack de frontend ausente de las instrucciones del Proyecto (Informativo)
 
-La sección 8 de las instrucciones no lista tecnologías de frontend. Si ADR-05 se acepta, conviene actualizarla (nueva versión del prompt) junto con los documentos que el propio ADR ya enumera.
+La sección 8 de las instrucciones no lista tecnologías de frontend. Si ADR-005 se acepta, conviene actualizarla (nueva versión del prompt) junto con los documentos que el propio ADR ya enumera.
 
 ## 3. Verificado como consistente
 
@@ -80,8 +80,8 @@ La sección 8 de las instrucciones no lista tecnologías de frontend. Si ADR-05 
 - Exclusión de noticias con `valor_humor = null` coherente con HU-SENT-003.
 - `enlace_original` y `categoria_iptc` coinciden con `diagrama-clases.md`; `CanalNoticias.pais` es efectivamente opcional.
 - Convención de paginación (`items`, `pagina`, `tamanio_pagina`, `total`) y recursos en inglés bajo `/api/v1` coinciden con los contratos existentes.
-- Regla "el frontend no calcula humor" coherente con ADR-03 y ADR-04.
-- ADR-05 respeta la estructura fija de ADR y evalúa los cuatro patrones de resiliencia; las referencias a ADR-01 (FastAPI) y ADR-04 (Circuit Breaker en embeddings) son correctas.
+- Regla "el frontend no calcula humor" coherente con ADR-003 y ADR-004.
+- ADR-005 respeta la estructura fija de ADR y evalúa los cuatro patrones de resiliencia; las referencias a ADR-001 (FastAPI) y ADR-004 (Circuit Breaker en embeddings) son correctas.
 - Estado "Propuesto" de ambos documentos es correcto: ninguno ha sido ratificado.
 
 ## 4. Riesgo de calendario
@@ -96,5 +96,5 @@ El Sprint 3 terminó el 2026-10-04 con las tres historias en maqueta. Dependen d
 | 2 | Cómo y dónde se persisten las coincidencias término–noticia, y quién lo estima | H-2 |
 | 3 | Definición del peso de una palabra | H-3 |
 | 4 | Gráfico temporal: se agrega a una historia o se retira Chart.js | H-4 |
-| 5 | Herramienta de pruebas de frontend (propuesta: Vitest con React Testing Library) | ADR-05 |
-| 6 | Ratificación formal de ADR-05 | ADR-05 |
+| 5 | Herramienta de pruebas de frontend (propuesta: Vitest con React Testing Library) | ADR-005 |
+| 6 | Ratificación formal de ADR-005 | ADR-005 |

@@ -1,6 +1,6 @@
 // HumWorld - pantalla "Listado de noticias".
 // Origen: HU-DASH-002-v2 (PDF, sección 4.3.2: "lista de las noticias que más han
-// influido en el cálculo del humor") y ADR-05. Muestra GET /api/v1/news con
+// influido en el cálculo del humor") y ADR-005. Muestra GET /api/v1/news con
 // orden=influencia: el backend ordena por |valor_humor|, filtra y pagina.
 import { useEffect, useState } from 'react'
 import { obtenerNoticias } from '../api/cliente.js'

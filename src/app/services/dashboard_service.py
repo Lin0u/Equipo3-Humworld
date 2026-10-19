@@ -4,7 +4,7 @@ Caso de uso: datos del mapa mundial de humor.
 Origina en: HU-DASH-001-v3 (mapa) y HU-DASH-003-v2 (nube de palabras). Contrato: contrato-dashboards.openapi.yaml,
 GET /dashboards/map. Los agregados siguen la definición de HU-SENT-004:
 promedio de valor_humor de las noticias con valor_humor no nulo.
-El frontend no calcula humor (ADR-05, Decisión, punto 9).
+El frontend no calcula humor (ADR-005, Decisión, punto 9).
 """
 from datetime import date
 

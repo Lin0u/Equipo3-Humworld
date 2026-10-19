@@ -1,7 +1,7 @@
 """
 Router: /api/v1/trainings
 
-Origina en: HU-SENT-006 (entrenamiento manual del modelo de ML). ADR-04.
+Origina en: HU-SENT-006 (entrenamiento manual del modelo de ML). ADR-004.
 Contrato: contrato-sentimiento-diccionario.openapi.yaml, tag trainings.
 
 Códigos de error (decisión de implementación, pendiente de ratificación):

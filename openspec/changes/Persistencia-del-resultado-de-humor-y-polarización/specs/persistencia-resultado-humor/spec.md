@@ -6,7 +6,7 @@ Persistir con cada `Noticia` el valor de humor calculado, la polarización de lo
 
 ### Requirement: Persistencia del resultado de sentimiento
 
-El sistema SHALL almacenar en el registro existente de `Noticia` el `valor_humor` recibido del cálculo, el indicador `polarizacion_terminos` y `metodo_calculo` (`diccionario` o `ml`). La polarización SHALL ser un valor numérico de punto flotante nullable, expresado como desviación estándar poblacional según ADR-03. La escritura SHALL ser transaccional y mantener los valores calculados sin pérdida de precisión dentro del tipo persistido.
+El sistema SHALL almacenar en el registro existente de `Noticia` el `valor_humor` recibido del cálculo, el indicador `polarizacion_terminos` y `metodo_calculo` (`diccionario` o `ml`). La polarización SHALL ser un valor numérico de punto flotante nullable, expresado como desviación estándar poblacional según ADR-003. La escritura SHALL ser transaccional y mantener los valores calculados sin pérdida de precisión dentro del tipo persistido.
 
 #### Scenario: Persistencia exitosa del resultado
 - **Dado** que el cálculo produjo `valor_humor=-1.0`, `polarizacion_terminos=7.0` y `metodo_calculo=diccionario` para una `Noticia` existente

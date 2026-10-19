@@ -1,21 +1,21 @@
 # Historias de Usuario — Módulo Dashboards y Visualización (EPIC-DASH, Sprint 3)
 
 **Proyecto:** HumWorld — Equipo 3
-**Origen:** PDF de especificaciones (`0 PROYECTO_FINAL_HUMWORLD 260821.pdf`), secciones 4.1 (Procesos principales, punto de visualización), 4.3 (Interfaces y experiencia de usuario), 4.3.1 (Dashboard de palabras influyentes), 4.3.2 (Dashboard de Humor), 6.1 (Capa de presentación) y 10.2 (Endpoints mínimos obligatorios: `/sentiment`, `/news`, `/dashboards`). Stack de la capa de presentación decidido y justificado en `ADR-05-stack-frontend-dashboards.md`.
+**Origen:** PDF de especificaciones (`0 PROYECTO_FINAL_HUMWORLD 260821.pdf`), secciones 4.1 (Procesos principales, punto de visualización), 4.3 (Interfaces y experiencia de usuario), 4.3.1 (Dashboard de palabras influyentes), 4.3.2 (Dashboard de Humor), 6.1 (Capa de presentación) y 10.2 (Endpoints mínimos obligatorios: `/sentiment`, `/news`, `/dashboards`). Stack de la capa de presentación decidido y justificado en `ADR-005-stack-frontend-dashboards.md`.
 **Estado general:** Propuesto — historias generadas a partir de los títulos ya oficializados en el backlog del entregable P3 (`Anexo-I-Planificacion-entregado-P3.md`: HU-DASH-001, HU-DASH-002 y HU-DASH-003; versiones vigentes: HU-DASH-001-v3, HU-DASH-002-v2 y HU-DASH-003-v2) y de la estimación en puntos ya realizada en Planning Poker (Sprint 3 = 12 puntos). Pendiente de revisión crítica del equipo.
 **Versión del documento:** v1.6. Ver la Tabla de control de versiones al final del documento.
 
 > **Nota de grounding general:** el PDF exige "dashboards interactivos que visualicen el humor global y por regiones" (Objetivos específicos, punto 3) y enumera las vistas en la sección 4.3: Dashboard de humor (mapa mundial interactivo con selector de fecha), Nube de palabras (términos influyentes con filtros por país/continente) y Listado de noticias (detalle de las noticias más relevantes para el humor calculado). Este documento formaliza esas tres vistas; no agrega ninguna vista nueva. El Panel de administración (cuarta vista de la sección 4.3) pertenece a EPIC-ADMIN (HU-ADMIN-004, Sprint 4) y queda fuera de este documento.
 
-> **Nota sobre el algoritmo de humor (sección 11 de las instrucciones del proyecto):** ninguna historia de EPIC-DASH calcula humor. La capa de presentación solo muestra valores ya calculados y persistidos por el backend: `valor_humor` por noticia (HU-SENT-002-v2, cálculo híbrido: modelo de ML cuando está disponible, o promedio simple de diccionario como fallback según HU-SENT-007 y `ADR-03-eleccion-algoritmo-agregacion-sentimiento.md`) y `humor_promedio` agregado (HU-SENT-004). Cada historia indica abajo qué valor consume.
+> **Nota sobre el algoritmo de humor (sección 11 de las instrucciones del proyecto):** ninguna historia de EPIC-DASH calcula humor. La capa de presentación solo muestra valores ya calculados y persistidos por el backend: `valor_humor` por noticia (HU-SENT-002-v2, cálculo híbrido: modelo de ML cuando está disponible, o promedio simple de diccionario como fallback según HU-SENT-007 y `ADR-003-eleccion-algoritmo-agregacion-sentimiento.md`) y `humor_promedio` agregado (HU-SENT-004). Cada historia indica abajo qué valor consume.
 
-> **Estado de implementación (2026-10-19):** las tres vistas están conectadas al backend real en la carpeta `frontend/` del repositorio principal (ramas `feature/mapa-humor`, `feature/humor-temporal`, `feature/nube-palabras` y `feature/noticias`, con sus Pull Requests): mapa y gráfico temporal (HU-DASH-001-v3), nube de palabras (HU-DASH-003-v2) y listado de noticias (HU-DASH-002-v2). Faltan las pruebas automatizadas del frontend (herramienta pendiente de decisión, ADR-05) y el filtro por país, por lo que ninguna de las tres cumple todavía la Definition of Done.
+> **Estado de implementación (2026-10-19):** las tres vistas están conectadas al backend real en la carpeta `frontend/` del repositorio principal (ramas `feature/mapa-humor`, `feature/humor-temporal`, `feature/nube-palabras` y `feature/noticias`, con sus Pull Requests): mapa y gráfico temporal (HU-DASH-001-v3), nube de palabras (HU-DASH-003-v2) y listado de noticias (HU-DASH-002-v2). Faltan las pruebas automatizadas del frontend (herramienta pendiente de decisión, ADR-005) y el filtro por país, por lo que ninguna de las tres cumple todavía la Definition of Done.
 
 ---
 
 ## HU-DASH-001-v3 — Dashboard mapa mundial de humor y evolución temporal
 
-**Reemplaza a:** HU-DASH-001-v2 (Deprecada). **Qué cambió:** (a) el mapa obtiene sus datos de un endpoint único, `GET /api/v1/dashboards/map`, que entrega el humor global, el de los 5 continentes y el rango de fechas con información, en lugar de una llamada a `/sentiment` por continente; (b) se agrega un gráfico de evolución temporal del humor global. **Por qué:** decisiones de equipo de la sesión del 2026-10-05, que cierran los puntos pendientes 2 y 3 y dan respaldo funcional a Chart.js, aprobado en ADR-05 sin historia que lo pidiera (hallazgos H-4 y H-5 de `Revision-consistencia-EPIC-DASH-2026-10-05.md`).
+**Reemplaza a:** HU-DASH-001-v2 (Deprecada). **Qué cambió:** (a) el mapa obtiene sus datos de un endpoint único, `GET /api/v1/dashboards/map`, que entrega el humor global, el de los 5 continentes y el rango de fechas con información, en lugar de una llamada a `/sentiment` por continente; (b) se agrega un gráfico de evolución temporal del humor global. **Por qué:** decisiones de equipo de la sesión del 2026-10-05, que cierran los puntos pendientes 2 y 3 y dan respaldo funcional a Chart.js, aprobado en ADR-005 sin historia que lo pidiera (hallazgos H-4 y H-5 de `Revision-consistencia-EPIC-DASH-2026-10-05.md`).
 
 **Tipo:** Historia de Usuario
 **Como** analista de medios o usuario interesado en la evolución del sentimiento global *(PDF, sección 4.1)*,
@@ -99,7 +99,7 @@ Escenario: El backend no responde o responde con error
 - La vista consume `GET /api/v1/dashboards/map` y `GET /api/v1/sentiment` reales; no quedan datos de ejemplo en el camino de producción.
 - Pruebas unitarias con la llamada a la API simulada mediante mock, cubriendo al menos los 9 escenarios Gherkin anteriores. Nunca pruebas unitarias con llamadas reales al backend ni al servidor de teselas del mapa.
 - Validado visualmente en al menos una resolución de pantalla, registrada en el Pull Request.
-- `ADR-05-stack-frontend-dashboards.md` en estado Aceptado.
+- `ADR-005-stack-frontend-dashboards.md` en estado Aceptado.
 - `contrato-dashboards.openapi.yaml` aprobado por el equipo y endpoint de mapa implementado en el backend.
 - Puntos pendientes 1 a 4 de esta historia resueltos y reflejados en el contrato.
 
@@ -181,7 +181,7 @@ Escenario: El backend no responde o responde con error
 - La vista consume `GET /api/v1/sentiment` real; no quedan datos de ejemplo en el camino de producción.
 - Pruebas unitarias con la llamada a la API simulada mediante mock, cubriendo al menos los 7 escenarios Gherkin anteriores. Nunca pruebas unitarias con llamadas reales al backend ni al servidor de teselas del mapa.
 - Validado visualmente en al menos una resolución de pantalla, registrada en el Pull Request.
-- `ADR-05-stack-frontend-dashboards.md` en estado Aceptado.
+- `ADR-005-stack-frontend-dashboards.md` en estado Aceptado.
 - Puntos pendientes 1 a 4 de esta historia resueltos y reflejados en el contrato.
 
 ---
@@ -260,7 +260,7 @@ Escenario: El backend no responde o responde con error
 - La vista consume `GET /api/v1/sentiment` real; no quedan datos de ejemplo en el camino de producción.
 - Pruebas unitarias con la llamada a la API simulada mediante mock, cubriendo al menos los 7 escenarios Gherkin anteriores. Nunca pruebas unitarias con llamadas reales al backend ni al servidor de teselas del mapa.
 - Validado visualmente en al menos una resolución de pantalla, registrada en el Pull Request.
-- `ADR-05-stack-frontend-dashboards.md` en estado Aceptado.
+- `ADR-005-stack-frontend-dashboards.md` en estado Aceptado.
 - Puntos pendientes 1 a 4 de esta historia resueltos y reflejados en el contrato.
 
 ---
@@ -351,7 +351,7 @@ Escenario: Detalle de una noticia inexistente
 - `contrato-noticias.openapi.yaml` aprobado por el equipo.
 - La vista consume el endpoint real; el orden por influencia, los filtros y la paginación los aplica el backend.
 - Pruebas del backend de los escenarios anteriores (implementadas en `src/tests/test_news.py`).
-- Pruebas unitarias del frontend con la llamada a la API simulada mediante mock (herramienta pendiente, `ADR-05-stack-frontend-dashboards.md`).
+- Pruebas unitarias del frontend con la llamada a la API simulada mediante mock (herramienta pendiente, `ADR-005-stack-frontend-dashboards.md`).
 - Validado visualmente en al menos una resolución de pantalla, registrada en el Pull Request.
 
 ---
@@ -438,7 +438,7 @@ Escenario: Filtro sin resultados
 **Valor de humor que consume:** el `valor` de cada término del diccionario (escala -10 a +10, HU-SENT-001) y su `peso`, calculado por el backend como la cantidad de noticias del filtro que contienen el término (HU-SENT-008). No aplica ninguna variante propia del algoritmo.
 
 **Puntos pendientes de decisión del equipo:**
-1. **Definición de "influencia" de una palabra: resuelto.** Peso = cantidad de noticias del filtro que contienen el término (decisión de equipo, 2026-10-05). Cada término cuenta una sola vez por noticia, en coherencia con HU-SENT-007 y `ADR-03-eleccion-algoritmo-agregacion-sentimiento.md`; no se cuentan las repeticiones dentro de un mismo texto.
+1. **Definición de "influencia" de una palabra: resuelto.** Peso = cantidad de noticias del filtro que contienen el término (decisión de equipo, 2026-10-05). Cada término cuenta una sola vez por noticia, en coherencia con HU-SENT-007 y `ADR-003-eleccion-algoritmo-agregacion-sentimiento.md`; no se cuentan las repeticiones dentro de un mismo texto.
 2. **Relación con el camino de ML: resuelto.** La nube se construye siempre a partir de las coincidencias con el diccionario, que HU-SENT-008 registra en una tabla de unión para toda noticia capturada, también cuando su humor lo calcula el modelo de ML.
 3. **Filtro por país.** El PDF pide filtro "por continente o país". La maqueta implementa solo continente. Falta definir de dónde sale la lista de países (`CanalNoticias.pais` es opcional en el modelo vigente).
 4. **Cantidad máxima de palabras.** No hay cifra en el PDF; debe fijarse un límite para que la nube sea legible. El contrato ya expone el parámetro `limite`, sin valor por defecto ni máximo.
@@ -510,7 +510,7 @@ Escenario: Filtro sin palabras
 
 **Puntos pendientes de decisión del equipo:**
 1. **Definición de "influencia" de una palabra.** El PDF no la define. La maqueta recibe un campo `peso` ya calculado y solo lo usa para el tamaño de la letra. El equipo debe decidir cómo se calcula ese peso en el backend (por ejemplo, frecuencia de aparición o frecuencia ponderada por el valor absoluto del término). Esa decisión es de EPIC-SENT, no de la capa de presentación.
-2. **Relación con el camino de ML.** Cuando el humor de una noticia se calcula con el modelo de ML (`ADR-04-arquitectura-modelo-ml-sentimiento.md`: embeddings más regresor), el cálculo no usa términos del diccionario. El equipo debe decidir si la nube se construye siempre a partir de las coincidencias con el diccionario, independientemente del método que calculó el humor.
+2. **Relación con el camino de ML.** Cuando el humor de una noticia se calcula con el modelo de ML (`ADR-004-arquitectura-modelo-ml-sentimiento.md`: embeddings más regresor), el cálculo no usa términos del diccionario. El equipo debe decidir si la nube se construye siempre a partir de las coincidencias con el diccionario, independientemente del método que calculó el humor.
 3. ~~**Filtro por país.**~~ **Resuelto el 2026-10-19:** la lista de países sale del campo `pais` de los canales registrados (`GET /api/v1/channels`, HU-RSS-010), el mismo dato con el que el backend filtra; con un continente elegido solo se ofrecen sus países. Los canales sin país informado solo aparecen en el filtro por continente.
 4. **Cantidad máxima de palabras.** No hay cifra en el PDF; debe fijarse un límite para que la nube sea legible.
 
@@ -591,9 +591,9 @@ Las estimaciones en puntos provienen del Planning Poker de P3 y son un punto de 
 | ID | Versión | Fecha/Sesión | Motivo del cambio |
 |---|---|---|---|
 | HU-DASH-001 a 003 | v1.0 | 2026-10-03 | Primera formalización detallada de las 3 historias de EPIC-DASH, a partir de los títulos ya oficializados en el backlog de P3 y de la estimación del Planning Poker de P3. Se agregan Gherkin, DoD, dependencia de contratos, notas de grounding y los puntos pendientes de decisión del equipo detectados al construir la maqueta de la rama `feature/frontend-dashboards`. |
-| HU-DASH-001 a 003 | v1.1 (editorial) | 2026-10-05 | Normalización de nomenclatura al incorporar el documento al Proyecto: referencias a ADRs con tres dígitos (`ADR-03`, `ADR-04`, `ADR-05`) y nombres de archivo reales (`ADR-03-eleccion-algoritmo-agregacion-sentimiento.md`, `ADR-04-arquitectura-modelo-ml-sentimiento.md`, `ADR-05-stack-frontend-dashboards.md`). Sin cambios en alcance, criterios de aceptación, estimaciones ni puntos pendientes. Los hallazgos de fondo de la revisión cruzada están en `Revision-consistencia-EPIC-DASH-2026-10-05.md` y no se aplicaron aquí. |
-| HU-DASH-001-v2 | v1.2 | 2026-10-05 | HU-DASH-001 pasa a **Deprecada** y se crea HU-DASH-001-v2: la lista de continentes se alinea a los 5 confirmados por el equipo en HU-RSS-009 (América, Europa, Asia, África, Oceanía), en lugar de los 6 asumidos por la maqueta. Cambian el punto pendiente 1 (queda solo la conversión a `enum`) y dos escenarios Gherkin. La estimación de 5 puntos se mantiene como punto de partida, sujeta a revalidación del equipo. Referencias actualizadas en `ADR-05-stack-frontend-dashboards.md` (v1.2). |
-| HU-DASH-001-v3, HU-DASH-003-v2 | v1.3 | 2026-10-05 | Cuatro decisiones de equipo tomadas en sesión. **HU-DASH-001-v3** (deprecada la v2): endpoint único `GET /api/v1/dashboards/map` y nuevo gráfico de evolución temporal con 2 escenarios Gherkin adicionales; la estimación de 5 puntos queda por reestimar. **HU-DASH-003-v2** (deprecada la original): peso = cantidad de noticias que contienen el término; datos provistos por la nueva HU-SENT-008 (tabla de unión, también en el camino de ML). Se crea `contrato-dashboards.openapi.yaml` (v1.0.0). Referencias actualizadas en `ADR-05-stack-frontend-dashboards.md` (v1.3). HU-DASH-002 no cambia: sus puntos pendientes y el contrato de `/news` siguen abiertos. |
-| Todas | v1.4 (editorial) | 2026-10-18 | Copia para el repositorio: las referencias a ADR vuelven a la convención de dos dígitos y a los nombres de archivo de `docs/Adr/` (`ADR-03-eleccion-algoritmo-agregacion-sentimiento.md`, `ADR-04-arquitectura-modelo-ml-sentimiento.md`, `ADR-05-stack-frontend-dashboards.md`). Deja sin efecto la normalización a tres dígitos de la v1.1. Sin cambios de contenido. |
+| HU-DASH-001 a 003 | v1.1 (editorial) | 2026-10-05 | Normalización de nomenclatura al incorporar el documento al Proyecto: referencias a ADRs con tres dígitos (`ADR-003`, `ADR-004`, `ADR-005`) y nombres de archivo reales (`ADR-003-eleccion-algoritmo-agregacion-sentimiento.md`, `ADR-004-arquitectura-modelo-ml-sentimiento.md`, `ADR-005-stack-frontend-dashboards.md`). Sin cambios en alcance, criterios de aceptación, estimaciones ni puntos pendientes. Los hallazgos de fondo de la revisión cruzada están en `Revision-consistencia-EPIC-DASH-2026-10-05.md` y no se aplicaron aquí. |
+| HU-DASH-001-v2 | v1.2 | 2026-10-05 | HU-DASH-001 pasa a **Deprecada** y se crea HU-DASH-001-v2: la lista de continentes se alinea a los 5 confirmados por el equipo en HU-RSS-009 (América, Europa, Asia, África, Oceanía), en lugar de los 6 asumidos por la maqueta. Cambian el punto pendiente 1 (queda solo la conversión a `enum`) y dos escenarios Gherkin. La estimación de 5 puntos se mantiene como punto de partida, sujeta a revalidación del equipo. Referencias actualizadas en `ADR-005-stack-frontend-dashboards.md` (v1.2). |
+| HU-DASH-001-v3, HU-DASH-003-v2 | v1.3 | 2026-10-05 | Cuatro decisiones de equipo tomadas en sesión. **HU-DASH-001-v3** (deprecada la v2): endpoint único `GET /api/v1/dashboards/map` y nuevo gráfico de evolución temporal con 2 escenarios Gherkin adicionales; la estimación de 5 puntos queda por reestimar. **HU-DASH-003-v2** (deprecada la original): peso = cantidad de noticias que contienen el término; datos provistos por la nueva HU-SENT-008 (tabla de unión, también en el camino de ML). Se crea `contrato-dashboards.openapi.yaml` (v1.0.0). Referencias actualizadas en `ADR-005-stack-frontend-dashboards.md` (v1.3). HU-DASH-002 no cambia: sus puntos pendientes y el contrato de `/news` siguen abiertos. |
+| Todas | v1.4 (editorial) | 2026-10-18 | Copia para el repositorio: las referencias a ADR vuelven a la convención de dos dígitos y a los nombres de archivo de `docs/Adr/` (`ADR-003-eleccion-algoritmo-agregacion-sentimiento.md`, `ADR-004-arquitectura-modelo-ml-sentimiento.md`, `ADR-005-stack-frontend-dashboards.md`). Deja sin efecto la normalización a tres dígitos de la v1.1. Sin cambios de contenido. |
 | HU-DASH-002-v2 | v1.5 | 2026-10-19 | HU-DASH-002 pasa a **Deprecada** y se crea HU-DASH-002-v2: se resuelven sus 4 puntos pendientes con la propuesta de Valentín García (influencia = `|valor_humor|`, paginación 10/50, filtros) y los ajustes de la PO (día de referencia `COALESCE(fecha_publicacion, fecha_registro)`, desempate por `id`, parámetro `orden`). Se crea `contrato-noticias.openapi.yaml` (v1.0.0) y se agregan 4 escenarios Gherkin. Se actualiza la nota de estado de implementación de las tres vistas. La estimación de 2 puntos queda por reestimar. |
 | HU-DASH-002-v2, HU-DASH-003-v2 | v1.6 | 2026-10-19 | Se implementa el filtro por país en la nube de palabras y en el listado de noticias (PDF §4.3.1). Se resuelve el punto pendiente 3 de HU-DASH-003-v2: los países salen de `CanalNoticias.pais` vía `GET /api/v1/channels`. Sin cambios en criterios de aceptación ni contratos. |

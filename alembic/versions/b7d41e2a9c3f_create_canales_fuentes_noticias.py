@@ -1,7 +1,7 @@
 """Crea las tablas base del módulo de Captura RSS: canales, fuentes y noticias.
 
 Origina en: HU-RSS-001 (CanalNoticias), HU-RSS-002 (FuenteRSS) y HU-RSS-006
-(Noticia). Decisión de arquitectura: ADR-02 (composición CanalNoticias →
+(Noticia). Decisión de arquitectura: ADR-002 (composición CanalNoticias →
 FuenteRSS; agregación FuenteRSS → Noticia).
 
 Motivo: los modelos ORM de estas tres entidades existían desde Sprint 1, pero
@@ -28,7 +28,7 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    # HU-RSS-001 — CanalNoticias (entidad "todo" de la composición, ADR-02).
+    # HU-RSS-001 — CanalNoticias (entidad "todo" de la composición, ADR-002).
     op.create_table(
         "canales_noticias",
         sa.Column("id", sa.Integer(), nullable=False),
@@ -42,7 +42,7 @@ def upgrade() -> None:
     op.create_index("ix_canales_noticias_nombre", "canales_noticias", ["nombre"], unique=True)
     op.create_index("ix_canales_noticias_continente", "canales_noticias", ["continente"])
 
-    # HU-RSS-002 — FuenteRSS (parte de la composición con CanalNoticias, ADR-02).
+    # HU-RSS-002 — FuenteRSS (parte de la composición con CanalNoticias, ADR-002).
     # El enum guarda los NOMBRES de EstadoCircuitBreaker, igual que el modelo ORM.
     op.create_table(
         "fuentes_rss",
@@ -63,7 +63,7 @@ def upgrade() -> None:
     op.create_index("ix_fuentes_rss_id", "fuentes_rss", ["id"])
     op.create_index("ix_fuentes_rss_canal_id", "fuentes_rss", ["canal_id"])
 
-    # HU-RSS-006 — Noticia (agregación con FuenteRSS, ADR-02).
+    # HU-RSS-006 — Noticia (agregación con FuenteRSS, ADR-002).
     op.create_table(
         "noticias",
         sa.Column("id", sa.Integer(), nullable=False),

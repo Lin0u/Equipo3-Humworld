@@ -1,4 +1,4 @@
-"""Pruebas de CORS para el frontend (ADR-05)."""
+"""Pruebas de CORS para el frontend (ADR-005)."""
 from fastapi.testclient import TestClient
 
 from app.main import app

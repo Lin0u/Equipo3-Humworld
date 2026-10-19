@@ -3,7 +3,7 @@ Router: /api/v1/dashboards
 
 Origina en: HU-DASH-001-v3 (mapa mundial de humor) y HU-DASH-003-v2 (nube de palabras).
 Contrato: contrato-dashboards.openapi.yaml, GET /dashboards/map y /dashboards/word-cloud.
-ADR relacionado: ADR-05 (stack de frontend; el frontend no calcula humor).
+ADR relacionado: ADR-005 (stack de frontend; el frontend no calcula humor).
 """
 from datetime import date
 from typing import Optional

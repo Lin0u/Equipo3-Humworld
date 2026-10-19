@@ -10,7 +10,7 @@ El valor de humor calculado debe sobrevivir a la ejecución del proceso y estar 
 - Añadir una migración Alembic solo para `polarizacion_terminos`, encadenada después de la de HU-SENT-002-v2, y actualizar el modelo ORM y la documentación UML del modelo de datos.
 - Mantener separadas las historias: persistir el resultado que entrega HU-SENT-002-v2; no implementar aquí el algoritmo/fallback de cálculo (HU-SENT-007/002-v2), el CRUD del diccionario (HU-SENT-001), agregaciones ni dashboard.
 - Este cambio forma parte del incremento actual junto con HU-SENT-001 y HU-SENT-002-v2. Las demás HU-SENT permanecen fuera.
-- No se requieren cambios a `docs/architecture.md` ni a ADR-03; el tipo propuesto sigue el valor real numérico ya usado por `Noticia.valor_humor`.
+- No se requieren cambios a `docs/architecture.md` ni a ADR-003; el tipo propuesto sigue el valor real numérico ya usado por `Noticia.valor_humor`.
 
 ## Capabilities
 

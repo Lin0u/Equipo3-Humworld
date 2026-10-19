@@ -3,16 +3,16 @@ Cálculo de humor de las noticias capturadas.
 
 Origina en:
 - HU-SENT-007: método determinista por diccionario. Promedio simple de los
-  valores de los términos ÚNICOS coincidentes (ADR-03): Σ(valores) / n.
+  valores de los términos ÚNICOS coincidentes (ADR-003): Σ(valores) / n.
 - HU-SENT-002-v2: cálculo híbrido síncrono tras la captura, con punto de
-  extensión ML (ADR-04), timeout explícito, fallback a diccionario y barrido
+  extensión ML (ADR-004), timeout explícito, fallback a diccionario y barrido
   de respaldo. OpenSpec: openspec/changes/Cálculo híbrido de humor.
 
 AVISO (instrucciones del proyecto, sección 12): este módulo contiene lógica
 de negocio del algoritmo de sentimiento. Debe ser revisado por el equipo
 antes de fusionarse.
 
-Camino ML (HU-SENT-006, ADR-04): si hay GEMINI_API_KEY y un modelo activo en
+Camino ML (HU-SENT-006, ADR-004): si hay GEMINI_API_KEY y un modelo activo en
 modelos_sentimiento, se usa su regresor (modelo_ml_service.proveedor_activo);
 si no, o si falla o excede el timeout, el diccionario.
 Calcula la polarización (HU-SENT-003) y persiste las coincidencias de HU-SENT-008
@@ -73,7 +73,7 @@ class ResultadoHumor:
 
 
 class ProveedorModeloML(Protocol):
-    """Punto de extensión para HU-SENT-006 (ADR-04: embeddings + regresor).
+    """Punto de extensión para HU-SENT-006 (ADR-004: embeddings + regresor).
 
     La implementación real debe aplicar su propio timeout y reintentos
     acotados al servicio de embeddings; este módulo agrega un timeout total.
@@ -138,7 +138,7 @@ def terminos_coincidentes(
 
 
 def polarizacion(valores: list[int]) -> float | None:
-    """Desviación estándar poblacional de los valores (ADR-03, HU-SENT-003).
+    """Desviación estándar poblacional de los valores (ADR-003, HU-SENT-003).
 
     None si no hay valores; 0.0 con un solo valor. Ejemplo de HU-SENT-007:
     [-8, 6] -> 7.0.
@@ -163,7 +163,7 @@ def calcular_humor_diccionario(
 
 
 def idiomas_a_evaluar(idioma_detectado: str | None) -> tuple[str, ...]:
-    """El idioma de la noticia si es es/en; si no se conoce, ambos (ADR-03)."""
+    """El idioma de la noticia si es es/en; si no se conoce, ambos (ADR-003)."""
     if idioma_detectado in IDIOMAS_SOPORTADOS:
         return (idioma_detectado,)
     return IDIOMAS_SOPORTADOS
@@ -286,7 +286,7 @@ def invalidar_calculos_diccionario(db: Session) -> int:
 def analizar_texto(db: Session, texto: str) -> ResultadoHumor:
     """HU-SENT-005: humor de un texto arbitrario, siempre por diccionario.
 
-    Sin idioma conocido, compara con los términos de ambos idiomas (ADR-03).
+    Sin idioma conocido, compara con los términos de ambos idiomas (ADR-003).
     No persiste nada.
     """
     noticia = Noticia(titulo=texto, contenido=None, idioma_detectado=None)

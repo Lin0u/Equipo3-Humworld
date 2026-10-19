@@ -1,7 +1,7 @@
 // HumWorld - acceso a la API REST del backend.
 // Origen: HU-DASH-001-v3 y contrato docs/Contratos/contrato-dashboards.openapi.yaml.
 // La dirección se configura con VITE_API_URL (archivo .env de Vite); por defecto,
-// el backend de docker compose. El backend permite este origen por CORS (ADR-05).
+// el backend de docker compose. El backend permite este origen por CORS (ADR-005).
 
 const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000/api/v1'
 

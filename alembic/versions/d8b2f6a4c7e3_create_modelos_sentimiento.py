@@ -1,7 +1,7 @@
 """Crea modelos_sentimiento y agrega noticias.modelo_sentimiento_id.
 
 Origina en: HU-SENT-006 (entrenamiento y versionado del modelo de ML) y
-ADR-04, punto 5. noticias.modelo_sentimiento_id registra la versión del
+ADR-004, punto 5. noticias.modelo_sentimiento_id registra la versión del
 modelo usada cuando metodo_calculo = "ml" (HU-SENT-002-v3).
 """
 
