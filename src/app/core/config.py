@@ -25,7 +25,16 @@ class Settings(BaseSettings):
     captura_concurrencia_maxima: int = 10  # TODO(equipo): validar límite de semáforo
     circuit_breaker_umbral_fallos: int = 5  # TODO(equipo): validar umbral
 
+    # CORS (ADR-05, stack de frontend): orígenes autorizados a llamar a la API
+    # desde el navegador, separados por coma. Por defecto, el servidor de
+    # desarrollo de Vite. TODO(equipo): agregar el origen del frontend desplegado.
+    cors_origenes: str = "http://localhost:5173,http://127.0.0.1:5173"
+
     model_config = SettingsConfigDict(env_file=".env")
+
+    @property
+    def cors_origenes_lista(self) -> list[str]:
+        return [origen.strip() for origen in self.cors_origenes.split(",") if origen.strip()]
 
 
 settings = Settings()

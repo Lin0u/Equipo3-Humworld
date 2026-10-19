@@ -14,6 +14,18 @@ class FuenteRSSRepository:
             select(CanalNoticias).where(CanalNoticias.id == canal_id)
         ).scalar_one_or_none()
 
+    def buscar_por_url(self, db: Session, url: str) -> FuenteRSS | None:
+        """Busca una fuente por url, activa o no (identidad de HU-RSS-009-v2)."""
+        return db.execute(
+            select(FuenteRSS).where(FuenteRSS.url == url)
+        ).scalars().first()
+
+    def agregar_sin_confirmar(self, db: Session, fuente: FuenteRSS) -> FuenteRSS:
+        """Agrega la fuente a la transacción en curso sin confirmarla (HU-RSS-009-v2)."""
+        db.add(fuente)
+        db.flush()
+        return fuente
+
     def crear(self, db: Session, fuente: FuenteRSS) -> FuenteRSS:
         db.add(fuente)
         try:
@@ -122,4 +134,4 @@ class FuenteRSSRepository:
             db.rollback()
             raise
         db.refresh(fuente)
-        return fuente
+        return fuente
