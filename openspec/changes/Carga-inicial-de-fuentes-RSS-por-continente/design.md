@@ -13,7 +13,7 @@ Ver [proposal.md](proposal.md) para motivación, alcance y discrepancia registra
 
 **Non-Goals:**
 
-- Exponer `POST /api/v1/seeds` en este cambio. La solicitud actual lo excluye, aunque el backlog vigente lo especifica; el equipo debe reconciliar esa divergencia antes de implementación/publicación.
+- Exponer `POST /api/v1/seeds`. Quedó retirado al deprecarse HU-RSS-009 en favor de HU-RSS-009-v2 (contrato v1.7.0). Como la lógica vive en Servicios, un endpoint podría agregarse después con un router que invoque el mismo caso de uso.
 - Inventar, descubrir en ejecución o validar por red URLs de feeds.
 - Cargar noticias, modificar el cron, cambiar esquema de persistencia o añadir dependencias.
 
@@ -31,7 +31,7 @@ Ver [proposal.md](proposal.md) para motivación, alcance y discrepancia registra
 
 La identidad funcional de un canal semilla es su `nombre`; la de una fuente es su `url`, conforme a las decisiones registradas en HU-RSS-009. Si el canal ya existe, el seed lo reutiliza para asociar fuentes aún ausentes. La ejecución debe ser transaccional o hacer rollback ante un error de persistencia para no dejar una carga parcialmente inconsistente.
 
-No hay una lista aprobada de URLs en el backlog ni en el script actual. Por ello no se agregan URLs ejemplo al diseño ni a los fixtures. La especificación exige que los datos se validen y aprueben antes de considerar el seed listo. La implementación que intente completar datos reales queda bloqueada hasta que el equipo proporcione el dataset.
+No hay todavía una lista aprobada de URLs en el script. Existe un dataset propuesto de 20 fuentes verificadas (`docs/Backlog/Dataset-fuentes-RSS-seed-HU-RSS-009.md`), pendiente de aprobación del equipo; mientras no se apruebe, no se agregan URLs reales al diseño ni a los fixtures. La especificación exige que los datos se validen y aprueben antes de considerar el seed listo. La implementación que intente completar datos reales queda bloqueada hasta que el equipo proporcione el dataset.
 
 ### Estrategia de pruebas
 
@@ -52,10 +52,9 @@ No hay una lista aprobada de URLs en el backlog ni en el script actual. Por ello
 ## Risks / Trade-offs
 
 - **[Riesgo]** La falta de feeds reales impide cumplir cobertura continental en datos de producción → **Mitigación:** mantener la carga de dataset real bloqueada hasta recibir URLs verificadas y aprobadas; no sustituirlas por ejemplos.
-- **[Riesgo]** La solicitud actual contradice el backlog que requiere un endpoint administrativo → **Mitigación:** reconciliar backlog/contrato antes de implementar o publicar; no introducir el endpoint por inferencia.
 - **[Riesgo]** Ejecuciones concurrentes podrían competir por nombres/URLs → **Mitigación:** conservar restricciones de unicidad y tratar colisiones como entidades existentes; probar repetición secuencial y documentar que el seed se ejecuta como tarea administrativa controlada.
 - **[Trade-off]** Reutilizar Servicios puede requerir un caso de uso idempotente de seed que no existe hoy; se acepta una ampliación mínima de Servicios/Repositorios antes que duplicar validaciones en el script.
 
 ## Migration Plan
 
-No hay migración de esquema. Una vez reconciliado el backlog y aprobado el dataset, ejecutar el script contra una base preparada; revisar el resumen de registros creados y la cobertura continental. El rollback de aplicación es retirar el cambio del script. No se borran automáticamente registros creados; si se requiere revertir datos, debe hacerse mediante un procedimiento explícito aprobado por el equipo.
+No hay migración de esquema. Una vez aprobado el dataset, ejecutar el script contra una base preparada; revisar el resumen de registros creados y la cobertura continental. El rollback de aplicación es retirar el cambio del script. No se borran automáticamente registros creados; si se requiere revertir datos, debe hacerse mediante un procedimiento explícito aprobado por el equipo.

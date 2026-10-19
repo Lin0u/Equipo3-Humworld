@@ -1,6 +1,6 @@
 ## 1. Decisiones y datos de entrada bloqueantes
 
-- [x] 1.1 Reconciliar con el equipo la discrepancia entre esta solicitud (procedimiento interno sin endpoint) y el HU-RSS-009 vigente (`POST /api/v1/seeds`); verificar el alcance aprobado actualizando backlog/contrato o confirmando formalmente que quedan fuera de este cambio. Confirmado por el usuario: este cambio cubre solo el procedimiento interno; el endpoint queda fuera.
+- [x] 1.1 Reconciliar con el equipo la discrepancia entre esta solicitud (procedimiento interno sin endpoint) y el HU-RSS-009 vigente (`POST /api/v1/seeds`); verificar el alcance aprobado actualizando backlog/contrato o confirmando formalmente que quedan fuera de este cambio. Reconciliado el 2026-10-18: HU-RSS-009 quedó Deprecada en favor de HU-RSS-009-v2 (procedimiento interno, sin endpoint) y `POST /api/v1/seeds` quedó retirado en el contrato v1.7.0.
 - [ ] 1.2 Obtener del equipo un dataset de feeds RSS reales verificados y aprobados, con al menos un `CanalNoticias` y una `FuenteRSS` por América, Europa, Asia, África y Oceanía; verificar URL, continente, canal asociado y categoría IPTC de cada elemento. No iniciar las tareas de implementación mientras este insumo esté pendiente.
 
 ## 2. Servicios y Repositorios
