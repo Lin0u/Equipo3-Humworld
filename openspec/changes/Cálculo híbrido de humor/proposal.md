@@ -9,7 +9,7 @@ Las noticias capturadas necesitan un valor de humor para quedar utilizables por 
 - Añadir un barrido de respaldo con APScheduler para volver a procesar noticias con `valor_humor IS NULL`; la periodicidad propuesta de 30 minutos queda configurable y pendiente de validación del equipo.
 - Persistir únicamente los campos de `Noticia` imprescindibles para HU-SENT-002-v2: idioma detectado cuando esté disponible, método de cálculo y versión del modelo cuando se use ML. No incluir la polarización de HU-SENT-003 ni implementar el catálogo/entrenamiento de HU-SENT-006.
 - Mantener el alcance del incremento en HU-SENT-001 y HU-SENT-002-v2 junto con las HU-RSS ya aprobadas; las demás HU-SENT quedan fuera.
-- No exponer endpoints nuevos ni introducir colas, proveedores o dependencias adicionales a las ya aprobadas en ADR-04. No se requieren cambios arquitectónicos ni de ADR.
+- No exponer endpoints nuevos ni introducir colas, proveedores o dependencias adicionales a las ya aprobadas en ADR-004. No se requieren cambios arquitectónicos ni de ADR.
 
 ## Capabilities
 

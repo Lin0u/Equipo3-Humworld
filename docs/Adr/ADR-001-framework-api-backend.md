@@ -1,4 +1,4 @@
-# ADR-01: Framework de la API backend
+# ADR-001: Framework de la API backend
 
 - Estado: Aceptado
 - Fecha: 2026-08-19

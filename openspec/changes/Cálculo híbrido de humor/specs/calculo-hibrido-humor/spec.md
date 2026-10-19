@@ -23,7 +23,7 @@ Tras persistir una `Noticia` capturada, el sistema SHALL calcular su humor sincr
 
 ### Requirement: Fallback determinista por fallo o timeout
 
-Cuando la integración ML de HU-SENT-006 esté disponible, un error de inferencia, indisponibilidad del servicio de embeddings o expiración del timeout SHALL activar el cálculo determinista por diccionario para esa `Noticia`. La llamada externa de embeddings SHALL aplicar timeout explícito y reintentos acotados con backoff conforme a ADR-04; nunca SHALL reintentar indefinidamente. El sistema SHALL registrar el incidente y SHALL persistir el resultado del fallback con `metodo_calculo=diccionario`, sin versión ML.
+Cuando la integración ML de HU-SENT-006 esté disponible, un error de inferencia, indisponibilidad del servicio de embeddings o expiración del timeout SHALL activar el cálculo determinista por diccionario para esa `Noticia`. La llamada externa de embeddings SHALL aplicar timeout explícito y reintentos acotados con backoff conforme a ADR-004; nunca SHALL reintentar indefinidamente. El sistema SHALL registrar el incidente y SHALL persistir el resultado del fallback con `metodo_calculo=diccionario`, sin versión ML.
 
 #### Scenario: Fallo explícito del modelo tras integración de HU-SENT-006
 - **Dado** que la integración de HU-SENT-006 provee un modelo ML activo cuya inferencia falla
@@ -41,7 +41,7 @@ Cuando la integración ML de HU-SENT-006 esté disponible, un error de inferenci
 
 ### Requirement: Semántica y persistencia del fallback de diccionario
 
-El cálculo por diccionario SHALL usar el promedio simple de los valores de términos únicos distintos que coincidan con el texto, según ADR-03/HU-SENT-007. Si no hay coincidencias, SHALL persistir `valor_humor=NULL`, `cantidad_terminos_evaluados=0` y `metodo_calculo=diccionario`. Cuando la noticia tenga `idioma_detectado=es` o `en`, SHALL limitar coincidencias a ese idioma. Si el idioma es nulo o no soportado, SHALL buscar coincidencias en ambos idiomas soportados. Esta HU solo requiere persistir humor, método de cálculo y, cuando HU-SENT-006 provea la integración, versión ML utilizada; no incluye polarización.
+El cálculo por diccionario SHALL usar el promedio simple de los valores de términos únicos distintos que coincidan con el texto, según ADR-003/HU-SENT-007. Si no hay coincidencias, SHALL persistir `valor_humor=NULL`, `cantidad_terminos_evaluados=0` y `metodo_calculo=diccionario`. Cuando la noticia tenga `idioma_detectado=es` o `en`, SHALL limitar coincidencias a ese idioma. Si el idioma es nulo o no soportado, SHALL buscar coincidencias en ambos idiomas soportados. Esta HU solo requiere persistir humor, método de cálculo y, cuando HU-SENT-006 provea la integración, versión ML utilizada; no incluye polarización.
 
 #### Scenario: Fallback con términos coincidentes
 - **Dado** que el diccionario contiene `guerra=-8` y `victoria=6`, y el idioma de la noticia es `es`

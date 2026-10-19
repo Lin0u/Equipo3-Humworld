@@ -30,7 +30,7 @@ class TerminoDiccionarioRepository:
     def listar_por_idiomas(
         self, db: Session, idiomas: tuple[str, ...]
     ) -> list[TerminoDiccionario]:
-        """Términos de los idiomas indicados (HU-SENT-007, ADR-03 punto 1)."""
+        """Términos de los idiomas indicados (HU-SENT-007, ADR-003 punto 1)."""
         return list(
             db.execute(
                 select(TerminoDiccionario)
@@ -97,4 +97,4 @@ class TerminoDiccionarioRepository:
 
     def eliminar(self, db: Session, termino: TerminoDiccionario) -> None:
         db.delete(termino)
-        db.commit()
+        db.commit()

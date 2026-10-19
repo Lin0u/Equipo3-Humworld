@@ -1,4 +1,4 @@
-# ADR-04: Arquitectura del modelo de Machine Learning para el cálculo de humor
+# ADR-004: Arquitectura del modelo de Machine Learning para el cálculo de humor
  
 **Proyecto:** HumWorld — Equipo 3
 **Fecha de creación:** 2026-09-28
@@ -16,7 +16,7 @@
  
 ### 1. Origen y por qué este ADR existe
  
-El PDF de especificaciones (`0 PROYECTO_FINAL_HUMWORLD 260714.pdf`) exige, en sus Objetivos específicos, un algoritmo de análisis de sentimiento "basado en diccionario, LLM u otro método justificado", dejando expresamente abierta la puerta a un enfoque de Machine Learning como alternativa o complemento al método de diccionario. El backlog ya oficializado por el equipo (hoja "Backlog" del Excel de planificación, entregable P3) incorporó esta posibilidad formalizando dos historias distintas: `HU-SENT-007` (método determinista de diccionario, ya resuelto y documentado en `ADR-03-eleccion-algoritmo-agregacion-sentimiento.md`) y `HU-SENT-006` ("Entrenamiento y versionado del modelo de ML"), cuyo título fue estimado en Planning Poker de P3 (5 puntos) pero **sin que ningún documento fuente especificara la arquitectura concreta del modelo**.
+El PDF de especificaciones (`0 PROYECTO_FINAL_HUMWORLD 260714.pdf`) exige, en sus Objetivos específicos, un algoritmo de análisis de sentimiento "basado en diccionario, LLM u otro método justificado", dejando expresamente abierta la puerta a un enfoque de Machine Learning como alternativa o complemento al método de diccionario. El backlog ya oficializado por el equipo (hoja "Backlog" del Excel de planificación, entregable P3) incorporó esta posibilidad formalizando dos historias distintas: `HU-SENT-007` (método determinista de diccionario, ya resuelto y documentado en `ADR-003-eleccion-algoritmo-agregacion-sentimiento.md`) y `HU-SENT-006` ("Entrenamiento y versionado del modelo de ML"), cuyo título fue estimado en Planning Poker de P3 (5 puntos) pero **sin que ningún documento fuente especificara la arquitectura concreta del modelo**.
  
 Al momento de la sesión de cierre del backlog RSS/SENT del 2026-09-28 (documento de reconciliación de backlog — **referencia pendiente de confirmar por el equipo:** el archivo citado no se encuentra en el repositorio), se identificaron 7 puntos de arquitectura completamente abiertos en `HU-SENT-006`:
  
@@ -45,7 +45,7 @@ Se decide una arquitectura de **embeddings externos + regresor local entrenado p
  
 ### 1. Tipo de modelo y features
  
-El texto de cada noticia (título + contenido) se convierte en un **vector de embeddings** (representación numérica densa del significado semántico del texto) mediante una llamada a un servicio externo de embeddings. Ese vector se usa como conjunto de features de entrada para entrenar, **localmente y con librerías del propio proyecto**, un modelo de regresión de `scikit-learn` (candidato inicial: `Ridge`, por ser una regresión lineal regularizada, rápida de entrenar y sin dependencias adicionales de infraestructura) que predice `valor_humor` en la escala -10 a +10 ya definida en `ADR-03`.
+El texto de cada noticia (título + contenido) se convierte en un **vector de embeddings** (representación numérica densa del significado semántico del texto) mediante una llamada a un servicio externo de embeddings. Ese vector se usa como conjunto de features de entrada para entrenar, **localmente y con librerías del propio proyecto**, un modelo de regresión de `scikit-learn` (candidato inicial: `Ridge`, por ser una regresión lineal regularizada, rápida de entrenar y sin dependencias adicionales de infraestructura) que predice `valor_humor` en la escala -10 a +10 ya definida en `ADR-003`.
  
 Esta decisión es deliberada frente a la alternativa de usar un LLM como "juez" directo en cada noticia (ver Alternativa B más abajo): aquí el artefacto que se entrena y versiona es un modelo propio del equipo (el regresor), coherente con el título literal de la historia — "Entrenamiento **y versionado** del modelo de ML" — mientras que un LLM-como-juez no involucra ningún entrenamiento ni versionado real por parte del equipo, solo llamadas a un modelo ya entrenado por un tercero.
  

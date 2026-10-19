@@ -4,7 +4,7 @@ Caso de uso: carga inicial de canales y fuentes RSS por continente.
 Origina en: HU-RSS-009-v2 (Historia Técnica/Enabler Story), que reemplaza a
 HU-RSS-009 (Deprecada). PDF de especificaciones, sección 4.2.1 ("carga
 inicial de fuentes RSS por continente").
-ADR relacionado: ADR-02 (arquitectura de captura RSS, modelo de datos).
+ADR relacionado: ADR-002 (arquitectura de captura RSS, modelo de datos).
 Diseño: openspec/changes/Carga-inicial-de-fuentes-RSS-por-continente/design.md.
 
 La lógica vive en la capa de Servicios para que un endpoint pueda invocarla

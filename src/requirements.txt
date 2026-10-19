@@ -17,6 +17,6 @@ pytest-asyncio==0.24.0
 pytest-cov==5.0.0
 respx==0.21.1
 
-# Modelo de ML (HU-SENT-006, ADR-04): regresor Ridge y serialización .joblib.
+# Modelo de ML (HU-SENT-006, ADR-004): regresor Ridge y serialización .joblib.
 scikit-learn==1.5.2
 numpy==2.1.3

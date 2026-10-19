@@ -30,7 +30,7 @@ tags:
   - name: dashboards
     description: >
       Recursos de solo lectura con datos ya agregados por el backend. El
-      frontend no calcula humor ni influencia (ADR-05, Decisión, punto 9).
+      frontend no calcula humor ni influencia (ADR-005, Decisión, punto 9).
       "map" y "word-cloud" se modelan como recursos únicos (singleton) dentro
       de la colección "dashboards": no existe más de un mapa ni más de una
       nube, por lo que no se pluralizan. Nombres en inglés por consistencia
@@ -90,7 +90,7 @@ paths:
         cumplen el filtro, ordenados por peso descendente. El peso es la
         cantidad de noticias del filtro que contienen el término; cada
         término cuenta una sola vez por noticia, en coherencia con HU-SENT-007
-        y ADR-03. Sin filtros, considera las noticias de todo el mundo.
+        y ADR-003. Sin filtros, considera las noticias de todo el mundo.
         Mezcla ambos idiomas: cada término (palabra + idioma) es una entrada
         distinta. Empates de peso: orden alfabético por palabra.
       parameters:

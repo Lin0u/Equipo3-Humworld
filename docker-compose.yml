@@ -31,7 +31,7 @@ services:
       dockerfile: Dockerfile
     environment:
       DATABASE_URL: mysql+pymysql://humworld:changeme@db:3306/humworld  # TODO(equipo)
-      # HU-SENT-006 / ADR-04: clave de Google Gemini Embedding. Se toma del
+      # HU-SENT-006 / ADR-004: clave de Google Gemini Embedding. Se toma del
       # entorno o de un archivo .env local (nunca se versiona). Vacía = ML
       # desactivado y humor 100% por diccionario.
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}

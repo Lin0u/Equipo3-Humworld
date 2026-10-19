@@ -52,7 +52,7 @@ El PATCH vacío queda rechazado como solicitud inválida (HTTP 400), ya que no r
 - Crear migración Alembic para tabla y unicidad compuesta.
 - Completar/verificar `docs/Contratos/contrato-sentimiento-diccionario.openapi.yaml` sin añadir endpoints de otras HU-SENT.
 - Añadir pruebas focalizadas en `src/tests/test_dictionary.py`.
-- Sin cambios previstos en `docs/architecture.md`, ADR-03 o ADR-04.
+- Sin cambios previstos en `docs/architecture.md`, ADR-003 o ADR-004.
 
 ## Risks / Trade-offs
 

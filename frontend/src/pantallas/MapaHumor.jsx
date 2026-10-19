@@ -1,5 +1,5 @@
 // HumWorld - pantalla "Mapa de humor".
-// Origen: HU-DASH-001-v3 (PDF, sección 4.3.2) y ADR-05. Muestra los datos de
+// Origen: HU-DASH-001-v3 (PDF, sección 4.3.2) y ADR-005. Muestra los datos de
 // GET /api/v1/dashboards/map, que App.jsx pide al backend, y el gráfico de
 // evolución de GET /api/v1/sentiment (HU-SENT-004). Esta pantalla no calcula humor.
 import L from 'leaflet'

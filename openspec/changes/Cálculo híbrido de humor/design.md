@@ -1,6 +1,6 @@
 ## Context
 
-Ver [proposal.md](proposal.md) para motivación y alcance, y [spec.md](specs/calculo-hibrido-humor/spec.md) para los requisitos observables. `captura_service.py` ya descarga, parsea, deduplica y persiste `Noticia`; `Noticia` solo posee `valor_humor`, y `scheduler.py` ya administra el cron APScheduler. HU-SENT-001 aporta el diccionario. ADR-03 fija promedio de términos únicos y ADR-04 fija embeddings Gemini + regresor local cuando exista una versión activa.
+Ver [proposal.md](proposal.md) para motivación y alcance, y [spec.md](specs/calculo-hibrido-humor/spec.md) para los requisitos observables. `captura_service.py` ya descarga, parsea, deduplica y persiste `Noticia`; `Noticia` solo posee `valor_humor`, y `scheduler.py` ya administra el cron APScheduler. HU-SENT-001 aporta el diccionario. ADR-003 fija promedio de términos únicos y ADR-004 fija embeddings Gemini + regresor local cuando exista una versión activa.
 
 ## Goals / Non-Goals
 
@@ -30,9 +30,9 @@ Ver [proposal.md](proposal.md) para motivación y alcance, y [spec.md](specs/cal
 
 ### Ejecución, timeout y aislamiento
 
-Se conserva el modo síncrono confirmado por HU-SENT-002-v2: calcular después de persistir la noticia en el mismo flujo. El camino ejecutable en este incremento usa diccionario; el uso de ML se habilitará solo cuando HU-SENT-006 provea la interfaz de versión activa. Se descarta un worker/cola independiente porque no está aprobado y cambiaría la infraestructura. El timeout de 3 segundos es una propuesta configurable (ADR-04), no un valor definitivo; no se fija por código ni se interpreta como ratificado.
+Se conserva el modo síncrono confirmado por HU-SENT-002-v2: calcular después de persistir la noticia en el mismo flujo. El camino ejecutable en este incremento usa diccionario; el uso de ML se habilitará solo cuando HU-SENT-006 provea la interfaz de versión activa. Se descarta un worker/cola independiente porque no está aprobado y cambiaría la infraestructura. El timeout de 3 segundos es una propuesta configurable (ADR-004), no un valor definitivo; no se fija por código ni se interpreta como ratificado.
 
-El valor de humor debe persistirse en una transacción posterior o separada de la inserción RSS, de modo que un fallo del análisis nunca haga rollback de la noticia ni interrumpa otras capturas. Cuando se conecte ML vía HU-SENT-006, timeout, error de modelo o indisponibilidad de embeddings activan diccionario; el adaptador externo respetará la resiliencia limitada de ADR-04. Esta HU prueba el punto de extensión con mocks, sin integrar ni llamar el proveedor.
+El valor de humor debe persistirse en una transacción posterior o separada de la inserción RSS, de modo que un fallo del análisis nunca haga rollback de la noticia ni interrumpa otras capturas. Cuando se conecte ML vía HU-SENT-006, timeout, error de modelo o indisponibilidad de embeddings activan diccionario; el adaptador externo respetará la resiliencia limitada de ADR-004. Esta HU prueba el punto de extensión con mocks, sin integrar ni llamar el proveedor.
 
 ### Resultado y persistencia mínima
 

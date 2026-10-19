@@ -2,21 +2,21 @@
 Entrenamiento, versionado y uso del modelo de ML de humor.
 
 Origina en: HU-SENT-006 (entrenamiento y versionado, POST /api/v1/trainings) y
-HU-SENT-002-v3 (camino ML del cálculo híbrido). Arquitectura: ADR-04.
+HU-SENT-002-v3 (camino ML del cálculo híbrido). Arquitectura: ADR-004.
 
 AVISO (instrucciones del proyecto, sección 12): este módulo contiene lógica de
 negocio del modelo de sentimiento. Debe ser revisado por el equipo antes de
 fusionarse. Las cifras (umbral 1.000, validación 20 %, alpha de Ridge 1.0) son
 valores propuestos, no ratificados.
 
-Resumen del flujo de entrenamiento (ADR-04):
+Resumen del flujo de entrenamiento (ADR-004):
 1. Datos: noticias con metodo_calculo = "diccionario" y valor_humor no nulo.
    Si no alcanzan ml_umbral_entrenamiento → DatosInsuficientesError (409).
 2. Features: embeddings de "título + contenido" (Google Gemini Embedding).
 3. Regresor Ridge de scikit-learn, con partición fija entrenamiento/validación
    (semilla 42, reproducible).
 4. Evaluación: MAE contra el valor del diccionario en validación. Limitación
-   metodológica (ADR-04, punto 6): el diccionario es la única referencia de
+   metodológica (ADR-004, punto 6): el diccionario es la única referencia de
    verdad; el MAE mide cuánto se aproxima el modelo al diccionario, no si lo
    supera.
 5. Versionado: .joblib en ml_directorio_modelos + fila en modelos_sentimiento,
@@ -46,7 +46,7 @@ from app.services.embeddings_service import (
 
 logger = logging.getLogger(__name__)
 
-ESCALA_MIN, ESCALA_MAX = -10.0, 10.0  # escala del diccionario (ADR-03)
+ESCALA_MIN, ESCALA_MAX = -10.0, 10.0  # escala del diccionario (ADR-003)
 SEMILLA = 42
 ALPHA_RIDGE = 1.0
 
@@ -140,7 +140,7 @@ def entrenar_modelo(
 # --- HU-SENT-002-v3: proveedor del modelo activo ------------------------------
 
 # El Circuit Breaker vive a nivel de módulo: protege todas las predicciones
-# del proceso, que son las llamadas de alta frecuencia (ADR-04, punto 7).
+# del proceso, que son las llamadas de alta frecuencia (ADR-004, punto 7).
 _circuito = CircuitBreaker(settings.ml_circuit_umbral_fallos, settings.ml_circuit_espera_segundos)
 
 

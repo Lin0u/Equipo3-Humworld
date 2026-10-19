@@ -50,7 +50,7 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# CORS: el frontend (ADR-05, React + Vite) corre en otro origen y el navegador
+# CORS: el frontend (ADR-005, React + Vite) corre en otro origen y el navegador
 # bloquea sus llamadas a la API sin estas cabeceras. Solo orígenes listados en
 # CORS_ORIGENES; sin credenciales, porque la API no usa cookies.
 app.add_middleware(

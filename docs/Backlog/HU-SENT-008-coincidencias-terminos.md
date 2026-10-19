@@ -83,7 +83,7 @@ Escenario: Eliminación de una noticia
   Entonces no queda ninguna coincidencia asociada a esa noticia
 ```
 
-**Nota de grounding (idioma):** el criterio de comparar el idioma detectado de la noticia contra el idioma del término proviene de `ADR-003-algoritmo-sentimiento.md`, Decisión, punto 1.
+**Nota de grounding (idioma):** el criterio de comparar el idioma detectado de la noticia contra el idioma del término proviene de `ADR-003-eleccion-algoritmo-agregacion-sentimiento.md`, Decisión, punto 1.
 
 ### Puntos pendientes de decisión del equipo
 

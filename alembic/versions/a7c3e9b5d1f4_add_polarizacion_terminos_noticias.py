@@ -1,7 +1,7 @@
 """Agrega la polarización de los términos a noticias.
 
 Origina en: HU-SENT-003 (persistencia del resultado de humor y polarización),
-ADR-03 (desviación estándar poblacional de los términos coincidentes).
+ADR-003 (desviación estándar poblacional de los términos coincidentes).
 OpenSpec: "Persistencia-del-resultado-de-humor-y-polarización".
 
 Datos: marca como pendientes las noticias calculadas por diccionario para que
