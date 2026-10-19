@@ -6,7 +6,9 @@ info:
     Origina en HU-DASH-002-v2 (listado de noticias más influyentes, ver
     `HU-DASH-dashboards.md`). Fuente funcional: PDF de especificaciones,
     secciones 4.3.2 ("lista de las noticias que más han influido en el cálculo
-    del humor") y 10.2 ("/news: GET (lista, detalle, filtros, influyentes)").
+    del humor"), 4.2.5 (purgado de información antigua) y 10.2 ("/news: GET
+    (lista, detalle, filtros, influyentes), DELETE"). El DELETE origina en
+    HU-ADMIN-003 (`HU-ADMIN-administracion.md`).
 
     Definiciones (propuesta de Valentín García con los ajustes de la PO,
     2026-10-19):
@@ -19,7 +21,7 @@ info:
 
     Implementado en el backend (FastAPI) el 2026-10-19. Estado: Propuesto,
     pendiente de ratificación del equipo.
-  version: "1.0.0"
+  version: "1.1.0"
 servers:
   - url: /api/v1
     description: Base URL versionada (PDF, sección 10.3), misma convención que los demás contratos del proyecto.
@@ -105,6 +107,44 @@ paths:
                 $ref: "#/components/schemas/NoticiaListado"
         "400":
           description: Parámetro inválido (valor fuera del enum, fecha mal formada, página o tamaño fuera de rango).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          $ref: "#/components/responses/ErrorInterno"
+    delete:
+      tags: [news]
+      summary: Purgar noticias antiguas
+      description: >
+        Origina en HU-ADMIN-003 (PDF §4.2.5: "existirá una función de usuario
+        que permita borrar noticias antiguas"). Elimina las noticias cuya
+        fecha_registro (UTC) es anterior al límite, junto con sus
+        coincidencias término–noticia (HU-SENT-008). Sin fecha_anterior_a,
+        aplica la caducidad configurada en /config (caducidad_noticias_dias,
+        HU-ADMIN-001), es decir, el mismo purgado que ejecuta el proceso
+        automático (HU-ADMIN-002). Responde 200 con un resumen en vez de 204:
+        el 204 del PDF (§10.3) aplica a la eliminación de un recurso
+        individual, y en un borrado masivo el administrador necesita saber
+        cuántas noticias se eliminaron. Operación idempotente: repetirla con
+        el mismo límite elimina 0 noticias.
+      parameters:
+        - name: fecha_anterior_a
+          in: query
+          required: false
+          description: Día límite (YYYY-MM-DD, UTC). Se eliminan las noticias registradas antes de las 00:00 de ese día; ese día se conserva. No puede ser posterior a hoy.
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          description: Purgado ejecutado (incluye el caso de 0 noticias eliminadas).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResultadoPurgado"
+        "400":
+          description: Fecha mal formada (codigo DATOS_INVALIDOS) o posterior a hoy (codigo FECHA_INVALIDA). No se elimina ninguna noticia.
           content:
             application/json:
               schema:
@@ -214,6 +254,19 @@ components:
           type: integer
       required: [items, pagina, tamanio_pagina, total]
 
+    ResultadoPurgado:
+      type: object
+      description: Origina en HU-ADMIN-002 y HU-ADMIN-003.
+      properties:
+        noticias_eliminadas:
+          type: integer
+          minimum: 0
+        fecha_limite:
+          type: string
+          format: date-time
+          description: Se eliminaron las noticias con fecha_registro anterior a este instante (UTC).
+      required: [noticias_eliminadas, fecha_limite]
+
     Error:
       type: object
       properties:
@@ -241,3 +294,6 @@ components:
 #   (HU-DASH-002-v2). Influencia = |valor_humor|, paginación 10/50 (propuesta
 #   de Valentín García); día de referencia COALESCE(fecha_publicacion,
 #   fecha_registro), desempate por id y parámetro orden (ajustes de la PO).
+# v1.1.0 (2026-10-19): se agrega DELETE /news (HU-ADMIN-003, purgado manual)
+#   con el esquema ResultadoPurgado. Con fecha_anterior_a borra lo registrado
+#   antes de ese día; sin ella aplica la caducidad de /config (HU-ADMIN-001).

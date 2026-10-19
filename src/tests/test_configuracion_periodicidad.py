@@ -58,7 +58,7 @@ def test_get_config_devuelve_periodicidad_actual(client, database_session):
     response = client.get("/api/v1/config")
 
     assert response.status_code == 200
-    assert response.json() == {"periodicidad_cron_minutos": 45}
+    assert response.json() == {"periodicidad_cron_minutos": 45, "caducidad_noticias_dias": 90}
 
 
 def test_put_config_actualiza_periodicidad_y_reprograma_scheduler(client, database_session):
@@ -71,7 +71,7 @@ def test_put_config_actualiza_periodicidad_y_reprograma_scheduler(client, databa
         )
 
     assert response.status_code == 200
-    assert response.json() == {"periodicidad_cron_minutos": 60}
+    assert response.json() == {"periodicidad_cron_minutos": 60, "caducidad_noticias_dias": 90}
     persisted = database_session.execute(
         select(Configuracion).where(
             Configuracion.clave == "periodicidad_cron_minutos"
@@ -113,7 +113,7 @@ def test_servicio_actualiza_conRepositorio_real_y_no_modifica_en_error(database_
         reprogramar=lambda minutos: None,
     )
 
-    assert result == {"periodicidad_cron_minutos": 45}
+    assert result == {"periodicidad_cron_minutos": 45, "caducidad_noticias_dias": 90}
     assert consultar_configuracion(database_session, repository=repository) == 45
 
 

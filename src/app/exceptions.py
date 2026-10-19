@@ -31,3 +31,7 @@ class RangoFechasInvalidoError(Exception):
 
 class NoticiaNotFoundError(Exception):
     """La noticia solicitada no existe (HU-DASH-002-v2)."""
+
+
+class FechaPurgadoInvalidaError(Exception):
+    """La fecha límite de un purgado manual es posterior a hoy (HU-ADMIN-003)."""

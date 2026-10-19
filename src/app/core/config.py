@@ -31,6 +31,13 @@ class Settings(BaseSettings):
     sentimiento_barrido_minutos: int = 30  # TODO(equipo): ratificar
     sentimiento_barrido_lote: int = 500  # noticias por ejecución del barrido
 
+    # Purgado de noticias (HU-ADMIN-002, PDF §4.2.5). La caducidad vigente se
+    # lee de la tabla configuracion (GET/PUT /api/v1/config); este valor solo
+    # se usa si la fila no existe. 90 días y 24 horas son valores PROPUESTOS
+    # (sesión PO 2026-10-19), pendientes de ratificación del equipo.
+    purgado_caducidad_dias_defecto: int = 90
+    purgado_intervalo_horas: int = 24
+
     # CORS (ADR-05, stack de frontend): orígenes autorizados a llamar a la API
     # desde el navegador, separados por coma. Por defecto, el servidor de
     # desarrollo de Vite. TODO(equipo): agregar el origen del frontend desplegado.

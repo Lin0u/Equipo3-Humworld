@@ -46,3 +46,10 @@ class NoticiaListado(BaseModel):
     pagina: int
     tamanio_pagina: int
     total: int
+
+
+class ResultadoPurgado(BaseModel):
+    """Resumen de un purgado de noticias (HU-ADMIN-002 y HU-ADMIN-003)."""
+
+    noticias_eliminadas: int
+    fecha_limite: datetime
