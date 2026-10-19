@@ -18,7 +18,7 @@ VALOR_MINIMO = -10
 VALOR_MAXIMO = 10
 
 
-def _validar_campos(palabra: str, idioma: str, valor: int) -> None:
+def validar_campos_termino(palabra: str, idioma: str, valor: int) -> None:
     if not palabra or not palabra.strip():
         raise ValueError("La palabra es obligatoria.")
     if idioma not in IDIOMAS_SOPORTADOS:
@@ -67,7 +67,7 @@ def crear_termino(
     valor: int,
     repository: TerminoDiccionarioRepository | None = None,
 ) -> TerminoDiccionario:
-    _validar_campos(palabra, idioma, valor)
+    validar_campos_termino(palabra, idioma, valor)
     termino_repository = repository or TerminoDiccionarioRepository()
     if termino_repository.buscar_por_palabra_idioma(db, palabra, idioma):
         raise TerminoDiccionarioConflictError
@@ -93,7 +93,7 @@ def actualizar_termino(
         "idioma": cambios.get("idioma", termino.idioma),
         "valor": cambios.get("valor", termino.valor),
     }
-    _validar_campos(valores["palabra"], valores["idioma"], valores["valor"])
+    validar_campos_termino(valores["palabra"], valores["idioma"], valores["valor"])
 
     existente = termino_repository.buscar_por_palabra_idioma(
         db, valores["palabra"], valores["idioma"]

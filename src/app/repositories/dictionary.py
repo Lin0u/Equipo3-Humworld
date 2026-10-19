@@ -39,6 +39,24 @@ class TerminoDiccionarioRepository:
             ).scalars().all()
         )
 
+    def claves_existentes(self, db: Session) -> set[tuple[str, str]]:
+        """Pares (palabra, idioma) ya registrados, comparados de forma literal."""
+        return {
+            (palabra, idioma)
+            for palabra, idioma in db.execute(
+                select(TerminoDiccionario.palabra, TerminoDiccionario.idioma)
+            ).all()
+        }
+
+    def agregar_lote(self, db: Session, terminos: list[TerminoDiccionario]) -> None:
+        """Inserta varios términos en una sola transacción (carga inicial)."""
+        db.add_all(terminos)
+        try:
+            db.commit()
+        except IntegrityError as error:
+            db.rollback()
+            raise TerminoDiccionarioConflictError from error
+
     def listar(self, db: Session, busqueda: str | None = None) -> list[TerminoDiccionario]:
         consulta = select(TerminoDiccionario)
         if busqueda:
