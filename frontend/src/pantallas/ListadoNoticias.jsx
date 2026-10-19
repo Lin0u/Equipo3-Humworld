@@ -5,6 +5,7 @@
 import { useEffect, useState } from 'react'
 import { obtenerNoticias } from '../api/cliente.js'
 import Carita from '../componentes/Carita.jsx'
+import SelectorPais from '../componentes/SelectorPais.jsx'
 import { formatoHumor, tipoHumor } from '../utilidades/humor.js'
 import { nombreCategoria } from '../utilidades/iptc.js'
 import './ListadoNoticias.css'
@@ -31,13 +32,14 @@ function formatoFecha(fechaIso) {
 export default function ListadoNoticias() {
   const [filtro, setFiltro] = useState('todas')
   const [continente, setContinente] = useState('')
+  const [pais, setPais] = useState('')
   const [pagina, setPagina] = useState(1)
   const [resultado, setResultado] = useState(null)
   const [error, setError] = useState(null)
 
   useEffect(() => {
     let vigente = true
-    obtenerNoticias({ signo: filtro, continente, pagina, tamanioPagina: TAMANIO_PAGINA })
+    obtenerNoticias({ signo: filtro, continente, pais, pagina, tamanioPagina: TAMANIO_PAGINA })
       .then((datos) => {
         if (vigente) {
           setResultado(datos)
@@ -48,7 +50,7 @@ export default function ListadoNoticias() {
     return () => {
       vigente = false
     }
-  }, [filtro, continente, pagina])
+  }, [filtro, continente, pais, pagina])
 
   // Cambiar un filtro vuelve a la primera página.
   function cambiarFiltro(nuevo) {
@@ -57,10 +59,18 @@ export default function ListadoNoticias() {
     setFiltro(nuevo)
   }
 
+  // Cambiar de continente borra el país: podría no pertenecer al nuevo continente.
   function cambiarContinente(nuevo) {
     setResultado(null)
     setPagina(1)
+    setPais('')
     setContinente(nuevo)
+  }
+
+  function cambiarPais(nuevo) {
+    setResultado(null)
+    setPagina(1)
+    setPais(nuevo)
   }
 
   function irAPagina(nueva) {
@@ -85,7 +95,7 @@ export default function ListadoNoticias() {
   } else {
     contenido = (
       // La "key" cambia con los filtros para que la animación se repita.
-      <ul className="noticias-lista" key={`${filtro}-${continente}-${pagina}`}>
+      <ul className="noticias-lista" key={`${filtro}-${continente}-${pais}-${pagina}`}>
         {noticias.map((noticia, posicion) => (
           <li key={noticia.id} className="noticia" style={{ animationDelay: `${posicion * 50}ms` }}>
             <div className="noticia-humor">
@@ -105,7 +115,7 @@ export default function ListadoNoticias() {
               </a>
               <div className="noticia-datos">
                 <span>{noticia.canal}</span>
-                <span>{noticia.continente}</span>
+                <span>{noticia.pais ? `${noticia.pais}, ${noticia.continente}` : noticia.continente}</span>
                 {noticia.categoria_iptc && <span>{nombreCategoria(noticia.categoria_iptc)}</span>}
                 <span>{formatoFecha(noticia.fecha_publicacion ?? noticia.fecha_registro)}</span>
               </div>
@@ -135,6 +145,7 @@ export default function ListadoNoticias() {
               ))}
             </select>
           </label>
+          <SelectorPais continente={continente} valor={pais} onCambio={cambiarPais} />
           <div className="filtros" role="group" aria-label="Filtrar noticias">
             {FILTROS.map((opcion) => (
               <button

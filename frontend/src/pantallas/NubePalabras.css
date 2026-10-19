@@ -51,3 +51,9 @@
 .nube-vacia {
   padding: 24px 0;
 }
+
+.filtros-lugar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
