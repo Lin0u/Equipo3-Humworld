@@ -10,6 +10,9 @@ info:
     funcional: PDF de especificaciones, secciones 4.3.1, 4.3.2 y 10.2
     ("/dashboards: GET (nube-palabras, mapa)").
 
+    Implementado en el backend (FastAPI): GET /dashboards/map y
+    GET /dashboards/word-cloud (2026-10-19).
+
     El gráfico de evolución temporal de HU-DASH-001-v3 no usa este contrato:
     consume `serie_temporal` de `GET /sentiment`
     (`contrato-sentimiento-diccionario.openapi.yaml`, HU-SENT-004).
@@ -18,7 +21,7 @@ info:
     incluido: sus puntos de decisión siguen abiertos.
 
     Estado: Propuesto, pendiente de ratificación del equipo.
-  version: "1.0.1"
+  version: "1.1.0"
 servers:
   - url: /api/v1
     description: Base URL versionada (PDF, sección 10.3), misma convención que los demás contratos del proyecto.
@@ -54,8 +57,9 @@ paths:
             type: string
             format: date
           description: >
-            Fecha consultada. Si se omite, se usa fecha_maxima_con_datos
-            (propuesta de este contrato, a confirmar por el equipo).
+            Fecha consultada. Si se omite, se usa fecha_maxima_con_datos.
+            El día de una noticia es COALESCE(fecha_publicacion,
+            fecha_registro), en UTC (misma regla propuesta para HU-DASH-002).
       responses:
         "200":
           description: >
@@ -87,6 +91,8 @@ paths:
         cantidad de noticias del filtro que contienen el término; cada
         término cuenta una sola vez por noticia, en coherencia con HU-SENT-007
         y ADR-03. Sin filtros, considera las noticias de todo el mundo.
+        Mezcla ambos idiomas: cada término (palabra + idioma) es una entrada
+        distinta. Empates de peso: orden alfabético por palabra.
       parameters:
         - name: continente
           in: query
@@ -110,10 +116,12 @@ paths:
           schema:
             type: integer
             minimum: 1
+            maximum: 100
+            default: 50
           description: >
-            Cantidad máxima de palabras a devolver. El valor por defecto y el
-            máximo permitido no están fijados: dependen del punto pendiente 4
-            de HU-DASH-003-v2.
+            Cantidad máxima de palabras a devolver. Por defecto 50, máximo 100
+            (decisión de equipo del 2026-10-19; cierra el punto pendiente 4 de
+            HU-DASH-003-v2).
       responses:
         "200":
           description: >
@@ -124,7 +132,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/NubePalabras"
         "400":
-          description: Valor de continente fuera del enum, o límite menor que 1.
+          description: Valor de continente fuera del enum, o límite fuera de 1..100.
           content:
             application/json:
               schema:
@@ -223,7 +231,8 @@ components:
       type: object
       properties:
         continente:
-          type: string
+          allOf:
+            - $ref: "#/components/schemas/Continente"
           nullable: true
           description: Eco del filtro aplicado, o null.
         pais:
@@ -269,3 +278,8 @@ components:
 #   en la nube y literales exactos del enum Continente.
 # v1.0.1 (2026-10-18): se confirman los literales del enum Continente, con
 #   tilde. Sin cambios de rutas ni de esquemas.
+# v1.1.0 (2026-10-19): implementación de ambos endpoints. Se fijan "limite"
+#   (por defecto 50, máximo 100), el tratamiento del idioma en la nube (ambos
+#   idiomas, un término por palabra + idioma), el orden de desempate y la
+#   regla del día de una noticia en el mapa. "continente" de NubePalabras
+#   pasa a usar el enum. Sigue pendiente el origen de la lista de países.

@@ -15,7 +15,7 @@ info:
     servicios internos invocados tras la captura de cada noticia o desde los
     endpoints de este contrato) y por lo tanto no aparecen aquí — ver
     `HU-SENT-motor-sentimiento.md` para su detalle.
-  version: "1.0.0"
+  version: "1.0.1"
 servers:
   - url: /api/v1
     description: Base URL versionada (PDF, sección 10.3), misma convención que contrato-canales-fuentes-rss.openapi.yaml.
@@ -469,10 +469,11 @@ components:
           nullable: true
           description: >
             Indicador complementario de polarización (desviación estándar,
-            ver ADR-03), calculado por el mismo método de HU-SENT-007. No
-            exigido explícitamente por el Gherkin de HU-SENT-005 — se agrega
-            por consistencia con HU-SENT-003, a confirmar con el equipo si
-            se expone en este endpoint.
+            ver ADR-03), calculado por el mismo método de HU-SENT-007. NULL
+            si no hay términos coincidentes. No exigido explícitamente por el
+            Gherkin de HU-SENT-005; se expone por consistencia con HU-SENT-003
+            (implementado el 2026-10-19, v1.0.1, pendiente de ratificación
+            del equipo en el PR).
       required: [valor_humor, cantidad_terminos_evaluados]
 
     ModeloSentimiento:
