@@ -3,6 +3,8 @@ uvicorn[standard]==0.30.6
 sqlalchemy==2.0.35
 alembic==1.13.2
 pymysql==1.1.1
+# Requerido por PyMySQL para autenticarse con MySQL 8 (caching_sha2_password).
+cryptography==43.0.1
 pydantic==2.9.2
 pydantic-settings==2.5.2
 httpx==0.27.2

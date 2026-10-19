@@ -16,7 +16,11 @@ services:
     volumes:
       - db_data:/var/lib/mysql
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      # -h 127.0.0.1 fuerza una conexión TCP. Con "localhost" el ping usa el
+      # socket y responde también durante la inicialización temporal de MySQL
+      # (que no escucha en el puerto 3306), por lo que la API arrancaba antes
+      # de tiempo y fallaba con "Connection refused" en la primera ejecución.
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-u", "root", "-pchangeme"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -32,6 +36,9 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    # Si las migraciones fallan por un corte transitorio de la base, el
+    # contenedor se reintenta en vez de quedar detenido.
+    restart: on-failure
 
 volumes:
   db_data:
