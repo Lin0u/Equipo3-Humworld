@@ -2,6 +2,7 @@
 
 from sqlalchemy import Column, Integer, String, UniqueConstraint
 from sqlalchemy.dialects.mysql import VARCHAR
+from sqlalchemy.orm import relationship
 
 from app.database import Base
 
@@ -23,3 +24,6 @@ class TerminoDiccionario(Base):
     )
     idioma = Column(String(2), nullable=False)
     valor = Column(Integer, nullable=False)
+
+    # HU-SENT-008: al borrar el término se borran sus coincidencias (cascada).
+    coincidencias = relationship("CoincidenciaTermino", cascade="all, delete-orphan")

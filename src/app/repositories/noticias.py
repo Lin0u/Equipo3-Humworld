@@ -2,6 +2,7 @@ from sqlalchemy import select, update
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
+from app.models.coincidencia_termino import CoincidenciaTermino
 from app.models.noticia import Noticia
 
 
@@ -62,11 +63,20 @@ class NoticiaRepository:
         valor_humor: float | None,
         metodo_calculo: str,
         cantidad_terminos_evaluados: int,
+        terminos_ids: tuple[int, ...] = (),
     ) -> None:
-        """Persiste el resultado en una transacción propia (HU-SENT-002-v2)."""
+        """Persiste el resultado y sus coincidencias en una transacción propia.
+
+        HU-SENT-002-v3 (resultado) y HU-SENT-008 (coincidencias): las
+        coincidencias anteriores de la noticia se reemplazan, de modo que un
+        reproceso nunca las duplica.
+        """
         noticia.valor_humor = valor_humor
         noticia.metodo_calculo = metodo_calculo
         noticia.cantidad_terminos_evaluados = cantidad_terminos_evaluados
+        noticia.coincidencias = [
+            CoincidenciaTermino(termino_id=termino_id) for termino_id in sorted(set(terminos_ids))
+        ]
         try:
             db.commit()
         except SQLAlchemyError:

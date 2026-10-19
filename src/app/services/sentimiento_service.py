@@ -15,7 +15,8 @@ antes de fusionarse.
 Alcance de este incremento: el camino efectivo es el diccionario. El camino
 ML queda definido como interfaz (ProveedorModeloML) pero no hay proveedor
 real hasta que HU-SENT-006 entregue el modelo activo y su versionado.
-No calcula polarización (HU-SENT-003) ni persiste coincidencias (HU-SENT-008).
+No calcula polarización (HU-SENT-003). Persiste las coincidencias de HU-SENT-008
+junto con el resultado.
 
 Comparación de términos (decisión de equipo del 2026-10-18; HU-SENT-007 no
 la fijaba):
@@ -60,6 +61,9 @@ class ResultadoHumor:
     valor_humor: float | None
     metodo_calculo: str
     cantidad_terminos_evaluados: int
+    # Ids de los términos coincidentes (HU-SENT-008). Se registran siempre,
+    # también cuando el humor lo calcula el modelo de ML.
+    terminos_ids: tuple[int, ...] = ()
 
 
 class ProveedorModeloML(Protocol):
@@ -102,16 +106,16 @@ def texto_de_noticia(noticia: Noticia) -> str:
     return f"{noticia.titulo or ''} {noticia.contenido or ''}"
 
 
-def calcular_humor_diccionario(
+def terminos_coincidentes(
     texto: str, terminos: list[TerminoDiccionario]
-) -> tuple[float | None, int]:
-    """Promedio simple de los términos únicos que aparecen en el texto.
+) -> list[TerminoDiccionario]:
+    """Términos únicos del diccionario que aparecen en el texto (HU-SENT-007-v2).
 
-    Devuelve (valor_humor, n). Si n = 0, valor_humor es None.
     Cada término (palabra + idioma) cuenta una sola vez aunque se repita.
+    También es la base de las coincidencias que persiste HU-SENT-008.
     """
     texto_normalizado = f" {_normalizar(texto)} "
-    valores: list[int] = []
+    encontrados: list[TerminoDiccionario] = []
     vistos: set[tuple[str, str]] = set()
     for termino in terminos:
         clave = (_normalizar(termino.palabra), termino.idioma)
@@ -119,7 +123,18 @@ def calcular_humor_diccionario(
             continue
         if f" {clave[0]} " in texto_normalizado:
             vistos.add(clave)
-            valores.append(termino.valor)
+            encontrados.append(termino)
+    return encontrados
+
+
+def calcular_humor_diccionario(
+    texto: str, terminos: list[TerminoDiccionario]
+) -> tuple[float | None, int]:
+    """Promedio simple de los términos únicos que aparecen en el texto.
+
+    Devuelve (valor_humor, n). Si n = 0, valor_humor es None.
+    """
+    valores = [termino.valor for termino in terminos_coincidentes(texto, terminos)]
     if not valores:
         return None, 0
     return sum(valores) / len(valores), len(valores)
@@ -151,11 +166,18 @@ def calcular_humor(
 ) -> ResultadoHumor:
     """ML si hay modelo activo; diccionario si no lo hay, falla o excede el timeout."""
     texto = texto_de_noticia(noticia)
+    terminos = [
+        termino
+        for idioma in idiomas_a_evaluar(noticia.idioma_detectado)
+        for termino in terminos_por_idioma.get(idioma, [])
+    ]
+    coincidentes = terminos_coincidentes(texto, terminos)
+    ids = tuple(t.id for t in coincidentes if t.id is not None)
 
     if proveedor_ml is not None:
         try:
             valor = _predecir_con_timeout(proveedor_ml, texto)
-            return ResultadoHumor(valor, METODO_ML, 0)
+            return ResultadoHumor(valor, METODO_ML, 0, ids)
         except FuturesTimeoutError:
             logger.warning("Timeout del modelo ML noticia_id=%s; se usa diccionario", noticia.id)
         except Exception as exc:  # noqa: BLE001 - cualquier fallo activa el fallback
@@ -165,13 +187,9 @@ def calcular_humor(
                 type(exc).__name__,
             )
 
-    terminos = [
-        termino
-        for idioma in idiomas_a_evaluar(noticia.idioma_detectado)
-        for termino in terminos_por_idioma.get(idioma, [])
-    ]
-    valor, cantidad = calcular_humor_diccionario(texto, terminos)
-    return ResultadoHumor(valor, METODO_DICCIONARIO, cantidad)
+    valores = [t.valor for t in coincidentes]
+    valor = sum(valores) / len(valores) if valores else None
+    return ResultadoHumor(valor, METODO_DICCIONARIO, len(valores), ids)
 
 
 def _cargar_terminos(db: Session) -> dict[str, list[TerminoDiccionario]]:
@@ -208,6 +226,7 @@ def procesar_noticias(
                 resultado.valor_humor,
                 resultado.metodo_calculo,
                 resultado.cantidad_terminos_evaluados,
+                resultado.terminos_ids,
             )
             procesadas += 1
         except Exception:  # noqa: BLE001 - el barrido la reintentará

@@ -41,3 +41,9 @@ export function obtenerSerieGlobal(desde, hasta) {
   const consulta = new URLSearchParams({ desde, hasta })
   return obtenerJson(`/sentiment?${consulta}`)
 }
+
+// GET /dashboards/word-cloud (HU-DASH-003-v2). Sin continente: todo el mundo.
+export function obtenerNubePalabras(continente) {
+  const consulta = continente ? `?continente=${encodeURIComponent(continente)}` : ''
+  return obtenerJson(`/dashboards/word-cloud${consulta}`)
+}

@@ -1,7 +1,7 @@
 """
 Caso de uso: datos del mapa mundial de humor.
 
-Origina en: HU-DASH-001-v3. Contrato: contrato-dashboards.openapi.yaml,
+Origina en: HU-DASH-001-v3 (mapa) y HU-DASH-003-v2 (nube de palabras). Contrato: contrato-dashboards.openapi.yaml,
 GET /dashboards/map. Los agregados siguen la definición de HU-SENT-004:
 promedio de valor_humor de las noticias con valor_humor no nulo.
 El frontend no calcula humor (ADR-05, Decisión, punto 9).
@@ -10,8 +10,15 @@ from datetime import date
 
 from sqlalchemy.orm import Session
 
-from app.repositories.dashboards import DashboardRepository
-from app.schemas.dashboard import Continente, HumorAgregado, HumorContinente, MapaHumor
+from app.repositories.dashboards import DashboardRepository, NubePalabrasRepository
+from app.schemas.dashboard import (
+    Continente,
+    HumorAgregado,
+    HumorContinente,
+    MapaHumor,
+    NubePalabras,
+    PalabraInfluyente,
+)
 from app.services.agregados_comun import DECIMALES, a_fecha, clave_continente
 
 # "America", "AMÉRICA" o "américa" cuentan como América (mismo criterio que el
@@ -53,5 +60,45 @@ def obtener_mapa(
         continentes=[
             HumorContinente(continente=c, **_agregado(sumas[c], cantidades[c]).model_dump())
             for c in Continente
+        ],
+    )
+
+
+# Cantidad de palabras de la nube: decisión de equipo del 2026-10-19.
+LIMITE_NUBE_POR_DEFECTO = 50
+LIMITE_NUBE_MAXIMO = 100
+
+
+def obtener_nube(
+    db: Session,
+    continente: Continente | None = None,
+    pais: str | None = None,
+    limite: int = LIMITE_NUBE_POR_DEFECTO,
+    repository: NubePalabrasRepository | None = None,
+) -> NubePalabras:
+    """HU-DASH-003-v2: palabras del diccionario con más noticias coincidentes.
+
+    Mezcla ambos idiomas: cada término (palabra + idioma) es una entrada.
+    """
+    repositorio = repository or NubePalabrasRepository()
+    pais = (pais or "").strip() or None
+
+    continentes = None
+    if continente is not None:
+        buscado = clave_continente(continente.value)
+        continentes = [
+            c for c in repositorio.continentes_registrados(db) if clave_continente(c) == buscado
+        ]
+
+    filas = []
+    if continentes != []:
+        filas = repositorio.palabras_influyentes(db, continentes, pais, limite)
+
+    return NubePalabras(
+        continente=continente,
+        pais=pais,
+        items=[
+            PalabraInfluyente(termino_id=i, palabra=p, idioma=idi, valor=v, peso=w)
+            for i, p, idi, v, w in filas
         ],
     )

@@ -40,3 +40,19 @@ class MapaHumor(BaseModel):
     continentes: List[HumorContinente] = Field(min_length=5, max_length=5)
 
     model_config = {"populate_by_name": True}
+
+
+class PalabraInfluyente(BaseModel):
+    """Origina en HU-DASH-003-v2: un TerminoDiccionario más su peso."""
+
+    termino_id: int
+    palabra: str
+    idioma: str
+    valor: int = Field(ge=-10, le=10)
+    peso: int = Field(ge=1, description="Cantidad de noticias del filtro que contienen el término.")
+
+
+class NubePalabras(BaseModel):
+    continente: Optional[Continente] = None
+    pais: Optional[str] = None
+    items: List[PalabraInfluyente]

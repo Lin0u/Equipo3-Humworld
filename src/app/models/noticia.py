@@ -47,3 +47,5 @@ class Noticia(Base):
     cantidad_terminos_evaluados = Column(Integer, nullable=True)
 
     fuente = relationship("FuenteRSS", back_populates="noticias")
+    # HU-SENT-008: composición; las coincidencias se borran con la noticia.
+    coincidencias = relationship("CoincidenciaTermino", cascade="all, delete-orphan")
