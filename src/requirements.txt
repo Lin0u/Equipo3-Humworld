@@ -20,3 +20,9 @@ respx==0.21.1
 # Modelo de ML (HU-SENT-006, ADR-004): regresor Ridge y serialización .joblib.
 scikit-learn==1.5.2
 numpy==2.1.3
+
+# Lematización (HU-SENT-007-v3, ADR-003 punto 6): spaCy y sus modelos chicos de
+# español e inglés (se descargan de los releases oficiales de spaCy en GitHub).
+spacy==3.8.14
+es_core_news_sm @ https://github.com/explosion/spacy-models/releases/download/es_core_news_sm-3.8.0/es_core_news_sm-3.8.0-py3-none-any.whl
+en_core_web_sm @ https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl

@@ -54,6 +54,40 @@ El algoritmo de diccionario decidido en este ADR **no integra ningún servicio e
  
 **Excepción ya resuelta:** el camino de ML (HU-SENT-006, fuera de alcance de este ADR) **sí terminó consumiendo un servicio externo real** — la API de Google Gemini Embedding, para la generación de vectores de embeddings. Esta decisión, junto con la evaluación completa de los cuatro patrones de resiliencia de la sección 13 aplicados a ese servicio externo (Timeout explícito y Retry acotado con backoff aplican; Circuit Breaker aplica con matiz, especialmente relevante en `HU-SENT-002-v2` por su alta frecuencia de llamadas; Bulkhead se evalúa y se descarta por ahora), quedó documentada en detalle en `ADR-004-arquitectura-modelo-ml-sentimiento.md`, sección "Patrones de resiliencia" — ya no es una incógnita futura, sino una decisión tomada y grounded en ese documento.
  
+### 5. Comparación de términos por lema y detección de idioma (v1.3)
+
+El profesor sugirió revisar la lematización, y la PO decidió incorporarla el 2026-10-19. Hasta HU-SENT-007-v2 cada término se comparaba por su forma exacta: para contar "guerras" había que cargarla aparte de "guerra", y las conjugaciones ("murieron", "ganaremos") prácticamente nunca coincidían, porque no es viable cargarlas todas. Esto inflaba el diccionario (418 formas en español para 148 conceptos) y dejaba noticias sin humor por el solo hecho de usar un tiempo verbal distinto.
+
+**Decisión:**
+
+1. **Lematizador: spaCy** con los modelos chicos `es_core_news_sm` y `en_core_web_sm` (versión 3.8), cargados sin `parser` ni `ner`. Se conservan solo el etiquetado morfológico y el lematizador, que elige el lema según el contexto de la oración ("fue" → "ser" o "ir" según la frase).
+2. **Se lematiza el texto de la noticia, no el diccionario.** Cada palabra del texto se compara con los términos primero por su forma y, si ningún término tiene esa forma, por su lema. Los términos del diccionario no se lematizan, porque fuera de contexto el lema es poco fiable: aislada, "best" se lematiza como "well" y "peña" como "peño". En consecuencia, los términos nuevos deben cargarse en su forma base (infinitivo, singular masculino). Las formas flexionadas ya cargadas siguen funcionando y tienen prioridad cuando coinciden literalmente.
+3. **Cada palabra del texto aporta como máximo un término.** Si existen "abandon" y "abandoned", la palabra "abandoned" activa solo "abandoned" (forma exacta) y no suma además "abandon". El divisor `n` sigue contando términos únicos (punto 1).
+4. **Frases de varias palabras:** coinciden si aparecen en el texto o en la secuencia de lemas del texto ("acuerdos de paz" → "acuerdo de paz").
+5. **Detección de idioma** (PDF §4.4; punto 1 de esta Decisión, que exigía comparar contra el idioma detectado): se cuentan las palabras vacías (stop words de spaCy) exclusivas de cada idioma. Si un idioma tiene al menos 2 y al menos el doble que el otro, ese es el idioma de la noticia; si no, queda desconocido y se evalúan ambos diccionarios, como antes. El resultado se guarda en `noticias.idioma_detectado`. Los umbrales (2 palabras y proporción 2) son valores propuestos, pendientes de ratificación.
+6. **Degradación:** si un modelo de spaCy no está instalado, ese idioma vuelve a compararse por forma exacta (HU-SENT-007-v2) y se registra una advertencia. El cálculo de humor nunca falla por esta dependencia.
+7. **Resiliencia:** spaCy corre dentro del proceso, sin red. No aplican Circuit Breaker, Bulkhead, Retry ni Timeout (mismo criterio del punto 4).
+
+**Rendimiento medido** (máquina de desarrollo, diccionario real de 3.798 términos): 500 noticias en ~3,3 s, dentro del ciclo de 30 minutos del barrido. Los modelos ocupan ~13 MB cada uno.
+
+**Alternativas evaluadas para este punto:**
+
+- **E. Mantener la forma exacta (HU-SENT-007-v2).** Sin dependencias nuevas, pero obliga a cargar cada flexión a mano y no cubre conjugaciones. **Descartada** por la sugerencia del profesor y porque no escala.
+- **F. simplemma.** Más liviana, en Python puro, pero lematiza palabra por palabra sin contexto, con más errores en casos ambiguos. **Descartada:** la PO priorizó la precisión.
+- **G. Stemming (Snowball de NLTK).** La más rápida, pero genera raíces que no son palabras ("guerras" → "guerr"), une palabras de sentido distinto y es difícil de explicar en el dashboard. **Descartada.**
+- **H. Lematizar también los términos del diccionario.** Permitiría unir "guerras" con "guerra" aunque la noticia no la use. **Descartada** tras probarla: los lemas fuera de contexto unían términos de significado distinto ("best" con "well").
+- **I. Modelos grandes o transformadores de spaCy (`*_lg`, `*_trf`).** Algo más precisos, pero de cientos de MB y mucho más lentos en CPU. **Descartados** por el criterio de proporcionalidad.
+
+**Consecuencias:**
+
+- (+) Más coincidencias reales, en especial verbos conjugados; menos noticias sin humor; diccionario más fácil de mantener (un término por concepto).
+- (+) La nube de palabras deja de mostrar como distintas palabras que son flexiones de un mismo término cargado en su forma base.
+- (+) Se cumple por fin la comparación contra el idioma detectado (punto 1 y HU-SENT-008, escenario "Coincidencia limitada al idioma").
+- (−) Dependencia nueva (~40 MB entre spaCy y los dos modelos), que se descarga de los releases oficiales de spaCy en GitHub al construir la imagen y en CI.
+- (−) El lematizador también se equivoca, y la detección por palabras vacías falla en textos muy cortos (un titular de tres palabras suele quedar "desconocido"). Ambos casos degradan al comportamiento anterior y no a un error.
+- (−) No resuelve la falta de contexto semántico (caso "fraude"/Santander en `Dataset-diccionario-inicial.md`).
+- (−) Cambia la regla de comparación: la migración `e1f4a8c2b6d9` marca para recálculo las noticias calculadas por diccionario.
+
 ## Alternativas consideradas
  
 ### Alternativa A: Suma ponderada por frecuencia de aparición
@@ -103,7 +137,7 @@ El algoritmo de diccionario decidido en este ADR **no integra ningún servicio e
 - El camino de ML sí involucra ahora un servicio externo de terceros (Google Gemini Embedding, vía `ADR-004`) — los patrones de resiliencia de la sección 13 del proyecto (Circuit Breaker, Timeout explícito, Retry con backoff acotado) **ya fueron evaluados y decididos** para ese caso en `ADR-004`, análogos a la regla de resiliencia obligatoria para las fuentes RSS documentada en `docs/architecture.md`, sección 8. Este ADR-003 no los repite por no aplicar a su propio alcance (el camino de diccionario), pero deja la referencia cruzada explícita para evitar que el equipo busque esa decisión en el documento equivocado.
 ## Historias de usuario relacionadas
  
-HU-SENT-001, HU-SENT-002-v2, HU-SENT-003, HU-SENT-004, HU-SENT-005, HU-SENT-006 *(solo en la parte de fallback a diccionario; su propia arquitectura de ML está documentada en `ADR-004-arquitectura-modelo-ml-sentimiento.md`, fuera del alcance de este ADR)*, HU-SENT-007.
+HU-SENT-007-v3 *(punto 5, lematización)*, HU-SENT-008, HU-SENT-001, HU-SENT-002-v2, HU-SENT-003, HU-SENT-004, HU-SENT-005, HU-SENT-006 *(solo en la parte de fallback a diccionario; su propia arquitectura de ML está documentada en `ADR-004-arquitectura-modelo-ml-sentimiento.md`, fuera del alcance de este ADR)*, HU-SENT-007.
  
 ---
  
@@ -114,3 +148,4 @@ HU-SENT-001, HU-SENT-002-v2, HU-SENT-003, HU-SENT-004, HU-SENT-005, HU-SENT-006 
 | v1.0 | 2026-09-28 | Creación inicial. Decide el algoritmo del camino de diccionario (promedio simple + desviación estándar como indicador de polarización complementario), evaluando explícitamente las cuatro alternativas exigidas por la sección 11 de las instrucciones del proyecto (suma ponderada por frecuencia, valor absoluto máximo, desviación estándar como valor principal, y suma simple sin promediar tal como sugiere el PDF). Deja explícitamente fuera de alcance el diseño del modelo de ML (HU-SENT-006). |
 | v1.1 | 2026-09-28 | Se actualizan las referencias cruzadas ahora que `HU-SENT-006` quedó completamente resuelta en `ADR-004-arquitectura-modelo-ml-sentimiento.md`: la sección 4 ("Patrones de resiliencia") y los dos puntos correspondientes de "Consecuencias negativas" dejan de describir la arquitectura de ML como una incógnita futura y pasan a referenciar la decisión ya tomada. Se confirma además, en la Decisión punto 1, que el divisor `n` del promedio cuenta términos únicos distintos (decisión ya reflejada en `HU-SENT-007` v1.1), eliminando ese punto de la lista de pendientes en Consecuencias. No cambia ninguna fórmula ni alternativa evaluada — solo referencias cruzadas y el cierre de un punto pendiente ya resuelto en otro documento. |
 | v1.2 (editorial) | 2026-09-29 | Limpieza editorial: se retiran las etiquetas "CONFIRMADO (decisión del equipo, sesión...)" y las marcas de fecha inline dentro del cuerpo del documento, integrando ese contenido como prosa técnica normal. La trazabilidad de cuándo se tomó cada decisión queda exclusivamente en esta tabla de Historial de revisión. Sin cambios de fondo en el algoritmo, las alternativas evaluadas ni las Consecuencias. |
+| v1.3 | 2026-10-19 | Se agrega el punto 5 de la Decisión: comparación de términos por lema con spaCy (`es_core_news_sm`, `en_core_web_sm`) sobre el texto de la noticia, sin lematizar el diccionario, y detección de idioma por palabras vacías. Incluye 5 alternativas evaluadas (E a I), sus consecuencias y el rendimiento medido. Origina HU-SENT-007-v3. Decisión de la PO, por sugerencia del profesor. |

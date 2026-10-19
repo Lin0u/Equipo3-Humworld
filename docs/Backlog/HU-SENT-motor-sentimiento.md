@@ -3,7 +3,7 @@
 **Proyecto:** HumWorld — Equipo 3
 **Origen:** PDF de especificaciones (`0 PROYECTO_FINAL_HUMWORLD 260714.pdf`), secciones 4.2.2 (Diccionario de palabras evaluables), 4.2.4 (Procesado de la información), 10.2 (Endpoints mínimos obligatorios: `/dictionary`, `/sentiment`) y 10.4 (Posible algoritmo para cálculo del humor). Algoritmo de agregación decidido y justificado en `ADR-003-eleccion-algoritmo-agregacion-sentimiento.md`, conforme a la sección 11 de las instrucciones del proyecto.
 **Estado general:** Propuesto — historias generadas a partir de los títulos ya oficializados en la hoja "Backlog" de `HumWorld_Anexo_I_Planificacion_actualizado.xlsx` (entregable P3) y de la estimación en puntos ya realizada en Planning Poker (P3, `Anexo-I-Planificacion-entregado-P3.md`, Sprint 2 = 18 puntos). Pendiente de revisión crítica del equipo antes de iniciar Sprint 2.
-**Versión del documento:** v1.9. Ver la Tabla de control de versiones al final del documento para el historial completo.
+**Versión del documento:** v1.10. Ver la Tabla de control de versiones al final del documento para el historial completo.
  
 > **Nota de grounding general:** el PDF exige un algoritmo de análisis de sentimiento "basado en diccionario, LLM u otro método justificado" (Objetivos específicos, punto 2) y ofrece un algoritmo posible (§10.4) como referencia no vinculante ("Esta es solo una posible solución. Cada equipo puede determinar otra manera"). El backlog ya oficializado por el equipo (hoja Excel) eligió un enfoque **híbrido diccionario + ML** (HU-SENT-002-v2, HU-SENT-006, HU-SENT-007). Este documento formaliza esa elección ya tomada por el equipo; no la introduce de nuevo. La parte de diccionario está completamente grounded en el PDF y en la sección 11 de las instrucciones del proyecto (ver `ADR-003-eleccion-algoritmo-agregacion-sentimiento.md`); la parte de ML no estaba especificada en ningún documento fuente más allá del título de la historia — el equipo definió esa arquitectura, documentada en `ADR-004-arquitectura-modelo-ml-sentimiento.md`.
  
@@ -456,6 +456,8 @@ Escenario: Término que aparece más de una vez en el mismo texto
  
 ## HU-SENT-007-v2 — Fallback determinista con diccionario
 
+**Estado:** **Deprecada (2026-10-19)** — reemplazada por **HU-SENT-007-v3** (ver más abajo), que incorpora la lematización. Se conserva este bloque íntegro como registro histórico, conforme a la sección 3 de las instrucciones del proyecto.
+
 **Tipo:** Historia Técnica / Enabler Story *(el actor es el propio sistema)*
 **Como** sistema HumWorld,
 **quiero** calcular el humor de una noticia mediante el método determinista de diccionario — promedio simple de los valores de los términos evaluables coincidentes, más un indicador de polarización — según lo definido en `ADR-003-eleccion-algoritmo-agregacion-sentimiento.md`, con una regla explícita para decidir cuándo un término coincide con el texto,
@@ -527,6 +529,83 @@ Escenario: Etiquetas HTML en el resumen del feed
 
 ---
 
+## HU-SENT-007-v3 — Fallback determinista con diccionario (comparación por lema)
+
+**Tipo:** Historia Técnica / Enabler Story *(el actor es el propio sistema)*
+**Como** sistema HumWorld,
+**quiero** calcular el humor de una noticia por el método determinista de diccionario, comparando cada palabra del texto con los términos por su forma y, si ningún término tiene esa forma, por su lema,
+**para** que las flexiones de un término (plurales, conjugaciones) cuenten sin tener que cargarlas una por una, manteniendo un valor de humor siempre calculable y reproducible.
+
+**Prioridad:** Alta
+**Estimación relativa:** M *(punto de partida propuesto por el agente PO/Arquitecto, sujeto a Planning Poker: agrega una dependencia nueva, la detección de idioma y el recálculo de las noticias)*
+**Depende de contrato de API:** No expone endpoint propio. Servicio interno invocado por HU-SENT-002-v3 y HU-SENT-005; `POST /api/v1/sentiment` no cambia de contrato.
+**Variante del algoritmo:** promedio simple de términos únicos más polarización (`ADR-003-eleccion-algoritmo-agregacion-sentimiento.md`, puntos 1 y 2); regla de comparación del punto 5.
+**Estado:** Implementada el 2026-10-19 (rama `feature/lematizacion`), pendiente de revisión en el PR y de ratificación del equipo.
+
+**Qué cambia respecto de HU-SENT-007-v2** (decisión de la PO del 2026-10-19, por sugerencia del profesor):
+
+1. La regla 4 ("sin lematización") se reemplaza: se lematiza el texto de la noticia con spaCy y se compara cada palabra primero por forma y luego por lema. Los términos del diccionario no se lematizan; los nuevos se cargan en su forma base.
+2. Cada palabra del texto aporta como máximo un término; la forma exacta tiene prioridad sobre el lema.
+3. Las frases coinciden por forma o por la secuencia de lemas.
+4. Si la noticia no trae idioma, se detecta y se guarda en `idioma_detectado`; con idioma conocido solo se evalúa su diccionario. Si no se puede decidir, se evalúan ambos.
+5. Se mantienen las reglas 1, 2, 3, 5 y 6 de HU-SENT-007-v2: palabra completa, sin mayúsculas, sin tildes salvo la ñ, sin HTML y, ante formas iguales, el término de menor id.
+
+### Criterios de aceptación (Gherkin)
+
+Se mantienen los escenarios de HU-SENT-007 y de HU-SENT-007-v2, salvo "Plural no cargado en el diccionario", que se reemplaza por el primero de esta lista:
+
+```gherkin
+Escenario: Plural no cargado en el diccionario
+  Dado que el diccionario contiene "guerra" (es, -8) pero no "guerras"
+  Y una noticia cuyo texto contiene "guerras" y ningún otro término
+  Cuando el sistema calcula su humor
+  Entonces valor_humor = -8.0 y cantidad_terminos_evaluados = 1
+
+Escenario: Verbo conjugado
+  Dado que el diccionario contiene "morir" (es, -7)
+  Y una noticia cuyo texto es "Murieron diez personas"
+  Cuando el sistema calcula su humor
+  Entonces valor_humor = -7.0 y cantidad_terminos_evaluados = 1
+
+Escenario: Forma exacta con prioridad sobre el lema
+  Dado que el diccionario contiene "abandon" (en, -2) y "abandoned" (en, -3)
+  Y una noticia cuyo texto es "They abandoned the plan"
+  Cuando el sistema calcula su humor
+  Entonces solo coincide "abandoned" y valor_humor = -3.0
+
+Escenario: Frase con palabras flexionadas
+  Dado que el diccionario contiene "acuerdo de paz" (es, 7)
+  Y una noticia cuyo texto es "Firmaron acuerdos de paz"
+  Cuando el sistema calcula su humor
+  Entonces valor_humor = 7.0
+
+Escenario: Idioma detectado
+  Dado que el diccionario contiene "crisis" (es, -6) y "crisis" (en, -4)
+  Y una noticia sin idioma cuyo texto es "La crisis de los mercados se agrava en toda la región"
+  Cuando el sistema calcula su humor
+  Entonces idioma_detectado = "es"
+  Y valor_humor = -6.0 y cantidad_terminos_evaluados = 1
+
+Escenario: Idioma no decidible
+  Dado una noticia sin idioma cuyo texto es "guerra and peace"
+  Cuando el sistema calcula su humor
+  Entonces idioma_detectado queda NULL y se evalúan los términos de ambos idiomas
+
+Escenario: Lematizador no disponible
+  Dado que el modelo de spaCy de un idioma no está instalado
+  Cuando el sistema calcula el humor de una noticia en ese idioma
+  Entonces la comparación es por forma exacta (HU-SENT-007-v2) y el cálculo no falla
+```
+
+### Definition of Done
+(Bloque general DoD, sección 14.) Adicionalmente:
+- Pruebas con los modelos reales de spaCy (son locales y deterministas, no requieren mocks de red) para cada escenario, más la prueba de degradación sin modelo.
+- Migración `e1f4a8c2b6d9` que marca para recálculo las noticias calculadas por diccionario.
+- Medición de rendimiento del barrido con el diccionario real (resultado en ADR-003, punto 5).
+- Revisar con el equipo los términos del diccionario en español que estén en forma flexionada y podrían pasar a su forma base.
+
+---
+
 ## Resumen de trazabilidad
  
 | ID | Tipo | Prioridad | Puntos (P3) | Endpoint / mecanismo | Referencia PDF |
@@ -537,7 +616,8 @@ Escenario: Etiquetas HTML en el resumen del feed
 | HU-SENT-004 | Historia de Usuario | Alta | 1 | `GET /api/v1/sentiment` — ver `contrato-sentimiento-diccionario.openapi.yaml` | §4.1, §10.2 |
 | HU-SENT-005 | Historia de Usuario | Media | 2 | `POST /api/v1/sentiment` — ver `contrato-sentimiento-diccionario.openapi.yaml` | §10.2 |
 | HU-SENT-006 | Historia de Usuario | Media | 5 | `POST /api/v1/trainings` — ver `contrato-sentimiento-diccionario.openapi.yaml` — embeddings externos (Google Gemini Embedding) + regresor local scikit-learn, disparo manual, umbral propuesto: 1.000 noticias (ver ADR-004) | Objetivos específicos #2 (no detallado) |
-| HU-SENT-007-v2 | Enabler Story | Alta | 2 | Interno (servicio compartido) — n = términos únicos; palabra completa, sin mayúsculas ni tildes (conserva ñ), sin lematización | §10.4, sección 11 instrucciones proyecto |
+| HU-SENT-007-v2 | **Deprecada** (ver HU-SENT-007-v3) | Alta | 2 | Interno (servicio compartido) — n = términos únicos; palabra completa, sin mayúsculas ni tildes (conserva ñ), sin lematización | §10.4, sección 11 instrucciones proyecto |
+| HU-SENT-007-v3 | Enabler Story | Alta | M (propuesta) | Interno (servicio compartido) — n = términos únicos; comparación por forma y lema (spaCy), detección de idioma | §4.4, §10.4, sección 11 instrucciones proyecto |
  
 ## Tabla de control de versiones
  
@@ -553,3 +633,4 @@ Escenario: Etiquetas HTML en el resumen del feed
 | HU-SENT-007 → HU-SENT-007-v2 | v1.7 | 2026-10-18 | Decisión de equipo: se fija la regla de comparación de términos que HU-SENT-007 no definía (palabra o frase completa; sin distinguir mayúsculas ni tildes, conservando la ñ; sin lematización; texto sin HTML; términos iguales al normalizar cuentan una vez). HU-SENT-007 queda Deprecada y se crea HU-SENT-007-v2 con 6 escenarios nuevos. Sin cambios en la fórmula ni en el divisor n. |
 | HU-SENT-003, HU-SENT-005 | v1.8 | 2026-10-19 | Implementación de HU-SENT-003 y HU-SENT-005 (rama `feature/polarizacion-analisis`): se resuelve el pendiente de HU-SENT-003 sobre el campo de polarización (`polarizacion_terminos`, float nullable, desviación estándar poblacional; migración `a7c3e9b5d1f4`) y se registra cómo quedó implementado `POST /api/v1/sentiment` (método de diccionario, sin persistencia, expone la polarización). Sin cambios en los criterios de aceptación. |
 | HU-SENT-006, HU-SENT-002-v3 | v1.9 | 2026-10-19 | Implementación de HU-SENT-006 según ADR-004 (embeddings de Gemini + Ridge, versionado en `modelos_sentimiento`, MAE contra diccionario, Timeout + Retry acotado + Circuit Breaker). Se fija 502 para el fallo del servicio y 503 para la falta de clave. El camino de ML de HU-SENT-002-v3 pasa a usar el modelo activo y registra su versión en `noticias.modelo_sentimiento_id`. Sin cambios en los criterios de aceptación. |
+| HU-SENT-007-v2 → HU-SENT-007-v3 | v1.10 | 2026-10-19 | Decisión de la PO, por sugerencia del profesor: comparación de términos por lema con spaCy (sobre el texto de la noticia, sin lematizar el diccionario) y detección de idioma. HU-SENT-007-v2 queda Deprecada. Se reemplaza el escenario "Plural no cargado en el diccionario" y se agregan 6 escenarios. Ver ADR-003, punto 5. |
