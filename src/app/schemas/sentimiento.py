@@ -7,7 +7,7 @@ componentes SentimientoAgregado y SentimientoPorFecha.
 from datetime import date
 from typing import List, Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, field_validator
 
 
 class SentimientoPorFecha(BaseModel):
@@ -24,3 +24,22 @@ class SentimientoAgregado(BaseModel):
     humor_promedio: Optional[float]
     cantidad_noticias_evaluadas: int
     serie_temporal: Optional[List[SentimientoPorFecha]] = None
+
+
+class AnalisisTextoCrear(BaseModel):
+    """HU-SENT-005: cuerpo de POST /sentiment."""
+
+    texto: str = Field(min_length=1)
+
+    @field_validator("texto")
+    @classmethod
+    def no_vacio(cls, valor: str) -> str:
+        if not valor.strip():
+            raise ValueError("El texto no puede estar vacío.")
+        return valor
+
+
+class AnalisisTextoResultado(BaseModel):
+    valor_humor: Optional[float]
+    cantidad_terminos_evaluados: int
+    polarizacion_terminos: Optional[float] = None

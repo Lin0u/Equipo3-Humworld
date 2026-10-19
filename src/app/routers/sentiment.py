@@ -3,7 +3,7 @@ Router: /api/v1/sentiment
 
 Origina en: HU-SENT-004 (GET: humor global, por continente, por país y timeline).
 Contrato: contrato-sentimiento-diccionario.openapi.yaml, path /sentiment.
-Pendiente: POST /sentiment (HU-SENT-005).
+POST: HU-SENT-005 (humor de un texto arbitrario, siempre por diccionario).
 """
 from datetime import date
 from typing import Optional
@@ -15,8 +15,13 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.exceptions import RangoFechasInvalidoError
 from app.schemas.common import Error
-from app.schemas.sentimiento import SentimientoAgregado
+from app.schemas.sentimiento import (
+    AnalisisTextoCrear,
+    AnalisisTextoResultado,
+    SentimientoAgregado,
+)
 from app.services.consulta_sentimiento_service import consultar_sentimiento
+from app.services.sentimiento_service import analizar_texto
 
 router = APIRouter(prefix="/sentiment", tags=["sentiment"])
 
@@ -35,3 +40,14 @@ def obtener_sentimiento(
     except RangoFechasInvalidoError as error:
         cuerpo = Error(codigo="RANGO_FECHAS_INVALIDO", mensaje=str(error))
         return JSONResponse(status_code=400, content=cuerpo.model_dump(exclude_none=True))
+
+
+@router.post("", response_model=AnalisisTextoResultado, responses={400: {"model": Error}})
+def analizar(payload: AnalisisTextoCrear, db: Session = Depends(get_db)):
+    """Humor de un texto: promedio de términos únicos y su polarización (HU-SENT-005)."""
+    resultado = analizar_texto(db, payload.texto)
+    return AnalisisTextoResultado(
+        valor_humor=resultado.valor_humor,
+        cantidad_terminos_evaluados=resultado.cantidad_terminos_evaluados,
+        polarizacion_terminos=resultado.polarizacion_terminos,
+    )

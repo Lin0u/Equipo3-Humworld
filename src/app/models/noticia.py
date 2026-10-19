@@ -45,6 +45,9 @@ class Noticia(Base):
     # cuando hubo 0 coincidencias).
     metodo_calculo = Column(String(20), nullable=True, index=True)
     cantidad_terminos_evaluados = Column(Integer, nullable=True)
+    # HU-SENT-003 / ADR-03: desviación estándar poblacional de los valores de
+    # los términos coincidentes. NULL si no hubo términos; 0.0 con un solo término.
+    polarizacion_terminos = Column(Float, nullable=True)
 
     fuente = relationship("FuenteRSS", back_populates="noticias")
     # HU-SENT-008: composición; las coincidencias se borran con la noticia.

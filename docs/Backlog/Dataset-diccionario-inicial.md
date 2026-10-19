@@ -47,6 +47,7 @@ Se quitaron también las formas que, al ignorar tildes (HU-SENT-007-v2), quedaba
 - **Valores moderados:** la mayoría de los términos vale entre -6 y +6; solo 21 llegan a ±10. El humor de una noticia rara vez será extremo.
 - **El español es más chico (418 frente a 3.380)** y sin validación humana todavía. Con 4 de las 20 fuentes en español, es el punto que más conviene revisar.
 - **Sin lematización:** solo se cuentan las formas listadas (HU-SENT-007-v2).
+- **Sin contexto:** el método cuenta palabras, no entiende frases. Caso real del 2026-10-19: "Banco Santander se alía con Nvidia para impulsar el despliegue de la IA en la entidad" obtuvo -8.0 porque su resumen menciona "fraude" (la IA se usa para detectarlo) y fue el único término encontrado. Es la limitación conocida del método de diccionario (ADR-03); la polarización (HU-SENT-003) y la cantidad de términos evaluados ayudan a leer estos casos, y el modelo de ML (HU-SENT-006) debería mejorarlos.
 
 ## 5. Cómo revisar la traducción
 
@@ -220,3 +221,4 @@ La tabla muestra cada término fuente, su valor en AFINN, el valor en HumWorld y
 | Documento | Versión | Fecha/Sesión | Motivo del cambio |
 |---|---|---|---|
 | Dataset diccionario inicial | v1.0 | 2026-10-19 | Creación. Inglés: AFINN-en-165 completo (× 2, sin valores 0). Español: traducción generada con IA de 148 términos orientados a noticias (418 formas). Licencia ODbL heredada de AFINN. Pendiente de aprobación del equipo y de revisión humana del español. |
+| Dataset diccionario inicial | v1.1 | 2026-10-19 | Se agrega a las limitaciones un caso real de falta de contexto ("fraude" en una noticia positiva sobre IA), detectado al probar el listado de noticias. |

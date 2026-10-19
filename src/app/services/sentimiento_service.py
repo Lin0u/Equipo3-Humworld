@@ -15,7 +15,7 @@ antes de fusionarse.
 Alcance de este incremento: el camino efectivo es el diccionario. El camino
 ML queda definido como interfaz (ProveedorModeloML) pero no hay proveedor
 real hasta que HU-SENT-006 entregue el modelo activo y su versionado.
-No calcula polarización (HU-SENT-003). Persiste las coincidencias de HU-SENT-008
+Calcula la polarización (HU-SENT-003) y persiste las coincidencias de HU-SENT-008
 junto con el resultado.
 
 Comparación de términos (decisión de equipo del 2026-10-18; HU-SENT-007 no
@@ -64,6 +64,10 @@ class ResultadoHumor:
     # Ids de los términos coincidentes (HU-SENT-008). Se registran siempre,
     # también cuando el humor lo calcula el modelo de ML.
     terminos_ids: tuple[int, ...] = ()
+    # HU-SENT-003: polarización de los términos del diccionario coincidentes.
+    # Se calcula también cuando el humor lo da el modelo de ML, porque las
+    # coincidencias se registran siempre (HU-SENT-008).
+    polarizacion_terminos: float | None = None
 
 
 class ProveedorModeloML(Protocol):
@@ -127,6 +131,18 @@ def terminos_coincidentes(
     return encontrados
 
 
+def polarizacion(valores: list[int]) -> float | None:
+    """Desviación estándar poblacional de los valores (ADR-03, HU-SENT-003).
+
+    None si no hay valores; 0.0 con un solo valor. Ejemplo de HU-SENT-007:
+    [-8, 6] -> 7.0.
+    """
+    if not valores:
+        return None
+    media = sum(valores) / len(valores)
+    return (sum((v - media) ** 2 for v in valores) / len(valores)) ** 0.5
+
+
 def calcular_humor_diccionario(
     texto: str, terminos: list[TerminoDiccionario]
 ) -> tuple[float | None, int]:
@@ -173,11 +189,13 @@ def calcular_humor(
     ]
     coincidentes = terminos_coincidentes(texto, terminos)
     ids = tuple(t.id for t in coincidentes if t.id is not None)
+    valores = [t.valor for t in coincidentes]
+    polar = polarizacion(valores)
 
     if proveedor_ml is not None:
         try:
             valor = _predecir_con_timeout(proveedor_ml, texto)
-            return ResultadoHumor(valor, METODO_ML, 0, ids)
+            return ResultadoHumor(valor, METODO_ML, 0, ids, polar)
         except FuturesTimeoutError:
             logger.warning("Timeout del modelo ML noticia_id=%s; se usa diccionario", noticia.id)
         except Exception as exc:  # noqa: BLE001 - cualquier fallo activa el fallback
@@ -187,9 +205,8 @@ def calcular_humor(
                 type(exc).__name__,
             )
 
-    valores = [t.valor for t in coincidentes]
     valor = sum(valores) / len(valores) if valores else None
-    return ResultadoHumor(valor, METODO_DICCIONARIO, len(valores), ids)
+    return ResultadoHumor(valor, METODO_DICCIONARIO, len(valores), ids, polar)
 
 
 def _cargar_terminos(db: Session) -> dict[str, list[TerminoDiccionario]]:
@@ -227,6 +244,7 @@ def procesar_noticias(
                 resultado.metodo_calculo,
                 resultado.cantidad_terminos_evaluados,
                 resultado.terminos_ids,
+                resultado.polarizacion_terminos,
             )
             procesadas += 1
         except Exception:  # noqa: BLE001 - el barrido la reintentará
@@ -255,3 +273,13 @@ def invalidar_calculos_diccionario(db: Session) -> int:
     marcadas = NoticiaRepository().marcar_para_recalculo(db, METODO_DICCIONARIO)
     logger.info("Diccionario modificado: %s noticias marcadas para recálculo", marcadas)
     return marcadas
+
+
+def analizar_texto(db: Session, texto: str) -> ResultadoHumor:
+    """HU-SENT-005: humor de un texto arbitrario, siempre por diccionario.
+
+    Sin idioma conocido, compara con los términos de ambos idiomas (ADR-03).
+    No persiste nada.
+    """
+    noticia = Noticia(titulo=texto, contenido=None, idioma_detectado=None)
+    return calcular_humor(noticia, _cargar_terminos(db), proveedor_ml=None)
