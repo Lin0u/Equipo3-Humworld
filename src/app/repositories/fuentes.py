@@ -1,9 +1,11 @@
+from datetime import datetime
+
 from sqlalchemy import func, select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from app.models.canal import CanalNoticias
-from app.models.fuente import FuenteRSS
+from app.models.fuente import EstadoCircuitBreaker, FuenteRSS
 
 
 class FuenteRSSRepository:
@@ -11,6 +13,18 @@ class FuenteRSSRepository:
         return db.execute(
             select(CanalNoticias).where(CanalNoticias.id == canal_id)
         ).scalar_one_or_none()
+
+    def buscar_por_url(self, db: Session, url: str) -> FuenteRSS | None:
+        """Busca una fuente por url, activa o no (identidad de HU-RSS-009-v2)."""
+        return db.execute(
+            select(FuenteRSS).where(FuenteRSS.url == url)
+        ).scalars().first()
+
+    def agregar_sin_confirmar(self, db: Session, fuente: FuenteRSS) -> FuenteRSS:
+        """Agrega la fuente a la transacción en curso sin confirmarla (HU-RSS-009-v2)."""
+        db.add(fuente)
+        db.flush()
+        return fuente
 
     def crear(self, db: Session, fuente: FuenteRSS) -> FuenteRSS:
         db.add(fuente)
@@ -74,6 +88,30 @@ class FuenteRSSRepository:
             )
         ).scalar_one_or_none()
 
+    def listar_activas(self, db: Session) -> list[FuenteRSS]:
+        return list(
+            db.execute(
+                select(FuenteRSS).where(FuenteRSS.activo.is_(True)).order_by(FuenteRSS.id)
+            ).scalars().all()
+        )
+
+    def actualizar_estado_captura(
+        self,
+        db: Session,
+        fuente: FuenteRSS,
+        fecha_ultima_captura_exitosa: datetime | None,
+        estado_circuit_breaker: EstadoCircuitBreaker,
+    ) -> FuenteRSS:
+        fuente.fecha_ultima_captura_exitosa = fecha_ultima_captura_exitosa
+        fuente.estado_circuit_breaker = estado_circuit_breaker
+        try:
+            db.commit()
+        except SQLAlchemyError:
+            db.rollback()
+            raise
+        db.refresh(fuente)
+        return fuente
+
     def eliminar_logicamente(self, db: Session, fuente: FuenteRSS) -> None:
         fuente.activo = False
         try:
@@ -96,4 +134,4 @@ class FuenteRSSRepository:
             db.rollback()
             raise
         db.refresh(fuente)
-        return fuente
+        return fuente

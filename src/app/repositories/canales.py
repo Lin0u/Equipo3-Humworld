@@ -65,7 +65,18 @@ class CanalNoticiasRepository:
         ).scalars().all()
         return list(canales), total
 
+    def agregar_sin_confirmar(self, db: Session, canal: CanalNoticias) -> CanalNoticias:
+        """Agrega el canal a la transacción en curso sin confirmarla.
+
+        Origina en: HU-RSS-009-v2 (carga inicial transaccional). El flush
+        asigna el id para asociar fuentes; el commit o rollback lo decide el
+        servicio que coordina la carga completa.
+        """
+        db.add(canal)
+        db.flush()
+        return canal
+
     def buscar_por_id(self, db: Session, canal_id: int) -> CanalNoticias | None:
         return db.execute(
             select(CanalNoticias).where(CanalNoticias.id == canal_id)
-        ).scalar_one_or_none()
+        ).scalar_one_or_none()

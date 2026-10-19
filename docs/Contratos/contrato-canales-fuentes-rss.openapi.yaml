@@ -4,10 +4,10 @@ info:
   description: >
     Contrato de API (OpenSpec) para la gestión de canales de noticias y fuentes RSS,
     y para el disparo de capturas manuales. Origina en las historias de usuario
-    HU-RSS-001 a HU-RSS-010 (y su versión HU-RSS-003-v2) y en ADR-01 (framework de la API backend)
-    y ADR-02 (relación de composición CanalNoticias/FuenteRSS). Fuente funcional: PDF de especificaciones,
+    HU-RSS-001 a HU-RSS-010 (y su versión HU-RSS-003-v2) y en ADR-001 (framework de la API backend)
+    y ADR-002 (relación de composición CanalNoticias/FuenteRSS). Fuente funcional: PDF de especificaciones,
     secciones 4.2.1, 4.2.3, 10.2 y 10.3.
-  version: "1.3.0"
+  version: "1.8.0"
 servers:
   - url: /api/v1
     description: Base URL versionada (PDF, sección 10.3)
@@ -19,8 +19,55 @@ tags:
     description: Gestión de fuentes RSS. Alta, modificación y eliminación originan en HU-RSS-002, HU-RSS-004, HU-RSS-005; consulta/listado paginado origina en HU-RSS-003-v2 (reemplaza a HU-RSS-003, deprecada).
   - name: captures
     description: Disparo de capturas manuales. Origina en HU-RSS-008.
+  - name: config
+    description: Configuración de la periodicidad del cron de captura. Origina en HU-RSS-007.
 
 paths:
+
+  /config:
+    get:
+      tags: [config]
+      summary: Consultar la configuración general
+      description: >
+        Devuelve la periodicidad del cron en minutos (HU-RSS-007) y la
+        caducidad de las noticias en días (HU-ADMIN-001, PDF §4.2.5). Si la
+        caducidad no está persistida, devuelve el valor por defecto (90 días,
+        propuesto y pendiente de ratificación del equipo).
+      responses:
+        "200":
+          description: Configuración consultada correctamente.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Configuracion"
+        "500":
+          $ref: "#/components/responses/ErrorInterno"
+    put:
+      tags: [config]
+      summary: Actualizar la configuración general
+      description: >
+        Persiste una periodicidad positiva y reprograma el scheduler
+        (HU-RSS-007). Si se envía caducidad_noticias_dias (HU-ADMIN-001), la
+        persiste; si se omite, se conserva el valor vigente (compatibilidad con
+        los clientes de HU-RSS-007). Ambos valores se validan antes de
+        escribir: si uno es inválido, no cambia ninguno.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ConfiguracionActualizar"
+      responses:
+        "200":
+          description: Configuración actualizada correctamente.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Configuracion"
+        "400":
+          $ref: "#/components/responses/ErrorValidacion"
+        "500":
+          $ref: "#/components/responses/ErrorInterno"
 
   /channels:
     get:
@@ -272,7 +319,7 @@ paths:
       summary: Eliminar una fuente RSS
       description: >
         Origina en HU-RSS-005. Política de eliminación en cascada de noticias
-        asociadas pendiente de confirmación por el equipo (ver ADR-02, sección
+        asociadas pendiente de confirmación por el equipo (ver ADR-002, sección
         "Negativas y deuda aceptada", y HU-RSS-005, nota de diseño).
       responses:
         "204":
@@ -289,14 +336,11 @@ paths:
       description: >
         Origina en HU-RSS-008. Recurso modelado como sustantivo en plural
         ("captures") conforme a las convenciones REST estrictas del proyecto
-        (sección 6 de las instrucciones), evitando verbos en la URL. Nombre
-        exacto del recurso pendiente de confirmación por el equipo (ver HU-RSS-008).
+        (sección 6 de las instrucciones), evitando verbos en la URL. La captura
+        se ejecuta de forma síncrona y reutiliza el procedimiento del cron.
       responses:
         "201":
-          description: >
-            Captura ejecutada de forma síncrona; se devuelve el resumen del
-            resultado. (Alternativa 202 si se decide procesamiento asíncrono —
-            a definir por el equipo, ver `docs/architecture.md`, sección 8).
+          description: Captura ejecutada de forma síncrona; se devuelve su resultado.
           content:
             application/json:
               schema:
@@ -314,7 +358,9 @@ paths:
     post:
       tags: [captures]
       summary: Disparar una captura manual para un conjunto de fuentes RSS
-      description: Origina en HU-RSS-008 (escenario de captura de conjunto).
+      description: >
+        Origina en HU-RSS-008. Procesa síncronamente cada FuenteRSS indicada
+        y devuelve un resultado individual, aunque falle la captura de otra fuente.
       requestBody:
         required: true
         content:
@@ -329,6 +375,8 @@ paths:
                     type: integer
                   minItems: 1
       responses:
+        "400":
+          $ref: "#/components/responses/ErrorValidacion"
         "201":
           description: Capturas ejecutadas; se devuelve el resumen por fuente.
           content:
@@ -358,9 +406,35 @@ components:
       description: Identificador único de la fuente RSS.
 
   schemas:
+    Configuracion:
+      type: object
+      description: Configuración general persistida. Origina en HU-RSS-007 (periodicidad) y HU-ADMIN-001 (caducidad).
+      properties:
+        periodicidad_cron_minutos:
+          type: integer
+          minimum: 1
+        caducidad_noticias_dias:
+          type: integer
+          minimum: 1
+          description: Días tras los cuales una noticia se purga (HU-ADMIN-002).
+      required: [periodicidad_cron_minutos, caducidad_noticias_dias]
+
+    ConfiguracionActualizar:
+      type: object
+      description: Nuevos valores de configuración. Origina en HU-RSS-007 y HU-ADMIN-001.
+      properties:
+        periodicidad_cron_minutos:
+          type: integer
+          minimum: 1
+        caducidad_noticias_dias:
+          type: integer
+          minimum: 1
+          description: Opcional. Si se omite, se conserva el valor vigente.
+      required: [periodicidad_cron_minutos]
+
     CanalNoticias:
       type: object
-      description: Origina en HU-RSS-001 (alta) y HU-RSS-010 (consulta/listado). Entidad "todo" en la relación de composición con FuenteRSS (ver ADR-02).
+      description: Origina en HU-RSS-001 (alta) y HU-RSS-010 (consulta/listado). Entidad "todo" en la relación de composición con FuenteRSS (ver ADR-002).
       properties:
         id:
           type: integer
@@ -413,7 +487,7 @@ components:
 
     FuenteRSS:
       type: object
-      description: Origina en HU-RSS-002. Entidad "parte" en la relación de composición con CanalNoticias (ver ADR-02).
+      description: Origina en HU-RSS-002. Entidad "parte" en la relación de composición con CanalNoticias (ver ADR-002).
       properties:
         id:
           type: integer
@@ -564,3 +638,18 @@ components:
 # v1.3.0 (2026-08-30): se define el criterio de orden de GET /sources, que
 #   quedaba pendiente en v1.2.0: ascendente por canal_id y, dentro de un mismo
 #   canal, alfabético por url. Sin cambios de esquema respecto a v1.2.0.
+# v1.4.0 (2026-10-07): se añade GET/PUT /config para consultar y actualizar
+#   la periodicidad del cron de captura (HU-RSS-007), con un valor positivo.
+# v1.7.0 (2026-10-18): consolidación de dos líneas de versiones que se habían
+#   separado tras v1.3.0. En el repositorio, v1.4.0 (2026-10-07) agregó
+#   GET/PUT /config (HU-RSS-007). En la copia del Proyecto de Claude, v1.4.0 a
+#   v1.6.0 (2026-09-10 a 2026-09-28) confirmaron los dos endpoints de captura
+#   manual síncrona (HU-RSS-008) y agregaron POST /seeds y el esquema
+#   ResultadoSeed (HU-RSS-009). Esta versión toma como base el contrato del
+#   repositorio, que ya incluye /config y /captures, y deja retirado
+#   POST /seeds: HU-RSS-009 fue deprecada en favor de HU-RSS-009-v2, que
+#   realiza la carga inicial con un script interno (python -m scripts.seed)
+#   sin endpoint. /seeds nunca llegó a implementarse en el código.
+# v1.8.0 (2026-10-19): /config agrega caducidad_noticias_dias (HU-ADMIN-001,
+#   PDF §4.2.5), obligatoria en la respuesta y opcional en el PUT. Valor por
+#   defecto propuesto: 90 días, pendiente de ratificación del equipo.

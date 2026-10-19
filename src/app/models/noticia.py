@@ -36,7 +36,24 @@ class Noticia(Base):
     idioma_detectado = Column(String(10), nullable=True)
     categoria_iptc = Column(String(100), nullable=True)
 
-    # Fuera de alcance de Sprint 1 / EPIC-RSS — poblado por EPIC-SENT.
+    # Poblados por EPIC-SENT (HU-SENT-002-v2, cálculo híbrido de humor).
+    # valor_humor: promedio de términos únicos (ADR-003, HU-SENT-007); NULL si no
+    # hubo términos evaluables.
     valor_humor = Column(Float, nullable=True)
+    # "diccionario" o "ml". NULL = la noticia aún no fue procesada; es la marca
+    # que usa el barrido de respaldo (no valor_humor, que también es NULL
+    # cuando hubo 0 coincidencias).
+    metodo_calculo = Column(String(20), nullable=True, index=True)
+    cantidad_terminos_evaluados = Column(Integer, nullable=True)
+    # HU-SENT-003 / ADR-003: desviación estándar poblacional de los valores de
+    # los términos coincidentes. NULL si no hubo términos; 0.0 con un solo término.
+    polarizacion_terminos = Column(Float, nullable=True)
+    # HU-SENT-002-v3 / HU-SENT-006: versión del modelo usada cuando
+    # metodo_calculo = "ml" (nombre propuesto en diagrama-clases-sentimiento.md).
+    modelo_sentimiento_id = Column(
+        Integer, ForeignKey("modelos_sentimiento.id", ondelete="SET NULL"), nullable=True
+    )
 
     fuente = relationship("FuenteRSS", back_populates="noticias")
+    # HU-SENT-008: composición; las coincidencias se borran con la noticia.
+    coincidencias = relationship("CoincidenciaTermino", cascade="all, delete-orphan")

@@ -1,0 +1,285 @@
+openapi: 3.0.3
+info:
+  title: HumWorld API — Módulo Dashboards y Visualización
+  description: >
+    Contrato de API (OpenSpec) para los datos agregados que consumen los
+    dashboards. Origina en las historias de usuario HU-DASH-001-v3 (mapa
+    mundial de humor) y HU-DASH-003-v2 (nube de palabras influyentes), ver
+    `HU-DASH-dashboards.md`, y en HU-SENT-008 (persistencia de coincidencias
+    término–noticia, `HU-SENT-008-coincidencias-terminos.md`). Fuente
+    funcional: PDF de especificaciones, secciones 4.3.1, 4.3.2 y 10.2
+    ("/dashboards: GET (nube-palabras, mapa)").
+
+    Implementado en el backend (FastAPI): GET /dashboards/map y
+    GET /dashboards/word-cloud (2026-10-19).
+
+    El gráfico de evolución temporal de HU-DASH-001-v3 no usa este contrato:
+    consume `serie_temporal` de `GET /sentiment`
+    (`contrato-sentimiento-diccionario.openapi.yaml`, HU-SENT-004).
+
+    El listado de noticias influyentes (HU-DASH-002, recurso `/news`) no está
+    incluido: sus puntos de decisión siguen abiertos.
+
+    Estado: Propuesto, pendiente de ratificación del equipo.
+  version: "1.1.0"
+servers:
+  - url: /api/v1
+    description: Base URL versionada (PDF, sección 10.3), misma convención que los demás contratos del proyecto.
+
+tags:
+  - name: dashboards
+    description: >
+      Recursos de solo lectura con datos ya agregados por el backend. El
+      frontend no calcula humor ni influencia (ADR-005, Decisión, punto 9).
+      "map" y "word-cloud" se modelan como recursos únicos (singleton) dentro
+      de la colección "dashboards": no existe más de un mapa ni más de una
+      nube, por lo que no se pluralizan. Nombres en inglés por consistencia
+      con /channels, /sources, /dictionary y /sentiment. A confirmar por el
+      equipo.
+
+paths:
+
+  /dashboards/map:
+    get:
+      tags: [dashboards]
+      summary: Obtener el humor global y por continente de una fecha
+      description: >
+        Origina en HU-DASH-001-v3. Devuelve en una sola respuesta el humor
+        agregado global, el de cada uno de los 5 continentes y el rango de
+        fechas con información disponible. Los agregados siguen la misma
+        definición que HU-SENT-004: promedio de valor_humor de las noticias
+        con valor_humor no nulo. Nunca responde 500 por ausencia de datos.
+      parameters:
+        - name: fecha
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+          description: >
+            Fecha consultada. Si se omite, se usa fecha_maxima_con_datos.
+            El día de una noticia es COALESCE(fecha_publicacion,
+            fecha_registro), en UTC (misma regla propuesta para HU-DASH-002).
+      responses:
+        "200":
+          description: >
+            Datos del mapa obtenidos correctamente. "continentes" contiene
+            siempre exactamente 5 elementos, uno por cada valor del enum
+            Continente; los que no tienen noticias evaluadas en la fecha
+            llevan humor_promedio null y cantidad_noticias_evaluadas 0.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MapaHumor"
+        "400":
+          description: Formato de fecha inválido.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          $ref: "#/components/responses/ErrorInterno"
+
+  /dashboards/word-cloud:
+    get:
+      tags: [dashboards]
+      summary: Obtener las palabras influyentes para la nube de palabras
+      description: >
+        Origina en HU-DASH-003-v2. Devuelve los términos del diccionario con
+        al menos 1 coincidencia registrada (HU-SENT-008) en las noticias que
+        cumplen el filtro, ordenados por peso descendente. El peso es la
+        cantidad de noticias del filtro que contienen el término; cada
+        término cuenta una sola vez por noticia, en coherencia con HU-SENT-007
+        y ADR-003. Sin filtros, considera las noticias de todo el mundo.
+        Mezcla ambos idiomas: cada término (palabra + idioma) es una entrada
+        distinta. Empates de peso: orden alfabético por palabra.
+      parameters:
+        - name: continente
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/Continente"
+          description: Limita el cálculo a noticias de canales de ese continente.
+        - name: pais
+          in: query
+          required: false
+          schema:
+            type: string
+          description: >
+            Limita el cálculo a noticias de canales de ese país
+            (CanalNoticias.pais, opcional en el modelo). El origen de la
+            lista de países que ofrece el frontend sigue pendiente de
+            decisión (HU-DASH-003-v2, punto pendiente 3).
+        - name: limite
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+          description: >
+            Cantidad máxima de palabras a devolver. Por defecto 50, máximo 100
+            (decisión de equipo del 2026-10-19; cierra el punto pendiente 4 de
+            HU-DASH-003-v2).
+      responses:
+        "200":
+          description: >
+            Palabras obtenidas correctamente. Si ningún término cumple el
+            filtro, "items" es un array vacío (nunca 500).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NubePalabras"
+        "400":
+          description: Valor de continente fuera del enum, o límite fuera de 1..100.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          $ref: "#/components/responses/ErrorInterno"
+
+components:
+  schemas:
+    Continente:
+      type: string
+      enum: [América, Europa, Asia, África, Oceanía]
+      description: >
+        Los 5 continentes confirmados por el equipo el 2026-09-28 (HU-RSS-009,
+        `HU-RSS-captura.md`). Literales con tilde confirmados por el equipo el
+        2026-10-18: son los valores que la carga inicial (HU-RSS-009-v2)
+        almacena en CanalNoticias.continente. En
+        `contrato-canales-fuentes-rss.openapi.yaml` y
+        `contrato-sentimiento-diccionario.openapi.yaml` "continente" sigue
+        siendo un string libre, cuyo filtro no distingue mayúsculas ni
+        tildes.
+
+    HumorAgregado:
+      type: object
+      properties:
+        humor_promedio:
+          type: number
+          nullable: true
+          description: Promedio de valor_humor (escala -10 a +10). Null si no hay noticias evaluadas.
+        cantidad_noticias_evaluadas:
+          type: integer
+          description: Cantidad de noticias con valor_humor no nulo consideradas.
+      required: [humor_promedio, cantidad_noticias_evaluadas]
+
+    HumorContinente:
+      allOf:
+        - $ref: "#/components/schemas/HumorAgregado"
+        - type: object
+          properties:
+            continente:
+              $ref: "#/components/schemas/Continente"
+          required: [continente]
+
+    MapaHumor:
+      type: object
+      description: Origina en HU-DASH-001-v3.
+      properties:
+        fecha:
+          type: string
+          format: date
+          nullable: true
+          description: Fecha a la que corresponden los agregados. Null solo si no se indicó fecha y no existe ninguna noticia evaluada.
+        fecha_minima_con_datos:
+          type: string
+          format: date
+          nullable: true
+          description: Primera fecha con al menos 1 noticia evaluada. Null si no existe ninguna.
+        fecha_maxima_con_datos:
+          type: string
+          format: date
+          nullable: true
+          description: Última fecha con al menos 1 noticia evaluada. Null si no existe ninguna.
+        global:
+          $ref: "#/components/schemas/HumorAgregado"
+        continentes:
+          type: array
+          minItems: 5
+          maxItems: 5
+          items:
+            $ref: "#/components/schemas/HumorContinente"
+      required: [fecha, fecha_minima_con_datos, fecha_maxima_con_datos, global, continentes]
+
+    PalabraInfluyente:
+      type: object
+      description: Origina en HU-DASH-003-v2. Corresponde a un TerminoDiccionario (HU-SENT-001) más su peso.
+      properties:
+        termino_id:
+          type: integer
+        palabra:
+          type: string
+        idioma:
+          type: string
+          enum: [es, en]
+        valor:
+          type: integer
+          minimum: -10
+          maximum: 10
+          description: Valor del término en el diccionario.
+        peso:
+          type: integer
+          minimum: 1
+          description: Cantidad de noticias del filtro que contienen el término.
+      required: [termino_id, palabra, idioma, valor, peso]
+
+    NubePalabras:
+      type: object
+      properties:
+        continente:
+          allOf:
+            - $ref: "#/components/schemas/Continente"
+          nullable: true
+          description: Eco del filtro aplicado, o null.
+        pais:
+          type: string
+          nullable: true
+          description: Eco del filtro aplicado, o null.
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/PalabraInfluyente"
+      required: [items]
+
+    Error:
+      type: object
+      properties:
+        codigo:
+          type: string
+        mensaje:
+          type: string
+        detalles:
+          type: array
+          items:
+            type: string
+          nullable: true
+      required: [codigo, mensaje]
+
+  responses:
+    ErrorInterno:
+      description: Error interno del servidor (500).
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+
+# Historial de revisión de este contrato
+# v1.0.0 (2026-10-05): versión inicial — GET /dashboards/map (HU-DASH-001-v3)
+#   y GET /dashboards/word-cloud (HU-DASH-003-v2, datos de HU-SENT-008).
+#   Decisiones de sesión: endpoint único de mapa en lugar de N llamadas a
+#   /sentiment; peso de palabra = cantidad de noticias que contienen el
+#   término. Pendientes de confirmación del equipo: nombres de los recursos
+#   (map, word-cloud), comportamiento de "fecha" omitida, valor por defecto y
+#   máximo de "limite", origen de la lista de países, tratamiento del idioma
+#   en la nube y literales exactos del enum Continente.
+# v1.0.1 (2026-10-18): se confirman los literales del enum Continente, con
+#   tilde. Sin cambios de rutas ni de esquemas.
+# v1.1.0 (2026-10-19): implementación de ambos endpoints. Se fijan "limite"
+#   (por defecto 50, máximo 100), el tratamiento del idioma en la nube (ambos
+#   idiomas, un término por palabra + idioma), el orden de desempate y la
+#   regla del día de una noticia en el mapa. "continente" de NubePalabras
+#   pasa a usar el enum. Sigue pendiente el origen de la lista de países.
