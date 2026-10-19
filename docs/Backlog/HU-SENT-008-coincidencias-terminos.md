@@ -2,7 +2,7 @@
 
 **Proyecto:** HumWorld — Equipo 3
 **Origen:** PDF de especificaciones, sección 4.3.1 (Dashboard de palabras influyentes) y sección 10.2 (`/dashboards`: nube de palabras). Historia derivada de HU-DASH-003-v2, que necesita un dato que ninguna historia de EPIC-SENT persistía (hallazgo H-2 de `Revision-consistencia-EPIC-DASH-2026-10-05.md`).
-**Estado:** Propuesto — decisión de diseño tomada en sesión del 2026-10-05 (tabla de unión, siempre, también en el camino de ML). Pendiente de ratificación del equipo y de estimación en Planning Poker.
+**Estado:** Implementada el 2026-10-19 (rama `feature/nube-palabras`), pendiente de revisión en el PR, de ratificación del equipo y de estimación en Planning Poker. Decisión de diseño de la sesión del 2026-10-05: tabla de unión, poblada siempre, también en el camino de ML.
 **Ubicación:** este documento es un anexo de `HU-SENT-motor-sentimiento.md` (v1.5). Queda pendiente fusionarlo en ese documento como v1.6.
 
 ---
@@ -23,8 +23,8 @@
 ### Relación con las historias existentes
 
 - **HU-SENT-007** ya detecta los términos coincidentes para promediar sus valores, pero los descarta después del cálculo. Esta historia persiste ese mismo conjunto.
-- **HU-SENT-002-v2** no cambia. Cuando el humor se calcula con el modelo de ML, el método de diccionario no se ejecuta para obtener `valor_humor`; esta historia exige ejecutar igualmente la detección de términos para registrar las coincidencias. `valor_humor` y `metodo_calculo` no se ven afectados.
-- **Sin dependencia externa:** la detección opera sobre el texto ya persistido y el diccionario en MySQL, por lo que no introduce llamadas a servicios externos ni requiere patrones de resiliencia (mismo criterio que ADR-03, sección 4).
+- **HU-SENT-002-v3** (antes HU-SENT-002-v2) no cambia por esta historia. Cuando el humor se calcula con el modelo de ML, el método de diccionario no se ejecuta para obtener `valor_humor`; esta historia exige ejecutar igualmente la detección de términos para registrar las coincidencias. `valor_humor` y `metodo_calculo` no se ven afectados.
+- **Sin dependencia externa:** la detección opera sobre el texto ya persistido y el diccionario en MySQL, por lo que no introduce llamadas a servicios externos ni requiere patrones de resiliencia (mismo criterio que ADR-003, sección 4).
 
 ### Modelo de datos propuesto
 
@@ -42,7 +42,7 @@ classDiagram
 
 - Tabla de unión propuesta: `noticia_termino`, con clave primaria compuesta (`noticia_id`, `termino_id`). La clave compuesta garantiza una sola fila por término y noticia.
 - **Composición con `Noticia`:** una coincidencia no tiene sentido sin su noticia; al eliminarse la noticia (purgado, HU-ADMIN-002 y HU-ADMIN-003) sus coincidencias se eliminan con ella.
-- Los nombres `CoincidenciaTermino` y `noticia_termino` son propuestas de este documento, a confirmar por el equipo antes de la migración. `diagrama-clases-sentimiento.md` (v1.1) afirma hoy que no existe relación persistida entre `Noticia` y `TerminoDiccionario`; debe actualizarse cuando esta historia se ratifique.
+- Los nombres `CoincidenciaTermino` y `noticia_termino` se usaron en la implementación (migración `e5a1c7d3f9b2`). `diagrama-clases-sentimiento.md` (v1.1) afirma hoy que no existe relación persistida entre `Noticia` y `TerminoDiccionario`; debe actualizarse cuando esta historia se ratifique.
 
 ### Criterios de aceptación (Gherkin)
 
@@ -83,13 +83,13 @@ Escenario: Eliminación de una noticia
   Entonces no queda ninguna coincidencia asociada a esa noticia
 ```
 
-**Nota de grounding (idioma):** el criterio de comparar el idioma detectado de la noticia contra el idioma del término proviene de `ADR-03-eleccion-algoritmo-agregacion-sentimiento.md`, Decisión, punto 1.
+**Nota de grounding (idioma):** el criterio de comparar el idioma detectado de la noticia contra el idioma del término proviene de `ADR-003-algoritmo-sentimiento.md`, Decisión, punto 1.
 
 ### Puntos pendientes de decisión del equipo
 
-1. **Noticias ya capturadas.** Las noticias anteriores a la puesta en marcha de esta historia no tienen coincidencias. Falta decidir si se recalculan una vez (proceso de carga retroactiva) o si la nube solo refleja noticias nuevas.
-2. **Cambios posteriores en el diccionario.** Si se agrega un término después de capturada una noticia, esa noticia no lo registra. Falta decidir si se acepta esa limitación o si se reprocesa.
-3. **Eliminación de un término con coincidencias** (`DELETE /api/v1/dictionary/{id}`, HU-SENT-001). Falta decidir entre eliminar sus coincidencias en cascada o rechazar la eliminación. Cualquiera de las dos afecta el contrato de HU-SENT-001.
+1. ~~**Noticias ya capturadas.**~~ **Resuelto el 2026-10-19:** se recalculan una vez. La migración `e5a1c7d3f9b2` marca como pendientes las noticias calculadas por diccionario y el barrido de humor (HU-SENT-002-v3) las reprocesa, registrando sus coincidencias.
+2. ~~**Cambios posteriores en el diccionario.**~~ **Resuelto el 2026-10-18:** toda alta, modificación o baja de un término marca para recálculo las noticias calculadas por diccionario, y el barrido de respaldo las reprocesa (HU-SENT-002-v3). Al implementar esta historia, sus coincidencias deben recalcularse en ese mismo reproceso. Pendiente: si las noticias calculadas con ML (que no se marcan) también deben recalcular sus coincidencias.
+3. ~~**Eliminación de un término con coincidencias.**~~ **Resuelto el 2026-10-19:** sus coincidencias se eliminan en cascada (`ON DELETE CASCADE`). El contrato de `DELETE /api/v1/dictionary/{id}` no cambia; además, la baja ya marca las noticias para recálculo (HU-SENT-002-v3).
 
 ### Definition of Done
 
@@ -106,3 +106,5 @@ Escenario: Eliminación de una noticia
 | ID | Versión | Fecha/Sesión | Motivo del cambio |
 |---|---|---|---|
 | HU-SENT-008 | v1.0 | 2026-10-05 | Creación. Historia técnica nueva, originada en el hallazgo H-2 de la revisión de consistencia de EPIC-DASH: HU-DASH-003 dependía de coincidencias término–noticia que no se persistían. Decisión de sesión: tabla de unión, poblada siempre, también cuando el humor lo calcula el modelo de ML. |
+| HU-SENT-008 | v1.1 | 2026-10-18 | Se resuelve el punto pendiente 2 (cambios posteriores en el diccionario) con la decisión de equipo registrada en HU-SENT-002-v3. Queda abierto un subcaso: las coincidencias de noticias calculadas con ML. Se actualiza la referencia a HU-SENT-002-v3. |
+| HU-SENT-008 | v1.2 | 2026-10-19 | Implementación y decisiones de equipo: se resuelven los puntos pendientes 1 (recálculo único de las noticias ya capturadas mediante la migración y el barrido) y 3 (borrado en cascada de las coincidencias de un término eliminado). Sin cambios en los criterios de aceptación. |
