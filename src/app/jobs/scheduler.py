@@ -11,12 +11,14 @@ from app.core.config import settings
 from app.database import SessionLocal
 from app.services.captura_service import ejecutar_captura_todas_las_activas
 from app.services.configuracion_service import consultar_configuracion
+from app.services.purgado_service import purgar_por_caducidad
 from app.services.sentimiento_service import procesar_pendientes
 
 logger = logging.getLogger(__name__)
 
 CAPTURA_JOB_ID = "captura-rss-automatica"
 BARRIDO_HUMOR_JOB_ID = "barrido-humor-pendiente"  # HU-SENT-002-v2
+PURGADO_JOB_ID = "purgado-noticias-caducadas"  # HU-ADMIN-002
 scheduler: AsyncIOScheduler = AsyncIOScheduler()
 
 
@@ -45,6 +47,17 @@ def _ejecutar_barrido_humor() -> None:
         procesar_pendientes(db)
     except SQLAlchemyError:
         logger.exception("El barrido de humor no pudo leer las noticias pendientes")
+    finally:
+        db.close()
+
+
+def _ejecutar_purgado() -> None:
+    """Purgado automático de HU-ADMIN-002 (PDF §4.2.5)."""
+    db: Session = SessionLocal()
+    try:
+        purgar_por_caducidad(db)
+    except SQLAlchemyError:
+        logger.exception("El purgado automático de noticias falló")
     finally:
         db.close()
 
@@ -79,6 +92,17 @@ def iniciar_scheduler() -> None:
         trigger="interval",
         minutes=settings.sentimiento_barrido_minutos,
         next_run_time=datetime.now(timezone.utc) + timedelta(minutes=1),
+        max_instances=1,
+        coalesce=True,
+    )
+    # HU-ADMIN-002: primera ejecución 5 minutos después de arrancar y luego
+    # cada purgado_intervalo_horas (valor propuesto: 24 h).
+    scheduler.add_job(
+        _ejecutar_purgado,
+        id=PURGADO_JOB_ID,
+        trigger="interval",
+        hours=settings.purgado_intervalo_horas,
+        next_run_time=datetime.now(timezone.utc) + timedelta(minutes=5),
         max_instances=1,
         coalesce=True,
     )

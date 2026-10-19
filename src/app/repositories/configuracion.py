@@ -1,4 +1,4 @@
-"""Repositorio de configuración del cron de captura RSS."""
+"""Repositorio de la configuración general (HU-RSS-007, HU-ADMIN-001)."""
 
 from sqlalchemy import Select, select
 from sqlalchemy.exc import SQLAlchemyError
@@ -37,6 +37,22 @@ class ConfiguracionRepository:
             )
             return self.insertar(db, configuracion)
 
+        configuracion.valor = valor
+        try:
+            db.commit()
+        except SQLAlchemyError:
+            db.rollback()
+            raise
+        db.refresh(configuracion)
+        return configuracion
+
+    def guardar(self, db: Session, clave: str, valor: int) -> Configuracion:
+        """Crea o actualiza un parámetro entero (HU-ADMIN-001)."""
+        if valor <= 0:
+            raise ValueError("El valor de configuración debe ser un entero positivo.")
+        configuracion = self.obtener(db, clave)
+        if configuracion is None:
+            return self.insertar(db, Configuracion(clave=clave, valor=valor))
         configuracion.valor = valor
         try:
             db.commit()

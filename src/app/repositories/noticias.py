@@ -1,4 +1,6 @@
-from sqlalchemy import select, update
+from datetime import datetime
+
+from sqlalchemy import delete, select, update
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
@@ -102,4 +104,31 @@ class NoticiaRepository:
         except SQLAlchemyError:
             db.rollback()
             raise
+        return resultado.rowcount
+
+    def eliminar_registradas_antes_de(self, db: Session, limite: datetime) -> int:
+        """Purgado (HU-ADMIN-002/003): borra las noticias con fecha_registro < limite.
+
+        Borra primero sus coincidencias (HU-SENT-008, composición) y luego las
+        noticias, en una sola transacción. El borrado explícito de
+        noticia_termino no depende de que el motor aplique ON DELETE CASCADE
+        (SQLite no lo hace sin PRAGMA foreign_keys).
+        """
+        ids = select(Noticia.id).where(Noticia.fecha_registro < limite)
+        try:
+            db.execute(
+                delete(CoincidenciaTermino)
+                .where(CoincidenciaTermino.noticia_id.in_(ids))
+                .execution_options(synchronize_session=False)
+            )
+            resultado = db.execute(
+                delete(Noticia)
+                .where(Noticia.fecha_registro < limite)
+                .execution_options(synchronize_session=False)
+            )
+            db.commit()
+        except SQLAlchemyError:
+            db.rollback()
+            raise
+        db.expire_all()
         return resultado.rowcount

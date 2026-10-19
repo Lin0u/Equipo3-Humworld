@@ -7,7 +7,7 @@ info:
     HU-RSS-001 a HU-RSS-010 (y su versión HU-RSS-003-v2) y en ADR-01 (framework de la API backend)
     y ADR-02 (relación de composición CanalNoticias/FuenteRSS). Fuente funcional: PDF de especificaciones,
     secciones 4.2.1, 4.2.3, 10.2 y 10.3.
-  version: "1.7.0"
+  version: "1.8.0"
 servers:
   - url: /api/v1
     description: Base URL versionada (PDF, sección 10.3)
@@ -27,11 +27,15 @@ paths:
   /config:
     get:
       tags: [config]
-      summary: Consultar la periodicidad del cron de captura
-      description: Devuelve la periodicidad persistida en minutos.
+      summary: Consultar la configuración general
+      description: >
+        Devuelve la periodicidad del cron en minutos (HU-RSS-007) y la
+        caducidad de las noticias en días (HU-ADMIN-001, PDF §4.2.5). Si la
+        caducidad no está persistida, devuelve el valor por defecto (90 días,
+        propuesto y pendiente de ratificación del equipo).
       responses:
         "200":
-          description: Periodicidad consultada correctamente.
+          description: Configuración consultada correctamente.
           content:
             application/json:
               schema:
@@ -40,8 +44,13 @@ paths:
           $ref: "#/components/responses/ErrorInterno"
     put:
       tags: [config]
-      summary: Actualizar la periodicidad del cron de captura
-      description: Persiste una periodicidad positiva y reprograma el scheduler.
+      summary: Actualizar la configuración general
+      description: >
+        Persiste una periodicidad positiva y reprograma el scheduler
+        (HU-RSS-007). Si se envía caducidad_noticias_dias (HU-ADMIN-001), la
+        persiste; si se omite, se conserva el valor vigente (compatibilidad con
+        los clientes de HU-RSS-007). Ambos valores se validan antes de
+        escribir: si uno es inválido, no cambia ninguno.
       requestBody:
         required: true
         content:
@@ -50,7 +59,7 @@ paths:
               $ref: "#/components/schemas/ConfiguracionActualizar"
       responses:
         "200":
-          description: Periodicidad actualizada correctamente.
+          description: Configuración actualizada correctamente.
           content:
             application/json:
               schema:
@@ -399,20 +408,28 @@ components:
   schemas:
     Configuracion:
       type: object
-      description: Periodicidad persistida del cron de captura. Origina en HU-RSS-007.
+      description: Configuración general persistida. Origina en HU-RSS-007 (periodicidad) y HU-ADMIN-001 (caducidad).
       properties:
         periodicidad_cron_minutos:
           type: integer
           minimum: 1
-      required: [periodicidad_cron_minutos]
+        caducidad_noticias_dias:
+          type: integer
+          minimum: 1
+          description: Días tras los cuales una noticia se purga (HU-ADMIN-002).
+      required: [periodicidad_cron_minutos, caducidad_noticias_dias]
 
     ConfiguracionActualizar:
       type: object
-      description: Nuevo valor de periodicidad del cron de captura. Origina en HU-RSS-007.
+      description: Nuevos valores de configuración. Origina en HU-RSS-007 y HU-ADMIN-001.
       properties:
         periodicidad_cron_minutos:
           type: integer
           minimum: 1
+        caducidad_noticias_dias:
+          type: integer
+          minimum: 1
+          description: Opcional. Si se omite, se conserva el valor vigente.
       required: [periodicidad_cron_minutos]
 
     CanalNoticias:
@@ -633,3 +650,6 @@ components:
 #   POST /seeds: HU-RSS-009 fue deprecada en favor de HU-RSS-009-v2, que
 #   realiza la carga inicial con un script interno (python -m scripts.seed)
 #   sin endpoint. /seeds nunca llegó a implementarse en el código.
+# v1.8.0 (2026-10-19): /config agrega caducidad_noticias_dias (HU-ADMIN-001,
+#   PDF §4.2.5), obligatoria en la respuesta y opcional en el PUT. Valor por
+#   defecto propuesto: 90 días, pendiente de ratificación del equipo.

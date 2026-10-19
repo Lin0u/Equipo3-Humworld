@@ -1,9 +1,10 @@
 """
 Router: /api/v1/news
 
-Origina en: HU-DASH-002-v2 (listado de noticias más influyentes).
+Origina en: HU-DASH-002-v2 (listado de noticias más influyentes) y
+HU-ADMIN-003 (purgado manual, DELETE).
 Contrato: contrato-noticias.openapi.yaml. PDF §10.2: "/news: GET (lista,
-detalle, filtros, influyentes)".
+detalle, filtros, influyentes), DELETE".
 """
 from datetime import date
 from typing import Optional
@@ -13,11 +14,18 @@ from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.exceptions import NoticiaNotFoundError
+from app.exceptions import FechaPurgadoInvalidaError, NoticiaNotFoundError
 from app.schemas.common import Error
 from app.schemas.dashboard import Continente
-from app.schemas.noticia import NoticiaDetalle, NoticiaListado, OrdenNoticias, SignoHumor
+from app.schemas.noticia import (
+    NoticiaDetalle,
+    NoticiaListado,
+    OrdenNoticias,
+    ResultadoPurgado,
+    SignoHumor,
+)
 from app.services.noticia_consulta_service import listar_noticias, obtener_noticia
+from app.services.purgado_service import purgar_anteriores_a, purgar_por_caducidad
 
 router = APIRouter(prefix="/news", tags=["news"])
 
@@ -44,6 +52,30 @@ def listar(
 ):
     """Noticias con humor calculado, paginadas y filtradas."""
     return listar_noticias(db, orden, signo, continente, pais, fecha, pagina, tamanio_pagina)
+
+
+@router.delete("", response_model=ResultadoPurgado, responses={400: {"model": Error}})
+def purgar(
+    fecha_anterior_a: Optional[date] = Query(
+        default=None,
+        description=(
+            "Elimina las noticias registradas antes de este día (UTC). "
+            "Si se omite, aplica la caducidad configurada en /config."
+        ),
+    ),
+    db: Session = Depends(get_db),
+):
+    """Purgado manual de noticias antiguas (HU-ADMIN-003)."""
+    if fecha_anterior_a is None:
+        return purgar_por_caducidad(db)
+    try:
+        return purgar_anteriores_a(db, fecha_anterior_a)
+    except FechaPurgadoInvalidaError:
+        cuerpo = Error(
+            codigo="FECHA_INVALIDA",
+            mensaje="La fecha límite no puede ser posterior a hoy.",
+        )
+        return JSONResponse(status_code=400, content=cuerpo.model_dump(exclude_none=True))
 
 
 @router.get("/{noticia_id}", response_model=NoticiaDetalle, responses={404: {"model": Error}})
