@@ -38,6 +38,26 @@ class Settings(BaseSettings):
     purgado_caducidad_dias_defecto: int = 90
     purgado_intervalo_horas: int = 24
 
+    # Modelo de ML (HU-SENT-006, ADR-04): embeddings de Google Gemini + regresor
+    # Ridge local. Sin GEMINI_API_KEY el camino ML queda desactivado y todo el
+    # humor se calcula por diccionario. La cuenta y la clave las gestiona el
+    # equipo (ADR-04, punto 2); nunca se versionan en el repositorio.
+    gemini_api_key: str = ""
+    gemini_url_base: str = "https://generativelanguage.googleapis.com/v1beta"
+    gemini_modelo_embeddings: str = "gemini-embedding-001"
+    # ADR-04, punto 7. Valores PROPUESTOS, pendientes de ratificación.
+    embeddings_timeout_segundos: float = 3.0
+    embeddings_max_reintentos: int = 3  # backoff exponencial acotado
+    embeddings_backoff_base_segundos: float = 0.5
+    embeddings_lote: int = 100  # textos por solicitud batchEmbedContents
+    embeddings_max_caracteres: int = 8000  # ~2.048 tokens de entrada del modelo
+    ml_circuit_umbral_fallos: int = 5
+    ml_circuit_espera_segundos: int = 60
+    # ADR-04, punto 4: umbral mínimo de entrenamiento (valor propuesto).
+    ml_umbral_entrenamiento: int = 1000
+    ml_proporcion_validacion: float = 0.2
+    ml_directorio_modelos: str = "modelos"
+
     # CORS (ADR-05, stack de frontend): orígenes autorizados a llamar a la API
     # desde el navegador, separados por coma. Por defecto, el servidor de
     # desarrollo de Vite. TODO(equipo): agregar el origen del frontend desplegado.

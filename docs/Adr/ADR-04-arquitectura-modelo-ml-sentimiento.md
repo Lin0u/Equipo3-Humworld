@@ -2,7 +2,7 @@
  
 **Proyecto:** HumWorld — Equipo 3
 **Fecha de creación:** 2026-09-28
-**Versión del documento:** v1.1 — historial completo en "Historial de revisión de este ADR", al final del documento.
+**Versión del documento:** v1.3 — historial completo en "Historial de revisión de este ADR", al final del documento.
  
 ---
  
@@ -99,6 +99,28 @@ Estos patrones se reutilizan, en su diseño, de la misma regla de resiliencia ya
  
 ---
  
+### 8. Implementación (2026-10-19)
+
+Implementado en la rama `feature/cierre-sprint` siguiendo los puntos 1 a 7, sin cambios de arquitectura. Parámetros concretos que el ADR dejaba abiertos, todos configurables (`src/app/core/config.py`) y **pendientes de ratificación del equipo**:
+
+| Parámetro | Valor | Nota |
+|---|---|---|
+| Modelo de embeddings | `gemini-embedding-001` | Modelo de embeddings de la Gemini API (anuncio de disponibilidad general de Google), 3.072 dimensiones por defecto, entrada máxima de 2.048 tokens. El texto se recorta a 8.000 caracteres. Las cuotas exactas del free tier siguen sin reconfirmarse. |
+| Llamadas | `embedContent` (predicción) y `batchEmbedContents` (entrenamiento, lotes de 100) | La clave viaja en la cabecera `x-goog-api-key`, nunca en la URL. |
+| Timeout | 3 s por llamada | Punto 7. |
+| Retry | 3 reintentos, backoff 0,5 s · 2ⁿ | Solo ante timeout, error de conexión, HTTP 429 y 5xx; nunca ante otros 4xx. |
+| Circuit Breaker | se abre tras 5 fallos seguidos durante 60 s | Solo en el camino de predicción, compartido por el proceso. |
+| Regresor | `Ridge(alpha=1.0)` | Predicciones recortadas a la escala -10 a +10. |
+| Validación | 20 % de los datos, semilla 42 | Partición reproducible; el MAE se calcula sobre esa parte. |
+| Umbral de entrenamiento | 1.000 noticias | Punto 4; solo noticias con `metodo_calculo = "diccionario"` y `valor_humor` no nulo. |
+| Errores de `POST /trainings` | 409 / 502 / 503 | 502 = Gemini falló tras los reintentos; 503 = falta `GEMINI_API_KEY`. |
+
+Sin `GEMINI_API_KEY` el camino de ML queda desactivado y todo el humor se calcula por diccionario, por lo que el sistema funciona igual que antes en cualquier despliegue que no configure la clave. Cada noticia calculada con ML guarda la versión usada en `noticias.modelo_sentimiento_id`.
+
+**Riesgo operativo observado al implementar:** el camino de predicción hace una llamada a Gemini por noticia. Con el volumen de captura actual (cientos de noticias por ejecución del cron), una cuota diaria del orden de la documentada en el punto 2 se agotaría en pocas horas; al agotarse, las respuestas 429 abren el Circuit Breaker y el cálculo vuelve al diccionario. Es el riesgo de cuota ya señalado en "Negativas / riesgos a mitigar", ahora con un mecanismo de degradación probado.
+
+---
+
 ## Alternativas consideradas
  
 ### Alternativa A — Modelo 100% local (TF-IDF + regresor local, sin servicio externo)
@@ -181,3 +203,4 @@ Las condiciones de free tier de Google Gemini Embedding, y la comparación con O
 | v1.1 | 2026-09-28 | Se fijan **valores propuestos** (no definitivos) para los dos parámetros que quedaban sin cifra en v1.0: umbral mínimo de entrenamiento = 1.000 noticias (punto 4 de la Decisión) y timeout de la llamada a Google Gemini Embedding = 3 segundos (punto 7, Patrones de resiliencia). Ambos valores se derivan de la estimación del equipo de ~50 fuentes RSS activas y de heurísticas generales de ingeniería, no de ningún dato del PDF — quedan marcados explícitamente como propuesta pendiente de ratificación por el equipo, a ajustar con datos reales una vez la integración esté corriendo. Sin cambios en la Decisión de arquitectura, las Alternativas evaluadas ni las Consecuencias. Actualizado en espejo en `HU-SENT-motor-sentimiento.md`. |
 | v1.2 (editorial) | 2026-09-29 | Limpieza editorial: se retiran las marcas de sesión ("tercera/cuarta sesión del día") y las etiquetas "PO/Arquitecto" inline dentro del cuerpo del documento, integrando ese contenido como prosa técnica normal. La trazabilidad de cuándo se tomó cada decisión queda exclusivamente en esta tabla de Historial de revisión. Sin cambios de fondo en la arquitectura, la Decisión ni las Consecuencias. |
  
+| v1.3 | 2026-10-19 | Se agrega el punto 8 "Implementación" con los parámetros concretos de la implementación de HU-SENT-006 (modelo `gemini-embedding-001`, reintentos, Circuit Breaker, Ridge, partición de validación y códigos 409/502/503) y el riesgo de cuota observado. Sin cambios en la Decisión, las Alternativas ni el Estado. |

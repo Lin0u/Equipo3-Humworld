@@ -24,6 +24,7 @@ from app.routers import (
     news,
     sentiment,
     sources,
+    trainings,
 )
 
 
@@ -83,3 +84,4 @@ app.include_router(dictionary.router, prefix=api_v1_prefix)
 app.include_router(dashboards.router, prefix=api_v1_prefix)
 app.include_router(sentiment.router, prefix=api_v1_prefix)
 app.include_router(news.router, prefix=api_v1_prefix)
+app.include_router(trainings.router, prefix=api_v1_prefix)
