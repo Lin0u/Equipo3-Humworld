@@ -1,7 +1,8 @@
 ## 1. Modelo y migración
 
-- [ ] 1.1 Extender `src/app/models/noticia.py` con `polarizacion_terminos` nullable de tipo Float y `metodo_calculo`; verificar definición ORM y valores permitidos en la capa de dominio.
-- [ ] 1.2 Crear migración Alembic encadenada a la revisión vigente para las columnas aprobadas; verificar `alembic upgrade head --sql`, orden de migración y downgrade sin modificar otras columnas.
+- [ ] 1.0 Verificar que ya existe la migración de HU-SENT-002-v2 que crea `metodo_calculo` y `cantidad_terminos_evaluados` (decisión de equipo del 2026-10-18); no iniciar este cambio antes.
+- [ ] 1.1 Extender `src/app/models/noticia.py` con `polarizacion_terminos` nullable de tipo Float; verificar la definición ORM. `metodo_calculo` ya lo agrega HU-SENT-002-v2 y no se redefine.
+- [ ] 1.2 Crear migración Alembic solo para `polarizacion_terminos`, con `down_revision` igual a la revisión de HU-SENT-002-v2; verificar `alembic upgrade head --sql`, orden de migración y un downgrade que retire solo esa columna.
 - [ ] 1.3 Actualizar `docs/UML/diagrama-clases.md` con los nuevos atributos de `Noticia`; verificar que el diagrama refleja modelo, nullabilidad y tipo persistido.
 
 ## 2. Repositorio y persistencia

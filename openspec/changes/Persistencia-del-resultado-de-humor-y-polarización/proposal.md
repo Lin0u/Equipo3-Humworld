@@ -4,10 +4,10 @@ El valor de humor calculado debe sobrevivir a la ejecución del proceso y estar 
 
 ## What Changes
 
-- Extender `Noticia` con `polarizacion_terminos` nullable, manteniendo `valor_humor` y añadiendo `metodo_calculo` para identificar `diccionario` o `ml`.
+- Extender `Noticia` con `polarizacion_terminos` nullable. `valor_humor` ya existe, y `metodo_calculo` (`diccionario` o `ml`) lo crea la migración de HU-SENT-002-v2 (decisión de equipo del 2026-10-18); este cambio lo lee y lo verifica, pero no vuelve a crearlo.
 - Persistir humor y polarización calculados en el registro de noticia ya existente, sin endpoint nuevo.
 - Usar `FLOAT NULL` para polarización: la desviación estándar es un valor real y queda nula cuando no hay términos evaluables; mantener `valor_humor=NULL` en ese caso.
-- Añadir migración Alembic y actualizar el modelo ORM y documentación UML del modelo de datos.
+- Añadir una migración Alembic solo para `polarizacion_terminos`, encadenada después de la de HU-SENT-002-v2, y actualizar el modelo ORM y la documentación UML del modelo de datos.
 - Mantener separadas las historias: persistir el resultado que entrega HU-SENT-002-v2; no implementar aquí el algoritmo/fallback de cálculo (HU-SENT-007/002-v2), el CRUD del diccionario (HU-SENT-001), agregaciones ni dashboard.
 - Este cambio forma parte del incremento actual junto con HU-SENT-001 y HU-SENT-002-v2. Las demás HU-SENT permanecen fuera.
 - No se requieren cambios a `docs/architecture.md` ni a ADR-03; el tipo propuesto sigue el valor real numérico ya usado por `Noticia.valor_humor`.
@@ -24,7 +24,7 @@ El valor de humor calculado debe sobrevivir a la ejecución del proceso y estar 
 
 ## Impact
 
-- Persistencia/ORM: extensión de `src/app/models/noticia.py` y migración Alembic para `polarizacion_terminos` y `metodo_calculo`.
+- Persistencia/ORM: extensión de `src/app/models/noticia.py` y migración Alembic para `polarizacion_terminos`. **Dependencia de orden:** la migración de HU-SENT-002-v2, que crea `metodo_calculo` y `cantidad_terminos_evaluados`, debe existir antes; esta migración la declara como `down_revision`.
 - Repositorios: lectura/escritura transaccional de los campos de resultado sobre `Noticia`.
 - Documentación: actualización de `docs/UML/diagrama-clases.md` para reflejar la entidad persistida.
 - Pruebas: SQLite para round-trip y migración; fixtures deterministas con `TestClient` innecesario al no haber API nueva.
