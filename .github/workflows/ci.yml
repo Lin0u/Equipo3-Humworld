@@ -11,9 +11,11 @@ name: CI
 
 on:
   push:
-    branches: [main, develop]
+    branches: [main, master, develop]
   pull_request:
-    branches: [main, develop]
+    # master es la rama del código (main solo tiene documentación); sin ella,
+    # los PRs de código no ejecutaban el pipeline.
+    branches: [main, master, develop]
 
 jobs:
   test:
@@ -39,9 +41,35 @@ jobs:
           name: coverage-report
           path: src/coverage.xml
 
+  # Pruebas del frontend (Vitest + Testing Library, decisión de la PO del
+  # 2026-10-19): lint, pruebas y cobertura >= 80% (umbral en vite.config.js).
+  test-frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Instalar dependencias
+        run: npm ci
+      - name: Lint
+        run: npm run lint
+      - name: Pruebas con cobertura
+        run: npm run coverage
+      - name: Subir reporte de cobertura
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-frontend
+          path: frontend/coverage/lcov.info
+
   sonarqube:
     runs-on: ubuntu-latest
-    needs: [test]
+    needs: [test, test-frontend]
     steps:
       - uses: actions/checkout@v4
         with:
@@ -51,6 +79,11 @@ jobs:
         with:
           name: coverage-report
           path: src/
+      - name: Descargar reporte de cobertura del frontend
+        uses: actions/download-artifact@v4
+        with:
+          name: coverage-frontend
+          path: frontend/coverage/
       - name: Análisis SonarQube
         uses:    SonarSource/sonarqube-scan-action@7006c4492b2e0ee0f816d36501671557c97f5995 # v8.1.0
         env:
@@ -61,7 +94,7 @@ jobs:
 
   build-and-deploy:
     runs-on: ubuntu-latest
-    needs: [test, sonarqube]
+    needs: [test, test-frontend, sonarqube]
     steps:
       - uses: actions/checkout@v4
       - name: Build imagen Docker
