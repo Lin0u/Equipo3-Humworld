@@ -15,7 +15,7 @@ info:
     servicios internos invocados tras la captura de cada noticia o desde los
     endpoints de este contrato) y por lo tanto no aparecen aquí — ver
     `HU-SENT-motor-sentimiento.md` para su detalle.
-  version: "1.0.1"
+  version: "1.1.0"
 servers:
   - url: /api/v1
     description: Base URL versionada (PDF, sección 10.3), misma convención que contrato-canales-fuentes-rss.openapi.yaml.
@@ -295,8 +295,9 @@ paths:
         "409":
           description: >
             El volumen de noticias evaluadas por diccionario no alcanza el
-            umbral mínimo configurado (valor propuesto: 1.000 — ver ADR-04).
-            El modelo activo previo, si existe, no se ve afectado.
+            umbral mínimo configurado (valor propuesto: 1.000 — ver ADR-04;
+            codigo DATOS_INSUFICIENTES). El modelo activo previo, si existe,
+            no se ve afectado.
           content:
             application/json:
               schema:
@@ -306,15 +307,19 @@ paths:
             El servicio externo de embeddings (Google Gemini Embedding) falló
             de forma persistente tras agotar los reintentos acotados con
             backoff exponencial (ver ADR-04). El entrenamiento se cancela
-            sin afectar el modelo activo previo. El Gherkin de HU-SENT-006
-            no fija un único código entre 502/503 — queda pendiente que el
-            equipo confirme cuál usar en la implementación.
+            sin afectar el modelo activo previo (codigo
+            SERVICIO_EMBEDDINGS_NO_DISPONIBLE). Implementado el 2026-10-19:
+            502 para el fallo del servicio externo y 503 para el despliegue
+            sin clave de API, pendiente de ratificación del equipo.
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
         "503":
-          description: Alternativa al 502 anterior para el mismo escenario de fallo persistente del servicio de embeddings — ver nota en la respuesta 502.
+          description: >
+            El camino de ML no está configurado en este despliegue (falta
+            GEMINI_API_KEY; codigo ML_NO_CONFIGURADO). No se llama al servicio
+            externo y el modelo activo previo no cambia.
           content:
             application/json:
               schema:
@@ -550,3 +555,8 @@ components:
 #   /channels y /sources), exposición de polarizacion_terminos en el resultado
 #   de POST /sentiment, y el código exacto (502 vs 503) para el fallo
 #   persistente del servicio de embeddings en POST /trainings.
+# v1.0.1 (2026-10-19): POST /sentiment expone polarizacion_terminos (HU-SENT-005).
+# v1.1.0 (2026-10-19): POST /trainings implementado (HU-SENT-006). Se fija el
+#   uso de 502 (fallo persistente de Gemini) y 503 (ML no configurado), y los
+#   códigos de error DATOS_INSUFICIENTES, SERVICIO_EMBEDDINGS_NO_DISPONIBLE y
+#   ML_NO_CONFIGURADO. Sin cambios en el esquema ModeloSentimiento.

@@ -67,6 +67,7 @@ class NoticiaRepository:
         cantidad_terminos_evaluados: int,
         terminos_ids: tuple[int, ...] = (),
         polarizacion_terminos: float | None = None,
+        modelo_sentimiento_id: int | None = None,
     ) -> None:
         """Persiste el resultado y sus coincidencias en una transacción propia.
 
@@ -78,6 +79,7 @@ class NoticiaRepository:
         noticia.metodo_calculo = metodo_calculo
         noticia.cantidad_terminos_evaluados = cantidad_terminos_evaluados
         noticia.polarizacion_terminos = polarizacion_terminos
+        noticia.modelo_sentimiento_id = modelo_sentimiento_id
         noticia.coincidencias = [
             CoincidenciaTermino(termino_id=termino_id) for termino_id in sorted(set(terminos_ids))
         ]

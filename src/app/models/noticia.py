@@ -48,6 +48,11 @@ class Noticia(Base):
     # HU-SENT-003 / ADR-03: desviación estándar poblacional de los valores de
     # los términos coincidentes. NULL si no hubo términos; 0.0 con un solo término.
     polarizacion_terminos = Column(Float, nullable=True)
+    # HU-SENT-002-v3 / HU-SENT-006: versión del modelo usada cuando
+    # metodo_calculo = "ml" (nombre propuesto en diagrama-clases-sentimiento.md).
+    modelo_sentimiento_id = Column(
+        Integer, ForeignKey("modelos_sentimiento.id", ondelete="SET NULL"), nullable=True
+    )
 
     fuente = relationship("FuenteRSS", back_populates="noticias")
     # HU-SENT-008: composición; las coincidencias se borran con la noticia.

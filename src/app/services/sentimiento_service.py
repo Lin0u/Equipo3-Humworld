@@ -12,9 +12,9 @@ AVISO (instrucciones del proyecto, sección 12): este módulo contiene lógica
 de negocio del algoritmo de sentimiento. Debe ser revisado por el equipo
 antes de fusionarse.
 
-Alcance de este incremento: el camino efectivo es el diccionario. El camino
-ML queda definido como interfaz (ProveedorModeloML) pero no hay proveedor
-real hasta que HU-SENT-006 entregue el modelo activo y su versionado.
+Camino ML (HU-SENT-006, ADR-04): si hay GEMINI_API_KEY y un modelo activo en
+modelos_sentimiento, se usa su regresor (modelo_ml_service.proveedor_activo);
+si no, o si falla o excede el timeout, el diccionario.
 Calcula la polarización (HU-SENT-003) y persiste las coincidencias de HU-SENT-008
 junto con el resultado.
 
@@ -68,6 +68,8 @@ class ResultadoHumor:
     # Se calcula también cuando el humor lo da el modelo de ML, porque las
     # coincidencias se registran siempre (HU-SENT-008).
     polarizacion_terminos: float | None = None
+    # HU-SENT-006: versión del modelo usada cuando metodo_calculo = "ml".
+    modelo_sentimiento_id: int | None = None
 
 
 class ProveedorModeloML(Protocol):
@@ -80,9 +82,13 @@ class ProveedorModeloML(Protocol):
     def predecir(self, texto: str) -> float: ...
 
 
-def obtener_proveedor_ml_activo() -> ProveedorModeloML | None:
-    """Devuelve el modelo ML activo. Sin HU-SENT-006 aún, no hay ninguno."""
-    return None
+def obtener_proveedor_ml_activo(db: Session | None = None) -> ProveedorModeloML | None:
+    """Devuelve el modelo ML activo (HU-SENT-006) o None si no hay ninguno utilizable."""
+    if db is None:
+        return None
+    from app.services.modelo_ml_service import proveedor_activo
+
+    return proveedor_activo(db)
 
 
 # --- HU-SENT-007: método de diccionario -------------------------------------
@@ -195,7 +201,8 @@ def calcular_humor(
     if proveedor_ml is not None:
         try:
             valor = _predecir_con_timeout(proveedor_ml, texto)
-            return ResultadoHumor(valor, METODO_ML, 0, ids, polar)
+            modelo_id = getattr(proveedor_ml, "modelo_id", None)
+            return ResultadoHumor(valor, METODO_ML, 0, ids, polar, modelo_id)
         except FuturesTimeoutError:
             logger.warning("Timeout del modelo ML noticia_id=%s; se usa diccionario", noticia.id)
         except Exception as exc:  # noqa: BLE001 - cualquier fallo activa el fallback
@@ -230,7 +237,7 @@ def procesar_noticias(
     """
     if not noticias:
         return 0
-    proveedor = proveedor_ml if proveedor_ml is not None else obtener_proveedor_ml_activo()
+    proveedor = proveedor_ml if proveedor_ml is not None else obtener_proveedor_ml_activo(db)
     terminos_por_idioma = _cargar_terminos(db)
     repositorio = NoticiaRepository()
     procesadas = 0
@@ -245,6 +252,7 @@ def procesar_noticias(
                 resultado.cantidad_terminos_evaluados,
                 resultado.terminos_ids,
                 resultado.polarizacion_terminos,
+                resultado.modelo_sentimiento_id,
             )
             procesadas += 1
         except Exception:  # noqa: BLE001 - el barrido la reintentará
