@@ -127,8 +127,10 @@ def test_conserva_la_enie():
     assert calcular_humor_diccionario("La PEÑA del barrio", [_t("peña", 3)]) == (3.0, 1)
 
 
-def test_plural_es_un_termino_distinto():
-    assert calcular_humor_diccionario("Dos guerras", [_t("guerra", -8)]) == (None, 0)
+def test_plural_coincide_por_lema_y_cuenta_una_vez():
+    # HU-SENT-007-v3: con lematización, "guerras" coincide con "guerra" y las
+    # dos formas cargadas cuentan como un solo concepto.
+    assert calcular_humor_diccionario("Dos guerras", [_t("guerra", -8)]) == (-8.0, 1)
     valor, n = calcular_humor_diccionario(
         "Dos guerras", [_t("guerra", -8), _t("guerras", -8)]
     )

@@ -18,20 +18,27 @@ si no, o si falla o excede el timeout, el diccionario.
 Calcula la polarización (HU-SENT-003) y persiste las coincidencias de HU-SENT-008
 junto con el resultado.
 
-Comparación de términos (decisión de equipo del 2026-10-18; HU-SENT-007 no
-la fijaba):
+Comparación de términos (HU-SENT-007-v3; ADR-003, punto 6):
 - Palabra o frase completa: "guerra" no coincide con "guerrilla".
 - Sin distinguir mayúsculas ni tildes: "POLITICA" coincide con "política".
   La ñ se conserva: "pena" no coincide con "peña".
-- Sin lematización: singular y plural se cargan como términos distintos en
-  el diccionario ("guerra" y "guerras").
+- Con lematización (spaCy, decisión de la PO del 2026-10-19): se lematiza el
+  TEXTO de la noticia, en contexto, y cada palabra se compara con los
+  términos del diccionario primero por su forma y, si no hay ninguno con esa
+  forma, por su lema. "guerras" y "murieron" coinciden con los términos
+  "guerra" y "morir". Los términos del diccionario NO se lematizan (fuera de
+  contexto el lema es poco fiable: "best" → "well"), así que deben cargarse en
+  su forma base; las formas flexionadas ya cargadas siguen funcionando.
+- Las frases de varias palabras coinciden si aparecen en el texto o en la
+  secuencia de sus lemas ("acuerdos de paz" → "acuerdo de paz").
 - Se quitan las etiquetas HTML del resumen del feed antes de comparar.
-- Si dos términos del mismo idioma quedan iguales al normalizar (p. ej.
-  "política" y "politica"), cuenta solo el primero (menor id).
+- Idioma: si la noticia no lo trae, se detecta (lematizacion.detectar_idioma)
+  y se guarda en idioma_detectado; si no se puede decidir, se evalúan ambos.
 """
 import logging
 import re
 import unicodedata
+from functools import lru_cache
 from concurrent.futures import ThreadPoolExecutor
 from concurrent.futures import TimeoutError as FuturesTimeoutError
 from dataclasses import dataclass
@@ -45,6 +52,7 @@ from app.models.noticia import Noticia
 from app.models.termino_diccionario import TerminoDiccionario
 from app.repositories.dictionary import TerminoDiccionarioRepository
 from app.repositories.noticias import NoticiaRepository
+from app.services import lematizacion
 
 logger = logging.getLogger(__name__)
 
@@ -106,10 +114,29 @@ def _quitar_tildes(texto: str) -> str:
     return unicodedata.normalize("NFC", "".join(caracteres))
 
 
+def _sin_html(texto: str) -> str:
+    return _ETIQUETA_HTML.sub(" ", unescape(texto))
+
+
+@lru_cache(maxsize=50000)
 def _normalizar(texto: str) -> str:
     """Minúsculas, sin tildes (salvo ñ), sin HTML ni puntuación."""
-    sin_html = _ETIQUETA_HTML.sub(" ", unescape(texto))
-    return " ".join(_PALABRA.findall(_quitar_tildes(sin_html.casefold())))
+    return " ".join(_PALABRA.findall(_quitar_tildes(_sin_html(texto).casefold())))
+
+
+def _palabras_del_texto(texto_limpio: str, idioma: str) -> list[tuple[str, str | None]]:
+    """(forma, lema) normalizados de cada palabra; lema None sin lematizador."""
+    tokens = lematizacion.tokens(texto_limpio, idioma)
+    if tokens is None:
+        return [(forma, None) for forma in _normalizar(texto_limpio).split()]
+    palabras: list[tuple[str, str | None]] = []
+    for texto_token, lema in tokens:
+        formas = _normalizar(texto_token).split()
+        if len(formas) == 1:
+            palabras.append((formas[0], _normalizar(lema) or None))
+        else:  # p. ej. "e-mail": se compara solo por forma
+            palabras.extend((forma, None) for forma in formas)
+    return palabras
 
 
 def texto_de_noticia(noticia: Noticia) -> str:
@@ -119,21 +146,42 @@ def texto_de_noticia(noticia: Noticia) -> str:
 def terminos_coincidentes(
     texto: str, terminos: list[TerminoDiccionario]
 ) -> list[TerminoDiccionario]:
-    """Términos únicos del diccionario que aparecen en el texto (HU-SENT-007-v2).
+    """Términos únicos del diccionario que aparecen en el texto (HU-SENT-007-v3).
 
-    Cada término (palabra + idioma) cuenta una sola vez aunque se repita.
-    También es la base de las coincidencias que persiste HU-SENT-008.
+    Cada concepto (lema + idioma) cuenta una sola vez aunque aparezca varias
+    veces o en varias formas. También es la base de las coincidencias que
+    persiste HU-SENT-008. Los términos se recorren en el orden recibido (por
+    id), así que ante un empate gana el de menor id.
     """
-    texto_normalizado = f" {_normalizar(texto)} "
-    encontrados: list[TerminoDiccionario] = []
-    vistos: set[tuple[str, str]] = set()
+    texto_limpio = _sin_html(texto)
+    por_idioma: dict[str, list[TerminoDiccionario]] = {}
     for termino in terminos:
-        clave = (_normalizar(termino.palabra), termino.idioma)
-        if not clave[0] or clave in vistos:
-            continue
-        if f" {clave[0]} " in texto_normalizado:
-            vistos.add(clave)
-            encontrados.append(termino)
+        por_idioma.setdefault(termino.idioma, []).append(termino)
+
+    elegidos: set[int] = set()
+    for idioma, del_idioma in por_idioma.items():
+        palabras_por_forma: dict[str, TerminoDiccionario] = {}
+        frases: dict[str, TerminoDiccionario] = {}
+        for termino in del_idioma:  # setdefault: ante formas iguales gana el menor id
+            forma = _normalizar(termino.palabra)
+            if not forma:
+                continue
+            destino = frases if " " in forma else palabras_por_forma
+            destino.setdefault(forma, termino)
+
+        palabras = _palabras_del_texto(texto_limpio, idioma)
+        for forma, lema in palabras:
+            termino = palabras_por_forma.get(forma) or (lema and palabras_por_forma.get(lema))
+            if termino is not None:
+                elegidos.add(id(termino))
+        if frases:
+            superficie = " " + " ".join(f for f, _ in palabras) + " "
+            lemas = " " + " ".join(l or f for f, l in palabras) + " "
+            for forma, termino in frases.items():
+                if f" {forma} " in superficie or f" {forma} " in lemas:
+                    elegidos.add(id(termino))
+
+    encontrados = [termino for termino in terminos if id(termino) in elegidos]
     return encontrados
 
 
@@ -188,6 +236,9 @@ def calcular_humor(
 ) -> ResultadoHumor:
     """ML si hay modelo activo; diccionario si no lo hay, falla o excede el timeout."""
     texto = texto_de_noticia(noticia)
+    if noticia.idioma_detectado is None:
+        # PDF §4.4 / ADR-003 punto 1: se detecta una vez y queda guardado.
+        noticia.idioma_detectado = lematizacion.detectar_idioma(_sin_html(texto))
     terminos = [
         termino
         for idioma in idiomas_a_evaluar(noticia.idioma_detectado)

@@ -1,7 +1,7 @@
 # Dataset propuesto para la carga inicial del diccionario de términos
 
 **Proyecto:** HumWorld — Equipo 3
-**Origen:** PDF de especificaciones, sección 4.2.2 ("Deberá existir un diccionario de términos con palabras y su valor para el cálculo del humor"); HU-SENT-001 (gestión del diccionario); HU-SENT-007-v2 (regla de comparación).
+**Origen:** PDF de especificaciones, sección 4.2.2 ("Deberá existir un diccionario de términos con palabras y su valor para el cálculo del humor"); HU-SENT-001 (gestión del diccionario); HU-SENT-007-v3 (regla de comparación).
 **Estado:** **Propuesto — pendiente de aprobación del equipo.** La traducción al español fue generada con IA y debe revisarla una persona del equipo antes de usarse como dato definitivo.
 **Versión:** v1.0. **Fecha:** 2026-10-19.
 **Archivo:** `src/scripts/data/diccionario_seed.csv` (columnas `palabra`, `idioma`, `valor`, `origen`). Carga: `python -m scripts.seed_diccionario`.
@@ -46,7 +46,7 @@ Se quitaron también las formas que, al ignorar tildes (HU-SENT-007-v2), quedaba
 - **AFINN se diseñó para Twitter**, no para noticias: incluye jerga y groserías (poco frecuentes en titulares, no afectan) y le faltan palabras habituales en prensa, como *inflation*, *flood* o *drought*. Se pueden agregar después por `POST /api/v1/dictionary`.
 - **Valores moderados:** la mayoría de los términos vale entre -6 y +6; solo 21 llegan a ±10. El humor de una noticia rara vez será extremo.
 - **El español es más chico (418 frente a 3.380)** y sin validación humana todavía. Con 4 de las 20 fuentes en español, es el punto que más conviene revisar.
-- **Sin lematización:** solo se cuentan las formas listadas (HU-SENT-007-v2).
+- **Lematización (desde v1.2):** el texto de las noticias se lematiza con spaCy (HU-SENT-007-v3), así que un término en forma base también coincide con sus plurales y conjugaciones. Las formas flexionadas del español (plurales, femeninos, conjugaciones) siguen cargadas y funcionan, pero ya no son necesarias: el equipo puede dejar solo la forma base al revisar la traducción. Los términos nuevos deben cargarse en su forma base.
 - **Sin contexto:** el método cuenta palabras, no entiende frases. Caso real del 2026-10-19: "Banco Santander se alía con Nvidia para impulsar el despliegue de la IA en la entidad" obtuvo -8.0 porque su resumen menciona "fraude" (la IA se usa para detectarlo) y fue el único término encontrado. Es la limitación conocida del método de diccionario (ADR-003); la polarización (HU-SENT-003) y la cantidad de términos evaluados ayudan a leer estos casos, y el modelo de ML (HU-SENT-006) debería mejorarlos.
 
 ## 5. Cómo revisar la traducción
@@ -222,3 +222,4 @@ La tabla muestra cada término fuente, su valor en AFINN, el valor en HumWorld y
 |---|---|---|---|
 | Dataset diccionario inicial | v1.0 | 2026-10-19 | Creación. Inglés: AFINN-en-165 completo (× 2, sin valores 0). Español: traducción generada con IA de 148 términos orientados a noticias (418 formas). Licencia ODbL heredada de AFINN. Pendiente de aprobación del equipo y de revisión humana del español. |
 | Dataset diccionario inicial | v1.1 | 2026-10-19 | Se agrega a las limitaciones un caso real de falta de contexto ("fraude" en una noticia positiva sobre IA), detectado al probar el listado de noticias. |
+| Dataset diccionario inicial | v1.2 | 2026-10-19 | Con la lematización de HU-SENT-007-v3, las formas flexionadas dejan de ser necesarias; se recomienda cargar términos nuevos en su forma base. Sin cambios en el CSV. |
