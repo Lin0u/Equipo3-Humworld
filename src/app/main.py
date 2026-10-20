@@ -30,9 +30,12 @@ from app.routers import (
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Inicia y detiene el scheduler interno de captura RSS."""
+    """Verifica los modelos de spaCy e inicia/detiene el scheduler interno."""
     from app.jobs.scheduler import detener_scheduler, iniciar_scheduler
+    from app.services.lematizacion import verificar_modelos
 
+    # HU-SENT-007-v3: falla al arrancar, no en silencio, si faltan los modelos.
+    verificar_modelos(settings.lematizacion_obligatoria)
     iniciar_scheduler()
     try:
         yield

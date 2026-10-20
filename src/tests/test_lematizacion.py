@@ -101,3 +101,37 @@ def test_idioma_ya_informado_no_se_vuelve_a_detectar():
     terminos = {"es": [_t("crisis", -6)], "en": [_t("crisis", -4, "en")]}
     noticia = Noticia(titulo="La crisis de los mercados se agrava en toda la región", idioma_detectado="en")
     assert calcular_humor(noticia, terminos).valor_humor == -4.0
+
+
+# --- Verificación de los modelos al arrancar (HU-SENT-007-v3) ---------------
+
+def test_los_modelos_de_spacy_estan_instalados():
+    # Si falla en CI, requirements.lock no instaló los modelos: la lematización
+    # quedaría desactivada sin aviso.
+    assert lematizacion.verificar_modelos(obligatoria=True) == {"es": "ok", "en": "ok"}
+
+
+def test_sin_modelo_y_obligatoria_no_arranca(monkeypatch):
+    monkeypatch.setattr(lematizacion, "cargar_modelo", lambda idioma: None if idioma == "es" else object())
+    with pytest.raises(lematizacion.ModelosNoDisponiblesError, match="es_core_news_sm"):
+        lematizacion.verificar_modelos(obligatoria=True)
+
+
+def test_sin_modelo_y_no_obligatoria_solo_advierte(monkeypatch, caplog):
+    monkeypatch.setattr(lematizacion, "cargar_modelo", lambda idioma: None)
+    estado = lematizacion.verificar_modelos(obligatoria=False)
+    assert estado == {"es": "no_disponible", "en": "no_disponible"}
+    assert "Faltan modelos de spaCy" in caplog.text
+
+
+def test_la_api_no_arranca_sin_modelos(monkeypatch):
+    from fastapi.testclient import TestClient
+
+    from app.core.config import settings
+    from app.main import app
+
+    monkeypatch.setattr(lematizacion, "cargar_modelo", lambda idioma: None)
+    monkeypatch.setattr(settings, "lematizacion_obligatoria", True)
+    with pytest.raises(lematizacion.ModelosNoDisponiblesError):
+        with TestClient(app):
+            pass

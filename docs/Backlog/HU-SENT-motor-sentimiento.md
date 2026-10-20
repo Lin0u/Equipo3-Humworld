@@ -3,7 +3,7 @@
 **Proyecto:** HumWorld — Equipo 3
 **Origen:** PDF de especificaciones (`0 PROYECTO_FINAL_HUMWORLD 260714.pdf`), secciones 4.2.2 (Diccionario de palabras evaluables), 4.2.4 (Procesado de la información), 10.2 (Endpoints mínimos obligatorios: `/dictionary`, `/sentiment`) y 10.4 (Posible algoritmo para cálculo del humor). Algoritmo de agregación decidido y justificado en `ADR-003-eleccion-algoritmo-agregacion-sentimiento.md`, conforme a la sección 11 de las instrucciones del proyecto.
 **Estado general:** Propuesto — historias generadas a partir de los títulos ya oficializados en la hoja "Backlog" de `HumWorld_Anexo_I_Planificacion_actualizado.xlsx` (entregable P3) y de la estimación en puntos ya realizada en Planning Poker (P3, `Anexo-I-Planificacion-entregado-P3.md`, Sprint 2 = 18 puntos). Pendiente de revisión crítica del equipo antes de iniciar Sprint 2.
-**Versión del documento:** v1.10. Ver la Tabla de control de versiones al final del documento para el historial completo.
+**Versión del documento:** v1.11. Ver la Tabla de control de versiones al final del documento para el historial completo.
  
 > **Nota de grounding general:** el PDF exige un algoritmo de análisis de sentimiento "basado en diccionario, LLM u otro método justificado" (Objetivos específicos, punto 2) y ofrece un algoritmo posible (§10.4) como referencia no vinculante ("Esta es solo una posible solución. Cada equipo puede determinar otra manera"). El backlog ya oficializado por el equipo (hoja Excel) eligió un enfoque **híbrido diccionario + ML** (HU-SENT-002-v2, HU-SENT-006, HU-SENT-007). Este documento formaliza esa elección ya tomada por el equipo; no la introduce de nuevo. La parte de diccionario está completamente grounded en el PDF y en la sección 11 de las instrucciones del proyecto (ver `ADR-003-eleccion-algoritmo-agregacion-sentimiento.md`); la parte de ML no estaba especificada en ningún documento fuente más allá del título de la historia — el equipo definió esa arquitectura, documentada en `ADR-004-arquitectura-modelo-ml-sentimiento.md`.
  
@@ -591,10 +591,21 @@ Escenario: Idioma no decidible
   Cuando el sistema calcula su humor
   Entonces idioma_detectado queda NULL y se evalúan los términos de ambos idiomas
 
-Escenario: Lematizador no disponible
+Escenario: Lematizador no disponible con lematización obligatoria
   Dado que el modelo de spaCy de un idioma no está instalado
+  Y LEMATIZACION_OBLIGATORIA = true (valor por defecto)
+  Cuando arranca la API
+  Entonces la API no arranca y el log indica qué modelo falta y cómo instalarlo
+
+Escenario: Lematizador no disponible en modo de desarrollo
+  Dado que el modelo de spaCy de un idioma no está instalado
+  Y LEMATIZACION_OBLIGATORIA = false
   Cuando el sistema calcula el humor de una noticia en ese idioma
   Entonces la comparación es por forma exacta (HU-SENT-007-v2) y el cálculo no falla
+
+Escenario: Estado del lematizador
+  Cuando se envía GET a /api/v1/health
+  Entonces el cuerpo incluye "lematizador": {"es": "ok", "en": "ok"} si ambos modelos están cargados
 ```
 
 ### Definition of Done
@@ -634,3 +645,4 @@ Escenario: Lematizador no disponible
 | HU-SENT-003, HU-SENT-005 | v1.8 | 2026-10-19 | Implementación de HU-SENT-003 y HU-SENT-005 (rama `feature/polarizacion-analisis`): se resuelve el pendiente de HU-SENT-003 sobre el campo de polarización (`polarizacion_terminos`, float nullable, desviación estándar poblacional; migración `a7c3e9b5d1f4`) y se registra cómo quedó implementado `POST /api/v1/sentiment` (método de diccionario, sin persistencia, expone la polarización). Sin cambios en los criterios de aceptación. |
 | HU-SENT-006, HU-SENT-002-v3 | v1.9 | 2026-10-19 | Implementación de HU-SENT-006 según ADR-004 (embeddings de Gemini + Ridge, versionado en `modelos_sentimiento`, MAE contra diccionario, Timeout + Retry acotado + Circuit Breaker). Se fija 502 para el fallo del servicio y 503 para la falta de clave. El camino de ML de HU-SENT-002-v3 pasa a usar el modelo activo y registra su versión en `noticias.modelo_sentimiento_id`. Sin cambios en los criterios de aceptación. |
 | HU-SENT-007-v2 → HU-SENT-007-v3 | v1.10 | 2026-10-19 | Decisión de la PO, por sugerencia del profesor: comparación de términos por lema con spaCy (sobre el texto de la noticia, sin lematizar el diccionario) y detección de idioma. HU-SENT-007-v2 queda Deprecada. Se reemplaza el escenario "Plural no cargado en el diccionario" y se agregan 6 escenarios. Ver ADR-003, punto 5. |
+| HU-SENT-007-v3 | v1.11 | 2026-10-20 | Ajuste antes de la ratificación del equipo: la falta de un modelo de spaCy deja de degradar en silencio. Por defecto la API no arranca (`LEMATIZACION_OBLIGATORIA=true`) y `/health` informa el estado de cada modelo; la degradación a forma exacta queda solo para desarrollo. Se reemplaza el escenario "Lematizador no disponible" por tres escenarios. |

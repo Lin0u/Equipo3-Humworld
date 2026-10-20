@@ -22,6 +22,7 @@ docker compose exec api python -m scripts.seed_diccionario    # diccionario inic
 ```
 
 - API y Swagger: http://localhost:8000/api/docs
+- Estado: http://localhost:8000/api/v1/health muestra también si los modelos de spaCy (lematización) están cargados. Si falta alguno, la API no arranca y el log dice cuál.
 - El cron captura cada 30 minutos; el barrido de humor corre 1 minuto después de arrancar y luego cada 30 minutos; el purgado, 5 minutos después de arrancar y luego cada 24 horas.
 
 Frontend (en otra terminal):

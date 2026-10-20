@@ -19,6 +19,14 @@ COPY src/ .
 COPY alembic/ ./alembic/
 COPY alembic.ini .
 
+# La API corre con un usuario sin privilegios (SonarQube: la imagen de Python
+# usa root por defecto). Es dueño solo de /app/modelos, donde HU-SENT-006
+# guarda los regresores entrenados (volumen modelos_ml de docker-compose).
+RUN useradd --create-home --uid 10001 humworld \
+    && mkdir -p /app/modelos \
+    && chown humworld:humworld /app/modelos
+USER humworld
+
 EXPOSE 8000
 
 CMD ["sh", "-c", "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000"]

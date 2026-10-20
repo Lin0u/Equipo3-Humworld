@@ -38,6 +38,11 @@ class Settings(BaseSettings):
     purgado_caducidad_dias_defecto: int = 90
     purgado_intervalo_horas: int = 24
 
+    # Lematización (HU-SENT-007-v3, ADR-003 punto 5). True: la API no arranca
+    # si falta un modelo de spaCy, para que la ausencia no pase inadvertida.
+    # False: se compara por forma exacta (solo para desarrollo sin spaCy).
+    lematizacion_obligatoria: bool = True
+
     # Modelo de ML (HU-SENT-006, ADR-004): embeddings de Google Gemini + regresor
     # Ridge local. Sin GEMINI_API_KEY el camino ML queda desactivado y todo el
     # humor se calcula por diccionario. La cuenta y la clave las gestiona el

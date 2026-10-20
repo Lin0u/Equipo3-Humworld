@@ -13,8 +13,9 @@ punto 6 (decisión de la PO del 2026-10-19, por sugerencia del profesor).
   clara, el idioma queda desconocido y se evalúan ambos diccionarios, como
   antes (ADR-003, punto 1).
 - Si un modelo no está instalado, el lematizador de ese idioma queda
-  desactivado y la comparación vuelve a ser por forma exacta (HU-SENT-007-v2):
-  el cálculo de humor nunca falla por esta dependencia.
+  desactivado y la comparación vuelve a ser por forma exacta (HU-SENT-007-v2).
+  Con LEMATIZACION_OBLIGATORIA=true (valor por defecto) la API no arranca en
+  ese caso (verificar_modelos), y /health informa el estado de cada modelo.
 """
 import logging
 import re
@@ -84,3 +85,34 @@ def tokens(texto: str, idioma: str) -> list[tuple[str, str]] | None:
         for token in modelo(texto)
         if not (token.is_punct or token.is_space)
     ]
+
+
+class ModelosNoDisponiblesError(RuntimeError):
+    """Faltan modelos de spaCy y la lematización es obligatoria."""
+
+
+def estado_modelos() -> dict[str, str]:
+    """'ok' o 'no_disponible' por idioma (para /health)."""
+    return {
+        idioma: "ok" if cargar_modelo(idioma) is not None else "no_disponible"
+        for idioma in MODELOS
+    }
+
+
+def verificar_modelos(obligatoria: bool) -> dict[str, str]:
+    """Carga los modelos al arrancar la API.
+
+    Con obligatoria=True lanza ModelosNoDisponiblesError si falta alguno, con
+    el comando para instalarlo; con False solo deja una advertencia en el log.
+    """
+    estado = estado_modelos()
+    faltantes = [MODELOS[idioma] for idioma, valor in estado.items() if valor != "ok"]
+    if faltantes:
+        mensaje = (
+            f"Faltan modelos de spaCy: {', '.join(faltantes)}. "
+            "Instálalos con: pip install -r requirements.txt"
+        )
+        if obligatoria:
+            raise ModelosNoDisponiblesError(mensaje)
+        logger.warning("%s La comparación de términos será por forma exacta.", mensaje)
+    return estado
