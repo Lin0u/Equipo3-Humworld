@@ -3,8 +3,12 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-COPY src/requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# Dependencias desde el lockfile con hashes (versiones exactas y verificadas) y
+# solo como wheels, para no ejecutar scripts de instalación. Única excepción:
+# sgmllib3k (dependencia de feedparser), que solo se publica como código fuente.
+# requirements.lock se genera desde requirements.txt (ver README).
+COPY src/requirements.lock .
+RUN pip install --no-cache-dir --require-hashes --only-binary :all: --no-binary sgmllib3k -r requirements.lock
 
 COPY src/ .
 

@@ -60,3 +60,13 @@ Sin configuración, todo el humor se calcula por diccionario. Para activar el mo
 
 - `GET`/`PUT /api/v1/config`: periodicidad del cron (minutos) y caducidad de las noticias (días, 90 por defecto).
 - `DELETE /api/v1/news?fecha_anterior_a=AAAA-MM-DD`: borra las noticias registradas antes de esa fecha. Sin parámetro, aplica la caducidad configurada. Es irreversible.
+
+## Dependencias de Python
+
+`src/requirements.txt` es la lista que se edita a mano. Docker y el CI instalan desde `src/requirements.lock`, que fija todas las dependencias (también las indirectas) con sus hashes. Después de cambiar `requirements.txt`, regenera el lockfile:
+
+```bash
+pip install uv
+cd src
+uv pip compile requirements.txt --python-version 3.11 --python-platform x86_64-manylinux_2_28 --generate-hashes --no-header -o requirements.lock
+```

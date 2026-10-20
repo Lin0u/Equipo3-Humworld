@@ -12,7 +12,7 @@ from pydantic import BaseModel, Field, field_validator
 
 class SentimientoPorFecha(BaseModel):
     fecha: date
-    humor_promedio: Optional[float]
+    humor_promedio: Optional[float] = None
     cantidad_noticias_evaluadas: int
 
 
@@ -21,7 +21,7 @@ class SentimientoAgregado(BaseModel):
     pais: Optional[str] = None
     desde: Optional[date] = None
     hasta: Optional[date] = None
-    humor_promedio: Optional[float]
+    humor_promedio: Optional[float] = None
     cantidad_noticias_evaluadas: int
     serie_temporal: Optional[List[SentimientoPorFecha]] = None
 
@@ -40,6 +40,6 @@ class AnalisisTextoCrear(BaseModel):
 
 
 class AnalisisTextoResultado(BaseModel):
-    valor_humor: Optional[float]
+    valor_humor: Optional[float] = None
     cantidad_terminos_evaluados: int
     polarizacion_terminos: Optional[float] = None

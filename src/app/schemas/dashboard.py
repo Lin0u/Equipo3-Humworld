@@ -23,6 +23,7 @@ class Continente(str, Enum):
 
 class HumorAgregado(BaseModel):
     humor_promedio: Optional[float] = Field(
+        default=None,
         description="Promedio de valor_humor (escala -10 a +10). Null si no hay noticias evaluadas."
     )
     cantidad_noticias_evaluadas: int
@@ -33,9 +34,9 @@ class HumorContinente(HumorAgregado):
 
 
 class MapaHumor(BaseModel):
-    fecha: Optional[date]
-    fecha_minima_con_datos: Optional[date]
-    fecha_maxima_con_datos: Optional[date]
+    fecha: Optional[date] = None
+    fecha_minima_con_datos: Optional[date] = None
+    fecha_maxima_con_datos: Optional[date] = None
     global_: HumorAgregado = Field(alias="global", serialization_alias="global")
     continentes: List[HumorContinente] = Field(min_length=5, max_length=5)
 
