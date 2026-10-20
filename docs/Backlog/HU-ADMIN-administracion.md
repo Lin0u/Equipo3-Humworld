@@ -3,7 +3,7 @@
 **Proyecto:** HumWorld — Equipo 3
 **Origen:** PDF de especificaciones, §4.2.5 (Purgado de información antigua), §4.3 punto 1 (Panel de administración) y §10.2 (`/config`: GET, PUT; `/news`: DELETE). Títulos y puntos tomados del backlog entregado en P3 (`Anexo-I-Planificacion-entregado-P3.md`, Sprint 4).
 **Estado general:** HU-ADMIN-001 (parcial), HU-ADMIN-002 y HU-ADMIN-003 implementadas el 2026-10-19 (rama `feature/cierre-sprint`), pendientes de revisión en el PR y de ratificación del equipo. HU-ADMIN-004 formalizada el 2026-10-20, pendiente de implementación.
-**Versión del documento:** v1.1. Ver la Tabla de control de versiones al final del documento.
+**Versión del documento:** v1.2. Ver la Tabla de control de versiones al final del documento.
 
 > **Nota de grounding (valores propuestos):** el PDF exige que la caducidad sea "un parámetro modificable por el usuario", pero no fija su valor. Los valores de este documento — caducidad por defecto de **90 días** y ejecución del purgado automático **cada 24 horas** — son propuestos (decisión de la PO del 2026-10-19), no tomados del PDF, y quedan pendientes de ratificación del equipo con el mismo tratamiento que una estimación de Planning Poker. Justificación de los 90 días: cubren con holgura la ventana de 30 días del gráfico de evolución (HU-DASH-001-v3) y conservan historial suficiente para el umbral de entrenamiento del modelo de ML (1.000 noticias, ADR-004).
 
@@ -177,7 +177,7 @@ Escenario: Idempotencia
 | Pestaña | Endpoints | Contrato |
 |---|---|---|
 | Fuentes RSS | `GET`/`POST /channels`, `GET`/`POST /sources`, `PUT`/`PATCH`/`DELETE /sources/{id}`, `POST /sources/{id}/captures`, `POST /captures` | `contrato-canales-fuentes-rss.openapi.yaml` v1.8.0 |
-| Diccionario | `GET`/`POST /dictionary`, `PUT`/`PATCH`/`DELETE /dictionary/{id}` | `contrato-sentimiento-diccionario.openapi.yaml` v1.1.0 |
+| Diccionario | `GET`/`POST /dictionary` (paginado, HU-SENT-001-v2), `PUT`/`PATCH`/`DELETE /dictionary/{id}` | `contrato-sentimiento-diccionario.openapi.yaml` v1.2.0 |
 | Parámetros | `GET`/`PUT /config` | `contrato-canales-fuentes-rss.openapi.yaml` v1.8.0 |
 | Purgado | `DELETE /news` | `contrato-noticias.openapi.yaml` v1.1.0 |
 | Modelo ML *(opcional)* | `POST /trainings` | `contrato-sentimiento-diccionario.openapi.yaml` v1.1.0 |
@@ -190,7 +190,7 @@ Escenario: Idempotencia
 
 **Decisiones de diseño propuestas (a ratificar):**
 1. **Navegación:** una cuarta opción "Administración" en el menú actual, con pestañas internas. Mismo patrón que las otras vistas (`useState`, sin librería de rutas; ADR-005).
-2. **Listados grandes:** `GET /dictionary` devuelve todos los términos sin paginar (~3.800 con la carga inicial). La vista pagina en el navegador (25 por página) y usa el parámetro `busqueda` del backend para filtrar.
+2. **Listados grandes:** `GET /dictionary` está paginado desde HU-SENT-001-v2 (contrato v1.2.0). La vista pide páginas de 25 (`tamanio_pagina=25`) y usa `busqueda` para filtrar.
 3. **Fuentes:** "Eliminar" es una baja lógica (la API deja `activo = false`, HU-RSS-005). La vista lo nombra "Desactivar" para no confundir al usuario.
 4. **Acciones irreversibles** (purgado, eliminar término): piden confirmación explícita antes de llamar a la API.
 5. **Errores:** se muestra el `mensaje` que devuelve la API (por ejemplo, el 409 de término duplicado), no un texto genérico.
@@ -244,8 +244,8 @@ Escenario: Captura de una fuente inactiva
 # --- Diccionario (HU-SENT-001) ---
 Escenario: Búsqueda en el diccionario
   Cuando el administrador escribe "guerra" en el buscador
-  Entonces se consulta GET /dictionary?busqueda=guerra
-  Y ve los términos que coinciden, con palabra, idioma y valor, en páginas de 25
+  Entonces se consulta GET /dictionary?busqueda=guerra&tamanio_pagina=25
+  Y ve los términos que coinciden, con palabra, idioma y valor, en páginas de 25 con el total encontrado
 
 Escenario: Alta de un término
   Cuando el administrador crea un término con palabra, idioma (es/en) y valor entre -10 y +10
@@ -334,3 +334,4 @@ Escenario: API no disponible
 |---|---|---|---|
 | HU-ADMIN-001 a 003 | v1.0 | 2026-10-19 | Primera formalización de EPIC-ADMIN a partir de los títulos del backlog de P3 y del PDF §4.2.5, junto con su implementación. Decisiones de la PO: caducidad por defecto de 90 días y fecha de referencia `fecha_registro`. Valor propuesto por el agente PO/Arquitecto: ejecución cada 24 horas. HU-ADMIN-004 queda sin formalizar. |
 | HU-ADMIN-004 | v1.1 | 2026-10-20 | Formalización de HU-ADMIN-004: pestañas, endpoints que consume, 20 escenarios Gherkin, DoD, alcance excluido (usuarios, edición de canales) y 5 decisiones de diseño propuestas. Sube a prioridad Alta por ser la única vista obligatoria del PDF pendiente; se pide re-estimar. |
+| HU-ADMIN-004 | v1.2 | 2026-10-20 | Decisión de la PO: el diccionario se pagina en el backend (HU-SENT-001-v2), no en el navegador. Se ajustan la decisión de diseño 2, el escenario de búsqueda y la tabla de endpoints. |

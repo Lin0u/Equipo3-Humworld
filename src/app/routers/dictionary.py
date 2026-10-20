@@ -1,3 +1,5 @@
+from typing import Optional
+
 from fastapi import APIRouter, Depends, Query
 from fastapi.responses import JSONResponse, Response
 from sqlalchemy.orm import Session
@@ -13,12 +15,13 @@ from app.schemas.dictionary import (
     TerminoDiccionarioActualizar,
     TerminoDiccionarioActualizarParcial,
     TerminoDiccionarioCrear,
+    TerminoDiccionarioListado,
 )
 from app.services.dictionary_service import (
     actualizar_termino,
     crear_termino,
     eliminar_termino,
-    listar_terminos,
+    listar_terminos_paginado,
     obtener_termino,
 )
 
@@ -30,9 +33,15 @@ def _error(status_code: int, codigo: str, mensaje: str) -> JSONResponse:
     return JSONResponse(status_code=status_code, content=error.model_dump())
 
 
-@router.get("", response_model=list[TerminoDiccionarioSchema])
-def listar(busqueda: str | None = Query(default=None), db: Session = Depends(get_db)):
-    return listar_terminos(db, busqueda)
+@router.get("", response_model=TerminoDiccionarioListado, responses={400: {"model": Error}})
+def listar(
+    busqueda: Optional[str] = Query(default=None, description="Coincidencia parcial en la palabra."),
+    pagina: int = Query(default=1, ge=1, description="Número de página."),
+    tamanio_pagina: int = Query(default=10, ge=1, le=50, description="Elementos por página."),
+    db: Session = Depends(get_db),
+):
+    """HU-SENT-001-v2: listado paginado (misma convención que /channels y /sources)."""
+    return listar_terminos_paginado(db, pagina, tamanio_pagina, busqueda=busqueda)
 
 
 @router.get(

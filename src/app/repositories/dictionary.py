@@ -69,6 +69,35 @@ class TerminoDiccionarioRepository:
             db.execute(consulta.order_by(TerminoDiccionario.id)).scalars().all()
         )
 
+    def listar_paginado(
+        self,
+        db: Session,
+        pagina: int,
+        tamanio_pagina: int,
+        busqueda: str | None = None,
+    ) -> tuple[list[TerminoDiccionario], int]:
+        """Página de términos y total filtrado (HU-SENT-001-v2).
+
+        Orden alfabético por palabra, luego idioma e id, para que la
+        paginación sea estable.
+        """
+        filtros = []
+        if busqueda:
+            filtros.append(
+                func.lower(TerminoDiccionario.palabra).contains(busqueda.lower(), autoescape=True)
+            )
+        total = db.execute(
+            select(func.count()).select_from(TerminoDiccionario).where(*filtros)
+        ).scalar_one()
+        items = db.execute(
+            select(TerminoDiccionario)
+            .where(*filtros)
+            .order_by(TerminoDiccionario.palabra, TerminoDiccionario.idioma, TerminoDiccionario.id)
+            .offset((pagina - 1) * tamanio_pagina)
+            .limit(tamanio_pagina)
+        ).scalars().all()
+        return list(items), total
+
     def crear(self, db: Session, termino: TerminoDiccionario) -> TerminoDiccionario:
         db.add(termino)
         try:

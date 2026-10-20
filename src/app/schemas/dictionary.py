@@ -50,3 +50,12 @@ class TerminoDiccionario(BaseModel):
     valor: int
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class TerminoDiccionarioListado(BaseModel):
+    """HU-SENT-001-v2: envoltorio de paginación, igual que /channels y /sources."""
+
+    items: list[TerminoDiccionario]
+    pagina: int
+    tamanio_pagina: int
+    total: int

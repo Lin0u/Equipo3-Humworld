@@ -47,6 +47,20 @@ def listar_terminos(
     return (repository or TerminoDiccionarioRepository()).listar(db, busqueda)
 
 
+def listar_terminos_paginado(
+    db: Session,
+    pagina: int,
+    tamanio_pagina: int,
+    busqueda: str | None = None,
+    repository: TerminoDiccionarioRepository | None = None,
+) -> dict:
+    """HU-SENT-001-v2: listado paginado con el mismo filtro de búsqueda."""
+    items, total = (repository or TerminoDiccionarioRepository()).listar_paginado(
+        db, pagina, tamanio_pagina, busqueda=busqueda
+    )
+    return {"items": items, "pagina": pagina, "tamanio_pagina": tamanio_pagina, "total": total}
+
+
 def obtener_termino(
     db: Session,
     termino_id: int,
@@ -115,4 +129,4 @@ def eliminar_termino(
     termino_repository = repository or TerminoDiccionarioRepository()
     termino = obtener_termino(db, termino_id, termino_repository)
     termino_repository.eliminar(db, termino)
-    _marcar_noticias_para_recalculo(db)
+    _marcar_noticias_para_recalculo(db)

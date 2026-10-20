@@ -3,13 +3,15 @@
 **Proyecto:** HumWorld — Equipo 3
 **Origen:** PDF de especificaciones (`0 PROYECTO_FINAL_HUMWORLD 260714.pdf`), secciones 4.2.2 (Diccionario de palabras evaluables), 4.2.4 (Procesado de la información), 10.2 (Endpoints mínimos obligatorios: `/dictionary`, `/sentiment`) y 10.4 (Posible algoritmo para cálculo del humor). Algoritmo de agregación decidido y justificado en `ADR-003-eleccion-algoritmo-agregacion-sentimiento.md`, conforme a la sección 11 de las instrucciones del proyecto.
 **Estado general:** Propuesto — historias generadas a partir de los títulos ya oficializados en la hoja "Backlog" de `HumWorld_Anexo_I_Planificacion_actualizado.xlsx` (entregable P3) y de la estimación en puntos ya realizada en Planning Poker (P3, `Anexo-I-Planificacion-entregado-P3.md`, Sprint 2 = 18 puntos). Pendiente de revisión crítica del equipo antes de iniciar Sprint 2.
-**Versión del documento:** v1.11. Ver la Tabla de control de versiones al final del documento para el historial completo.
+**Versión del documento:** v1.12. Ver la Tabla de control de versiones al final del documento para el historial completo.
  
 > **Nota de grounding general:** el PDF exige un algoritmo de análisis de sentimiento "basado en diccionario, LLM u otro método justificado" (Objetivos específicos, punto 2) y ofrece un algoritmo posible (§10.4) como referencia no vinculante ("Esta es solo una posible solución. Cada equipo puede determinar otra manera"). El backlog ya oficializado por el equipo (hoja Excel) eligió un enfoque **híbrido diccionario + ML** (HU-SENT-002-v2, HU-SENT-006, HU-SENT-007). Este documento formaliza esa elección ya tomada por el equipo; no la introduce de nuevo. La parte de diccionario está completamente grounded en el PDF y en la sección 11 de las instrucciones del proyecto (ver `ADR-003-eleccion-algoritmo-agregacion-sentimiento.md`); la parte de ML no estaba especificada en ningún documento fuente más allá del título de la historia — el equipo definió esa arquitectura, documentada en `ADR-004-arquitectura-modelo-ml-sentimiento.md`.
  
 ---
  
 ## HU-SENT-001 — Gestión CRUD del diccionario de términos
+
+**Estado:** **Deprecada (2026-10-20)** — reemplazada por **HU-SENT-001-v2** (ver más abajo), que pagina el listado. Se conserva este bloque íntegro como registro histórico, conforme a la sección 3 de las instrucciones del proyecto.
  
 **Tipo:** Historia de Usuario
 **Como** administrador del sistema,
@@ -61,6 +63,51 @@ Escenario: Eliminación de un término inexistente
 - Prueba del criterio de unicidad compuesta (palabra + idioma), no solo palabra.
 ---
  
+## HU-SENT-001-v2 — Gestión CRUD del diccionario de términos (listado paginado)
+
+**Tipo:** Historia de Usuario
+**Como** administrador del sistema,
+**quiero** dar de alta, consultar, modificar y eliminar términos del diccionario de sentimiento, recorriendo el listado por páginas,
+**para** mantener el vocabulario del cálculo de humor aunque el diccionario tenga miles de términos.
+
+**Prioridad:** Alta
+**Estimación:** se mantienen los 5 puntos del Planning Poker de P3; la paginación agrega poco esfuerzo *(punto de partida, el equipo debe revalidarlo)*.
+**Depende de contrato de API:** Sí — las mismas 6 operaciones de HU-SENT-001; `GET /api/v1/dictionary` cambia según `contrato-sentimiento-diccionario.openapi.yaml` v1.2.0.
+**Estado:** Implementada el 2026-10-20 (rama `feature/diccionario-paginado`), pendiente de revisión en el PR.
+
+**Qué cambia respecto de HU-SENT-001:** el contrato v1.0.0 dejaba explícito que la paginación debía agregarse como nueva versión si el volumen lo justificaba. Con la carga inicial (~3.800 términos, `Dataset-diccionario-inicial.md`) y el panel de administración (HU-ADMIN-004), lo justifica. `GET /dictionary` recibe `pagina` y `tamanio_pagina` (10 por defecto, máximo 50, la misma convención que `/channels` y `/sources`) y responde `{items, pagina, tamanio_pagina, total}`, ordenado alfabéticamente por palabra. El resto de las operaciones no cambia. Decisión de la PO del 2026-10-20.
+
+### Criterios de aceptación (Gherkin)
+
+Se mantienen los escenarios de HU-SENT-001; el de búsqueda se lee sobre `items`. Se agregan:
+
+```gherkin
+Escenario: Listado paginado por defecto
+  Dado que existen 12 términos
+  Cuando se envía GET a /api/v1/dictionary
+  Entonces el sistema responde con código HTTP 200
+  Y el cuerpo tiene pagina = 1, tamanio_pagina = 10, total = 12 y 10 items
+
+Escenario: Orden alfabético y página siguiente
+  Dado los términos "zeta", "alfa" y "media"
+  Cuando se envía GET a /api/v1/dictionary?tamanio_pagina=2&pagina=2
+  Entonces items contiene solo "zeta" y total = 3
+
+Escenario: Búsqueda paginada
+  Dado los términos "crisis", "crisol" y "paz"
+  Cuando se envía GET a /api/v1/dictionary?busqueda=cris&tamanio_pagina=1
+  Entonces total = 2 e items contiene solo "crisis"
+
+Escenario: Paginación inválida
+  Cuando se envía GET a /api/v1/dictionary con pagina=0, tamanio_pagina=0 o tamanio_pagina=51
+  Entonces el sistema responde con código HTTP 400
+```
+
+### Definition of Done
+(Bloque general DoD, sección 14.) Adicionalmente: los consumidores del listado (el panel de HU-ADMIN-004) leen `items` y no el array directo.
+
+---
+
 ## HU-SENT-002-v2 — Cálculo híbrido de humor (diccionario + ML)
  
 **Estado:** **Deprecada (2026-10-18)** — reemplazada por **HU-SENT-002-v3** (ver más abajo), que cambia la marca de "pendiente" del barrido y agrega el recálculo tras cambios del diccionario. Se conserva este bloque íntegro como registro histórico, conforme a la sección 3 de las instrucciones del proyecto.
@@ -621,7 +668,8 @@ Escenario: Estado del lematizador
  
 | ID | Tipo | Prioridad | Puntos (P3) | Endpoint / mecanismo | Referencia PDF |
 |---|---|---|---|---|---|
-| HU-SENT-001 | Historia de Usuario | Alta | 5 | `/api/v1/dictionary` (CRUD) — ver `contrato-sentimiento-diccionario.openapi.yaml` | §4.2.2, §10.2 |
+| HU-SENT-001 | **Deprecada** (ver HU-SENT-001-v2) | Alta | 5 | `/api/v1/dictionary` (CRUD) — ver `contrato-sentimiento-diccionario.openapi.yaml` | §4.2.2, §10.2 |
+| HU-SENT-001-v2 | Historia de Usuario | Alta | 5 | `/api/v1/dictionary` (CRUD, listado paginado v1.2.0) — ver `contrato-sentimiento-diccionario.openapi.yaml` | §4.2.2, §10.2 |
 | HU-SENT-002-v3 | Enabler Story | Alta | 5 | Interno — síncrono + Timeout explícito (propuesto: 3s) + fallback a diccionario + job de barrido de respaldo (propuesto: cada 30 min) sobre `metodo_calculo IS NULL` + recálculo tras cambios del diccionario | §4.2.4, Objetivos específicos #2 |
 | HU-SENT-003 | Enabler Story | Alta | 3 | Extiende modelo `Noticia` | §4.2.4 |
 | HU-SENT-004 | Historia de Usuario | Alta | 1 | `GET /api/v1/sentiment` — ver `contrato-sentimiento-diccionario.openapi.yaml` | §4.1, §10.2 |
@@ -646,3 +694,4 @@ Escenario: Estado del lematizador
 | HU-SENT-006, HU-SENT-002-v3 | v1.9 | 2026-10-19 | Implementación de HU-SENT-006 según ADR-004 (embeddings de Gemini + Ridge, versionado en `modelos_sentimiento`, MAE contra diccionario, Timeout + Retry acotado + Circuit Breaker). Se fija 502 para el fallo del servicio y 503 para la falta de clave. El camino de ML de HU-SENT-002-v3 pasa a usar el modelo activo y registra su versión en `noticias.modelo_sentimiento_id`. Sin cambios en los criterios de aceptación. |
 | HU-SENT-007-v2 → HU-SENT-007-v3 | v1.10 | 2026-10-19 | Decisión de la PO, por sugerencia del profesor: comparación de términos por lema con spaCy (sobre el texto de la noticia, sin lematizar el diccionario) y detección de idioma. HU-SENT-007-v2 queda Deprecada. Se reemplaza el escenario "Plural no cargado en el diccionario" y se agregan 6 escenarios. Ver ADR-003, punto 5. |
 | HU-SENT-007-v3 | v1.11 | 2026-10-20 | Ajuste antes de la ratificación del equipo: la falta de un modelo de spaCy deja de degradar en silencio. Por defecto la API no arranca (`LEMATIZACION_OBLIGATORIA=true`) y `/health` informa el estado de cada modelo; la degradación a forma exacta queda solo para desarrollo. Se reemplaza el escenario "Lematizador no disponible" por tres escenarios. |
+| HU-SENT-001 → HU-SENT-001-v2 | v1.12 | 2026-10-20 | Decisión de la PO: `GET /api/v1/dictionary` pasa a estar paginado (10 por defecto, máximo 50) por el volumen de la carga inicial y el panel de administración. HU-SENT-001 queda Deprecada. Contrato v1.2.0. |

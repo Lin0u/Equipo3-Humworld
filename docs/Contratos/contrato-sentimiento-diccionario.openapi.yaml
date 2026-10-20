@@ -15,7 +15,7 @@ info:
     servicios internos invocados tras la captura de cada noticia o desde los
     endpoints de este contrato) y por lo tanto no aparecen aquí — ver
     `HU-SENT-motor-sentimiento.md` para su detalle.
-  version: "1.1.0"
+  version: "1.2.0"
 servers:
   - url: /api/v1
     description: Base URL versionada (PDF, sección 10.3), misma convención que contrato-canales-fuentes-rss.openapi.yaml.
@@ -24,11 +24,10 @@ tags:
   - name: dictionary
     description: >
       Gestión CRUD del diccionario de términos de sentimiento. Origina en
-      HU-SENT-001. A diferencia de /channels y /sources (EPIC-RSS), el listado
-      no está paginado: la historia de origen solo exige un filtro de
-      búsqueda por coincidencia parcial de palabra, sin criterio de paginación
-      definido — si el volumen de términos lo justifica más adelante, debe
-      añadirse como una nueva versión de HU-SENT-001 y de este contrato.
+      HU-SENT-001-v2. Desde v1.2.0 el listado está paginado con la misma
+      convención que /channels y /sources (pagina, tamanio_pagina 10 por
+      defecto y 50 como máximo), porque la carga inicial deja ~3.800 términos
+      y el panel de administración (HU-ADMIN-004) los recorre por páginas.
   - name: sentiment
     description: >
       Consulta de sentimiento agregado (HU-SENT-004) y análisis de un texto
@@ -52,10 +51,10 @@ paths:
       tags: [dictionary]
       summary: Listar términos del diccionario de sentimiento
       description: >
-        Origina en HU-SENT-001. Filtro opcional de búsqueda por coincidencia
+        Origina en HU-SENT-001-v2. Filtro opcional de búsqueda por coincidencia
         parcial en la palabra (Gherkin: "GET /api/v1/dictionary?busqueda=guerr"
-        devuelve únicamente términos cuya palabra contiene "guerr"). Sin
-        paginación (ver descripción del tag "dictionary").
+        devuelve únicamente términos cuya palabra contiene "guerr"). Listado
+        paginado y ordenado alfabéticamente por palabra, luego idioma e id.
       parameters:
         - name: busqueda
           in: query
@@ -63,15 +62,34 @@ paths:
           schema:
             type: string
           description: Filtra términos cuya palabra contiene este texto (coincidencia parcial, no sensible a mayúsculas/minúsculas).
+        - name: pagina
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: tamanio_pagina
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 10
       responses:
         "200":
-          description: Listado de términos obtenido correctamente (array simple, sin envoltorio de paginación).
+          description: Página de términos. Sin resultados, "items" es un array vacío y "total" es 0.
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/TerminoDiccionario"
+                $ref: "#/components/schemas/TerminoDiccionarioListado"
+        "400":
+          description: pagina o tamanio_pagina fuera de rango.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
         "500":
           $ref: "#/components/responses/ErrorInterno"
     post:
@@ -451,6 +469,23 @@ components:
           type: integer
       required: [fecha, humor_promedio, cantidad_noticias_evaluadas]
 
+    TerminoDiccionarioListado:
+      type: object
+      description: Origina en HU-SENT-001-v2. Mismo envoltorio que CanalesPaginados y FuentesPaginadas.
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/TerminoDiccionario"
+        pagina:
+          type: integer
+        tamanio_pagina:
+          type: integer
+        total:
+          type: integer
+          description: Cantidad total de términos que cumplen el filtro.
+      required: [items, pagina, tamanio_pagina, total]
+
     AnalisisTextoCrear:
       type: object
       properties:
@@ -560,3 +595,7 @@ components:
 #   uso de 502 (fallo persistente de Gemini) y 503 (ML no configurado), y los
 #   códigos de error DATOS_INSUFICIENTES, SERVICIO_EMBEDDINGS_NO_DISPONIBLE y
 #   ML_NO_CONFIGURADO. Sin cambios en el esquema ModeloSentimiento.
+# v1.2.0 (2026-10-20): GET /dictionary pasa a estar paginado (HU-SENT-001-v2):
+#   parámetros pagina y tamanio_pagina (10 por defecto, máximo 50), respuesta
+#   TerminoDiccionarioListado y orden alfabético. Cambio incompatible con v1.1.0:
+#   la respuesta deja de ser un array simple.

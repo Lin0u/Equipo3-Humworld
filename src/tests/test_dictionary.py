@@ -127,7 +127,7 @@ def test_api_crud_completo_y_respuestas_contractuales(client):
     assert client.get("/api/v1/dictionary").status_code == 200
     listado = client.get("/api/v1/dictionary?busqueda=GUERR")
     assert listado.status_code == 200
-    assert [item["id"] for item in listado.json()] == [termino_id]
+    assert [item["id"] for item in listado.json()["items"]] == [termino_id]
     assert client.get(f"/api/v1/dictionary/{termino_id}").status_code == 200
 
     actualizado = client.put(
@@ -229,3 +229,44 @@ def test_api_actualizacion_y_consulta_de_ids_inexistentes(client):
         json={"palabra": "x", "idioma": "es", "valor": 1},
     ).status_code == 404
     assert client.patch("/api/v1/dictionary/77", json={"valor": 1}).status_code == 404
+
+
+# --- HU-SENT-001-v2: listado paginado ----------------------------------------
+
+def test_listado_paginado_por_defecto(client):
+    for i in range(12):
+        termino_crear(client, f"palabra{i:02d}", valor=1)
+
+    cuerpo = client.get("/api/v1/dictionary").json()
+
+    assert (cuerpo["pagina"], cuerpo["tamanio_pagina"], cuerpo["total"]) == (1, 10, 12)
+    assert len(cuerpo["items"]) == 10
+
+
+def test_listado_ordena_por_palabra_y_pagina(client):
+    for palabra in ["zeta", "alfa", "media"]:
+        termino_crear(client, palabra, valor=1)
+
+    pagina1 = client.get("/api/v1/dictionary?tamanio_pagina=2").json()
+    pagina2 = client.get("/api/v1/dictionary?tamanio_pagina=2&pagina=2").json()
+
+    assert [t["palabra"] for t in pagina1["items"]] == ["alfa", "media"]
+    assert [t["palabra"] for t in pagina2["items"]] == ["zeta"]
+    assert pagina2["total"] == 3
+
+
+def test_listado_paginado_respeta_la_busqueda(client):
+    for palabra in ["crisis", "crisol", "paz"]:
+        termino_crear(client, palabra, valor=1)
+
+    cuerpo = client.get("/api/v1/dictionary?busqueda=cris&tamanio_pagina=1").json()
+
+    assert cuerpo["total"] == 2
+    assert [t["palabra"] for t in cuerpo["items"]] == ["crisis"]
+
+
+@pytest.mark.parametrize(
+    "consulta", ["pagina=0", "tamanio_pagina=0", "tamanio_pagina=51"]
+)
+def test_listado_rechaza_parametros_invalidos(client, consulta):
+    assert client.get(f"/api/v1/dictionary?{consulta}").status_code == 400
