@@ -2,8 +2,8 @@
 
 **Proyecto:** HumWorld — Equipo 3
 **Origen:** PDF de especificaciones, sección 4.2.2 ("Deberá existir un diccionario de términos con palabras y su valor para el cálculo del humor"); HU-SENT-001 (gestión del diccionario); HU-SENT-007-v3 (regla de comparación).
-**Estado:** **Propuesto — pendiente de aprobación del equipo.** La traducción al español fue generada con IA y debe revisarla una persona del equipo antes de usarse como dato definitivo.
-**Versión:** v1.0. **Fecha:** 2026-10-19.
+**Estado:** **Incorporado al seed, con aprobación pendiente.** El CSV ya está en `src/scripts/data/diccionario_seed.csv` y lo carga `python -m scripts.seed_diccionario`. Pendiente del equipo: la aprobación formal y, en particular, la revisión humana de la traducción al español (generada con IA), antes de darla por definitiva.
+**Versión:** v1.2. **Fecha:** 2026-10-19.
 **Archivo:** `src/scripts/data/diccionario_seed.csv` (columnas `palabra`, `idioma`, `valor`, `origen`). Carga: `python -m scripts.seed_diccionario`.
 
 ---
@@ -223,3 +223,4 @@ La tabla muestra cada término fuente, su valor en AFINN, el valor en HumWorld y
 | Dataset diccionario inicial | v1.0 | 2026-10-19 | Creación. Inglés: AFINN-en-165 completo (× 2, sin valores 0). Español: traducción generada con IA de 148 términos orientados a noticias (418 formas). Licencia ODbL heredada de AFINN. Pendiente de aprobación del equipo y de revisión humana del español. |
 | Dataset diccionario inicial | v1.1 | 2026-10-19 | Se agrega a las limitaciones un caso real de falta de contexto ("fraude" en una noticia positiva sobre IA), detectado al probar el listado de noticias. |
 | Dataset diccionario inicial | v1.2 | 2026-10-19 | Con la lematización de HU-SENT-007-v3, las formas flexionadas dejan de ser necesarias; se recomienda cargar términos nuevos en su forma base. Sin cambios en el CSV. |
+| Dataset diccionario inicial | v1.2 (editorial) | 2026-10-29 | Actualización de consistencia (rol Documentación): se corrige el encabezado (decía v1.0 pese a que el historial ya registraba v1.1 y v1.2) y se precisa el estado para reflejar que el CSV ya está incorporado al seed (`diccionario_seed.csv`), dejando como pendiente real la aprobación del equipo y la revisión humana del español. Sin cambios en el CSV. |

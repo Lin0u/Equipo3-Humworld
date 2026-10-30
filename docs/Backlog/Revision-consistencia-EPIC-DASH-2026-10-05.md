@@ -3,7 +3,7 @@
 **Proyecto:** HumWorld — Equipo 3
 **Fecha:** 2026-10-05
 **Documentos revisados:** `HU-DASH-dashboards.md` (v1.0) y `ADR-005-stack-frontend-dashboards.md` (v1.0, recibido como `ADR-005`).
-**Contrastados contra:** `HU-SENT-motor-sentimiento.md` (v1.5), `ADR-001`, `ADR-003`, `ADR-004`, `contrato-sentimiento-diccionario.openapi.yaml` (v1.0.0), `contrato-canales-fuentes-rss.openapi.yaml` (v1.6.0), `diagrama-clases.md`, `diagrama-clases-sentimiento.md` (v1.1), `HU-RSS-captura.md` (HU-RSS-009) y `Anexo-I-Planificacion-entregado-P3.md`.
+**Contrastados contra:** `HU-SENT-motor-sentimiento.md` (v1.5), `ADR-001`, `ADR-003`, `ADR-004`, `contrato-sentimiento-diccionario.openapi.yaml` (v1.0.0), `contrato-canales-fuentes-rss.openapi.yaml` (v1.6.0), `diagrama-clases.md`, `diagrama-clases-sentimiento.md` (v1.1; consolidado en `diagrama-clases.md` el 2026-10-29), `HU-RSS-captura.md` (HU-RSS-009) y `Anexo-I-Planificacion-entregado-P3.md`.
 
 **Alcance de lo aplicado:** solo se normalizó la nomenclatura (v1.1 editorial de ambos documentos). Ningún hallazgo de fondo fue corregido en los documentos: todos requieren decisión del equipo.
 
@@ -27,7 +27,7 @@ Resolución: alinear HU-DASH-001 a 5 continentes, o reabrir la decisión de HU-R
 
 > **Resuelto el 2026-10-05:** se creó HU-SENT-008 (tabla de unión, poblada también en el camino de ML) y HU-DASH-003-v2 depende de ella. HU-SENT-008 está sin estimar y sin sprint.
 
-HU-DASH-003 declara que "necesita el diccionario y sus coincidencias en las noticias" (HU-SENT-001, HU-SENT-007). `diagrama-clases-sentimiento.md` establece que **no existe relación persistida entre `Noticia` y `TerminoDiccionario`**: la comparación ocurre en el momento del cálculo y no se guarda. Ninguna HU-SENT cubre hoy esa persistencia.
+HU-DASH-003 declara que "necesita el diccionario y sus coincidencias en las noticias" (HU-SENT-001, HU-SENT-007). `diagrama-clases-sentimiento.md` establece que **no existe relación persistida entre `Noticia` y `TerminoDiccionario`**: la comparación ocurre en el momento del cálculo y no se guarda. Ninguna HU-SENT cubre hoy esa persistencia. *(Nota posterior: este diagrama se consolidó en `diagrama-clases.md` el 2026-10-29, que ya incluye la relación persistida `CoincidenciaTermino` de HU-SENT-008.)*
 
 Además, cuando `metodo_calculo = "ml"` el método de diccionario no se ejecuta, así que esas noticias no tendrían coincidencias (punto pendiente 2 de HU-DASH-003, que este hallazgo agrava).
 

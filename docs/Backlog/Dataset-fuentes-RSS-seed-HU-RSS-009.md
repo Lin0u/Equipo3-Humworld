@@ -2,8 +2,8 @@
 
 **Proyecto:** HumWorld — Equipo 3
 **Origen:** HU-RSS-009-v2 (`HU-RSS-captura.md` v1.12) y PDF de especificaciones, sección 4.2.1 ("carga inicial de fuentes RSS por continente").
-**Estado:** **Propuesto — pendiente de aprobación del equipo.** No debe copiarse a `src/scripts/seed.py` hasta que el equipo lo apruebe.
-**Versión:** v2.0. **Fecha de verificación:** 2026-10-18.
+**Estado:** **Incorporado al seed, con aprobación pendiente.** El dataset ya está en `src/scripts/seed.py` (que lo referencia como v2.1); su aprobación formal queda en la revisión del pull request. Nota: los feeds RSS cambian de dirección sin aviso, así que conviene re-verificar las URLs la misma semana en que se ejecute el seed contra una base compartida.
+**Versión:** v2.1. **Fecha de verificación:** 2026-10-18.
 
 ---
 
@@ -63,11 +63,12 @@
 - Con su ítem más reciente fuera del rango de 3 días: Premium Times Business (12 oct.), ABC Business (14 oct.), AllAfrica Health (3 sep.), AllAfrica Sport (30 sep.), Arab News Saudi Arabia (14 ago.) y SBS News (ago.).
 - Otros: El Tiempo Salud (fechas de los ítems en formato ISO 8601 en vez de RFC 822), BusinessTech (cerca de un tercio de sus ítems no son de negocios), SuperSport (devuelve una página HTML, no un feed), feeds de SCMP encontrados (sin publicaciones desde 2019 y 2026-02) y RNZ World (1 solo ítem).
 
-## 5. Uso recomendado
+## 5. Estado de uso
 
-1. El equipo revisa la tabla y las observaciones de la sección 3 y aprueba el dataset.
-2. Se re-verifica la lista la misma semana en que se ejecute el seed: los feeds RSS cambian de dirección sin aviso.
-3. Se copia el dataset a `CANALES_SEED` en `src/scripts/seed.py`, agrupando las fuentes por canal (11 canales, 20 fuentes).
+Este dataset ya está incorporado como `CANALES_SEED` en `src/scripts/seed.py`, agrupado por canal (11 canales, 20 fuentes). Pendientes del equipo:
+
+1. Aprobar formalmente el dataset (revisión del pull request), contrastando la tabla y las observaciones de la sección 3.
+2. Re-verificar las URLs la misma semana en que se ejecute el seed contra una base compartida: los feeds RSS cambian de dirección sin aviso.
 
 ## Tabla de control de versiones
 
@@ -77,3 +78,4 @@
 | Dataset de fuentes RSS (HU-RSS-009-v2) | v1.1 | 2026-10-18 | Se resuelve el punto de los continentes: con tilde. Sigue pendiente la categoría IPTC de los feeds generales. |
 | Dataset de fuentes RSS (HU-RSS-009-v2) | v2.0 | 2026-10-18 | Decisión de equipo: solo feeds de sección. Se reemplazan los 14 feeds generales y 2 de sección para diversificar categorías. Resultado: 20 fuentes en 11 canales, todas con una categoría IPTC exacta, sin cambios en el código ni en HU-RSS-002. No quedan decisiones abiertas; solo la aprobación del equipo y la revisión de las observaciones de la sección 3. |
 | Dataset de fuentes RSS (HU-RSS-009-v2) | v2.1 | 2026-10-18 | Se confirman en navegador los feeds 6 (El Mundo Ciencia) y 11 (Dawn Business). Las 20 fuentes quedan verificadas. |
+| Dataset de fuentes RSS (HU-RSS-009-v2) | v2.1 (editorial) | 2026-10-29 | Actualización de consistencia (rol Documentación): se corrige el encabezado (decía v2.0 pese a que el historial ya registraba v2.1 y `seed.py` referencia v2.1), y se actualiza el estado y la sección 5 para reflejar que el dataset ya está incorporado a `src/scripts/seed.py` (deja de decir "no copiar hasta aprobar"). La aprobación formal del equipo sigue pendiente. Sin cambios en el dataset. |

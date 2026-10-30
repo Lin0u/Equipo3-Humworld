@@ -42,7 +42,7 @@ classDiagram
 
 - Tabla de unión propuesta: `noticia_termino`, con clave primaria compuesta (`noticia_id`, `termino_id`). La clave compuesta garantiza una sola fila por término y noticia.
 - **Composición con `Noticia`:** una coincidencia no tiene sentido sin su noticia; al eliminarse la noticia (purgado, HU-ADMIN-002 y HU-ADMIN-003) sus coincidencias se eliminan con ella.
-- Los nombres `CoincidenciaTermino` y `noticia_termino` se usaron en la implementación (migración `e5a1c7d3f9b2`). `diagrama-clases-sentimiento.md` (v1.1) afirma hoy que no existe relación persistida entre `Noticia` y `TerminoDiccionario`; debe actualizarse cuando esta historia se ratifique.
+- Los nombres `CoincidenciaTermino` y `noticia_termino` se usaron en la implementación (migración `e5a1c7d3f9b2`). El diagrama de clases afirmaba en su momento (entonces `diagrama-clases-sentimiento.md` v1.1) que no existía relación persistida entre `Noticia` y `TerminoDiccionario`; ya se actualizó: el modelo de datos consolidado (`diagrama-clases.md`, 2026-10-29) incluye esta entidad.
 
 ### Criterios de aceptación (Gherkin)
 
@@ -97,7 +97,7 @@ Escenario: Eliminación de una noticia
 - Migración de MySQL para la tabla de unión, documentada y revisada por el equipo antes de fusionar.
 - Pruebas unitarias deterministas de los 6 escenarios Gherkin, con el modelo de ML simulado mediante mock en el escenario de `metodo_calculo = "ml"`.
 - Prueba de unicidad: un segundo procesamiento de la misma noticia no duplica coincidencias.
-- `diagrama-clases-sentimiento.md` actualizado con la nueva entidad.
+- `diagrama-clases.md` actualizado con la nueva entidad.
 
 ---
 

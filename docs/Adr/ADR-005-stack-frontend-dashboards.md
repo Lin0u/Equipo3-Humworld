@@ -166,13 +166,24 @@ Usar un framework de estilos utilitario o una librería de componentes prefabric
 - `docs/architecture.md`: mover el frontend de "fuera del alcance" a tecnología aprobada (sección 2) y describir la organización de `frontend/` (sección 7).
 - `openspec/config.yaml`: agregar a "Tecnologías aprobadas" las de este ADR, para que los cambios de OpenSpec del frontend no violen la regla de no incorporar tecnologías nuevas.
 - `.github/workflows/ci.yml`, `docker-compose.yml` y `sonar-project.properties`: incorporar el frontend, según lo descrito en las consecuencias negativas.
-- Contratos: `contrato-dashboards.openapi.yaml` (v1.0.0, Propuesto) cubre el mapa de HU-DASH-001-v3 y la nube de HU-DASH-003-v2. Sigue por crear el de `/news` (HU-DASH-002).
+- Contratos: `contrato-dashboards.openapi.yaml` (v1.0.0, Propuesto) cubre el mapa de HU-DASH-001-v3 y la nube de HU-DASH-003-v2. Sigue por crear el de `/news` (HU-DASH-002-v2).
+
+---
+
+## Implementación (2026-10)
+
+El stack decidido en este ADR está implementado en el código, sin cambios respecto de la Decisión. Nota de documentación añadida el 2026-10-29; no modifica el Contexto, la Decisión, las Alternativas ni el Estado (el paso de "Propuesto" a "Aceptado" sigue siendo una ratificación pendiente del equipo). Varias afirmaciones del Contexto y las Consecuencias describían el estado al momento de escribir el ADR (2026-10-03, maqueta con datos de ejemplo); su estado actual es:
+
+- **Stack:** React 19 + Vite, Leaflet (`MapaHumor.jsx`) y Chart.js (`componentes/GraficoEvolucion.jsx`, que ya usa la serie temporal — el punto 5 decía "todavía no se usan"); CSS plano; acceso a datos vía `frontend/src/api/cliente.js` contra `/api/v1`. La carpeta `datos/*Ejemplo.js` dejó de ser el origen de producción: las vistas consumen la API real.
+- **Herramienta de pruebas (punto 11):** se implementó con Vitest + Testing Library, con pruebas en `frontend/src/` y cobertura ≥ 80% (`vite.config.js`). El equipo debe ratificar formalmente esta dependencia, que el ADR dejó "sin decidir".
+- **CI, CORS y Docker (Consecuencias negativas):** el pipeline ya tiene el job `test-frontend` encadenado por `needs` (`.github/workflows/ci.yml`), y el backend configura CORS en `src/app/main.py`. Quedan como puntos a confirmar por DevOps el servicio de Docker para servir el frontend y la inclusión de `frontend/src` en SonarQube.
+- **Contratos:** `/news` ya tiene contrato (`docs/Contratos/contrato-noticias.openapi.yaml`), cerrando el "sigue por crear" de la sección de sincronización.
 
 ---
 
 ## Historias de usuario relacionadas
 
-HU-DASH-001-v3, HU-DASH-002, HU-DASH-003-v2 *(ver `HU-DASH-dashboards.md`)*; HU-SENT-004 *(endpoint que consume el mapa)*; HU-SENT-001 y HU-SENT-008 *(diccionario y coincidencias término–noticia persistidas, origen de la nube de palabras)*; HU-RSS-009 *(carga inicial de fuentes, que fija la lista de continentes)*; HU-ADMIN-004 *(panel de administración unificado, que reutilizará este stack en el Sprint 4)*.
+HU-DASH-001-v3, HU-DASH-002-v2, HU-DASH-003-v2 *(ver `HU-DASH-dashboards.md`)*; HU-SENT-004 *(endpoint que consume el mapa)*; HU-SENT-001 y HU-SENT-008 *(diccionario y coincidencias término–noticia persistidas, origen de la nube de palabras)*; HU-RSS-009-v2 *(carga inicial de fuentes, que fija la lista de continentes)*; HU-ADMIN-004 *(panel de administración unificado, que reutilizará este stack)*.
 
 ---
 
@@ -181,7 +192,8 @@ HU-DASH-001-v3, HU-DASH-002, HU-DASH-003-v2 *(ver `HU-DASH-dashboards.md`)*; HU-
 | Versión | Fecha/Sesión | Motivo del cambio |
 |---|---|---|
 | v1.0 | 2026-10-03 | Creación inicial. Formaliza el stack de la capa de presentación (React 19 con Vite, Leaflet, Chart.js, CSS plano, `fetch` nativo) ya usado en la maqueta de la rama `feature/frontend-dashboards`, evalúa ocho alternativas y los cuatro patrones de resiliencia de la sección 13 de las instrucciones del proyecto, y deja explícitamente sin decidir la herramienta de pruebas del frontend. |
-| v1.1 (editorial) | 2026-10-05 | Renumerado de ADR-005 a ADR-005 y normalización de las referencias a ADR-001 a ADR-004 con tres dígitos, según la convención del Proyecto. Sin cambios en la Decisión, las Alternativas ni las Consecuencias. Hallazgos de la revisión cruzada en `Revision-consistencia-EPIC-DASH-2026-10-05.md`, no aplicados aquí. |
+| v1.1 (editorial) | 2026-10-05 | Normalización de las referencias a ADR-001 a ADR-004 con tres dígitos, según la convención del Proyecto. Sin cambios en la Decisión, las Alternativas ni las Consecuencias. Hallazgos de la revisión cruzada en `Revision-consistencia-EPIC-DASH-2026-10-05.md`, no aplicados aquí. |
 | v1.2 | 2026-10-05 | Actualización de referencias: HU-DASH-001 fue deprecada y reemplazada por HU-DASH-001-v2 (lista de 5 continentes, según HU-RSS-009). Sin cambios en la Decisión, las Alternativas ni las Consecuencias. |
 | v1.3 | 2026-10-05 | Chart.js queda respaldado por una historia (gráfico de evolución temporal de HU-DASH-001-v3). Referencias actualizadas a HU-DASH-001-v3, HU-DASH-003-v2 y HU-SENT-008, y al nuevo `contrato-dashboards.openapi.yaml`. Sin cambios en el stack decidido ni en las Alternativas. |
 | v1.4 (editorial) | 2026-10-18 | Copia para el repositorio: se mantiene el número ADR-005 y las referencias de dos dígitos de `docs/Adr/`, dejando sin efecto la renumeración a tres dígitos de la v1.1. Sin cambios en la Decisión, las Alternativas ni las Consecuencias. |
+| v1.5 | 2026-10-29 | Se agrega la sección "Implementación (2026-10)" (rol Documentación), que registra que el stack está implementado (Chart.js en uso, Vitest, CORS, job `test-frontend`, contrato de `/news`). Se actualizan las referencias a las historias vigentes (HU-DASH-002-v2, HU-RSS-009-v2) en el texto vivo y se corrige el defecto editorial "Renumerado de ADR-005 a ADR-005" en la fila v1.1. Sin cambios en la Decisión, las Alternativas ni el Estado. |

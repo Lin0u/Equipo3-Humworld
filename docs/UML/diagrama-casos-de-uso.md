@@ -1,61 +1,108 @@
-# Diagrama de Casos de Uso — Módulo Captura RSS (EPIC-RSS, Sprint 1)
+# Diagrama de Casos de Uso — HumWorld (sistema completo)
 
 **Proyecto:** HumWorld — Equipo 3
-**Alcance:** Historias HU-RSS-001, 002, 003-v2, 004 a 010 (módulo de Captura y Gestión de Fuentes RSS), según `HU-RSS-captura.md`. No incluye HU-RSS-003, Deprecada en favor de HU-RSS-003-v2.
 **Origen:** PDF de especificaciones, sección 4.7.3.a ("Documentación UML de diseño → Diagrama de casos de uso").
-**Nota:** Este diagrama cubre únicamente EPIC-RSS (lo único implementado hasta ahora). EPIC-SENT ya tiene su propio diagrama de diseño en `diagrama-casos-de-uso-sentimiento.md` (pendiente de implementación en código). EPIC-DASH y EPIC-ADMIN todavía no tienen diagrama propio, hasta que se aborden esos sprints.
+**Alcance:** casos de uso de las cuatro épicas (EPIC-RSS, EPIC-SENT, EPIC-DASH, EPIC-ADMIN), con las historias vigentes del backlog.
+**Estado:** refleja las funcionalidades implementadas en el sistema.
+
+> **Nota de organización (2026-10-29):** este diagrama consolida en uno solo los casos de uso de todas las épicas. Antes estaban repartidos entre `diagrama-casos-de-uso.md` (EPIC-RSS) y `diagrama-casos-de-uso-sentimiento.md` (EPIC-SENT), y EPIC-DASH/EPIC-ADMIN no tenían diagrama. La separación por épica no estaba documentada como decisión del equipo; se unifica para cubrir el sistema completo en un único diagrama, como pide §4.7.3.a.
 
 ## Actores
 
-| Actor | Rol en las historias |
+| Actor | Rol |
 |---|---|
-| **Administrador del sistema** | Actor de las historias administrativas de alta/gestión (HU-RSS-001, 002, 004, 005, 007, 008), según la convención de nombres fijada en `openspec/config.yaml` y `.github/copilot-instructions.md`. |
-| **Administrador o analista de medios** | Actor de las historias de consulta (HU-RSS-003-v2, HU-RSS-010) — puede ser el mismo administrador u otro rol de solo lectura/auditoría. |
-| **Sistema HumWorld (scheduler)** | Actor no humano: dispara la captura automática periódica (HU-RSS-006, Historia Técnica/Enabler). |
-| **Equipo de desarrollo** | Actor no humano en tiempo de ejecución: ejecuta el procedimiento de carga inicial/seed (HU-RSS-009, Historia Técnica/Enabler). |
+| **Administrador del sistema** | Gestión de canales y fuentes (HU-RSS-001/002/004/005), captura manual (HU-RSS-008), configuración (HU-RSS-007, HU-ADMIN-001), gestión del diccionario (HU-SENT-001), disparo del entrenamiento (HU-SENT-006) y purgado manual (HU-ADMIN-003). |
+| **Analista de medios o usuario interesado** | Consultas de solo lectura: listado de canales y fuentes (HU-RSS-003-v2, HU-RSS-010), sentimiento agregado (HU-SENT-004), análisis de texto (HU-SENT-005), y los dashboards (HU-DASH-001-v3, HU-DASH-002-v2, HU-DASH-003-v2). Grounded en PDF §4.1. |
+| **Sistema HumWorld (procesos automáticos)** | Actor no humano: captura automática (HU-RSS-006), cálculo de humor tras cada captura y barrido de respaldo (HU-SENT-002-v3), purgado automático (HU-ADMIN-002) y carga inicial por script (HU-RSS-009-v2, diccionario). |
 
 ## Diagrama
 
 ```mermaid
 flowchart LR
     Admin["🧑 Administrador\ndel sistema"]
-    Analista["🧑 Administrador o\nanalista de medios"]
-    Cron(("⏱️ Sistema HumWorld\n(scheduler)"))
-    Dev["🧑 Equipo de\ndesarrollo"]
+    Analista["🧑 Analista de medios\no usuario interesado"]
+    Sistema(("⚙️ Sistema HumWorld\n(procesos automáticos)"))
 
-    subgraph SYS["Sistema HumWorld — Módulo Captura RSS"]
-        UC1(["Dar de alta un canal\nde noticias — HU-RSS-001"])
-        UC10(["Consultar y listar canales\nde noticias — HU-RSS-010"])
-        UC2(["Dar de alta una\nfuente RSS — HU-RSS-002"])
-        UC3(["Consultar y filtrar\nfuentes RSS — HU-RSS-003-v2"])
-        UC4(["Modificar una\nfuente RSS — HU-RSS-004"])
-        UC5(["Eliminar una\nfuente RSS — HU-RSS-005"])
-        UC7(["Configurar periodicidad\ndel cron — HU-RSS-007"])
-        UC8(["Disparar captura\nmanual — HU-RSS-008"])
-        UC6(["Ejecutar captura automática\nde noticias — HU-RSS-006"])
-        UC9(["Cargar fuentes RSS\niniciales (seed) — HU-RSS-009"])
-        UCcapt(["Capturar y deduplicar\nnoticias de una fuente"])
+    subgraph RSS["EPIC-RSS — Captura y gestión de fuentes"]
+        UC1(["Dar de alta un canal — HU-RSS-001"])
+        UC10(["Consultar/listar canales — HU-RSS-010"])
+        UC2(["Dar de alta una fuente RSS — HU-RSS-002"])
+        UC3(["Consultar/filtrar fuentes — HU-RSS-003-v2"])
+        UC4(["Modificar una fuente — HU-RSS-004"])
+        UC5(["Eliminar una fuente — HU-RSS-005"])
+        UC8(["Disparar captura manual — HU-RSS-008"])
+        UC6(["Captura automática — HU-RSS-006"])
+        UC9(["Carga inicial de fuentes (seed) — HU-RSS-009-v2"])
+        UCcapt(["Capturar y deduplicar noticias"])
+    end
+
+    subgraph SENT["EPIC-SENT — Motor de sentimiento"]
+        UCS1(["Gestionar diccionario (CRUD) — HU-SENT-001"])
+        UCS4(["Consultar sentimiento agregado — HU-SENT-004"])
+        UCS5(["Analizar un texto arbitrario — HU-SENT-005"])
+        UCS6(["Disparar entrenamiento del modelo ML — HU-SENT-006"])
+        UCS2(["Calcular el humor de una noticia — HU-SENT-002-v3"])
+        UCBarrido(["Barrido de respaldo — HU-SENT-002-v3"])
+        UCDicc(["Calcular humor por diccionario — HU-SENT-007-v3"])
+        UCML(["Calcular humor con modelo ML — HU-SENT-006"])
+    end
+
+    subgraph DASH["EPIC-DASH — Dashboards"]
+        UCD1(["Ver mapa mundial de humor — HU-DASH-001-v3"])
+        UCD2(["Ver listado de noticias influyentes — HU-DASH-002-v2"])
+        UCD3(["Ver nube de palabras — HU-DASH-003-v2"])
+    end
+
+    subgraph ADMIN["EPIC-ADMIN — Administración"]
+        UCA1(["Configurar parámetros generales — HU-ADMIN-001 / HU-RSS-007"])
+        UCA2(["Purgado automático de noticias — HU-ADMIN-002"])
+        UCA3(["Purgado manual de noticias — HU-ADMIN-003"])
     end
 
     Admin --> UC1
     Admin --> UC2
     Admin --> UC4
     Admin --> UC5
-    Admin --> UC7
     Admin --> UC8
+    Admin --> UCS1
+    Admin --> UCS6
+    Admin --> UCA1
+    Admin --> UCA3
     Analista --> UC10
     Analista --> UC3
-    Cron --> UC6
-    Dev --> UC9
+    Analista --> UCS4
+    Analista --> UCS5
+    Analista --> UCD1
+    Analista --> UCD2
+    Analista --> UCD3
+    Sistema --> UC6
+    Sistema --> UC9
+    Sistema --> UCS2
+    Sistema --> UCBarrido
+    Sistema --> UCA2
 
     UC6 -. "«include»" .-> UCcapt
     UC8 -. "«include»" .-> UCcapt
+    UCcapt -. "«include»" .-> UCS2
+    UCS2 -. "«include»" .-> UCDicc
+    UCS2 -. "«extend»\n(si hay modelo y responde a tiempo)" .-> UCML
+    UCS5 -. "«include»\n(siempre diccionario)" .-> UCDicc
+    UCBarrido -. "«include»" .-> UCS2
+    UCD1 -. "usa" .-> UCS4
 ```
 
 ## Notas de diseño
 
-- **`«include»` entre HU-RSS-006/HU-RSS-008 y "Capturar y deduplicar noticias de una fuente":** la captura manual (HU-RSS-008) reutiliza exactamente el mismo procedimiento de captura y deduplicación que el cron automático (HU-RSS-006) —ver `HU-RSS-captura.md` (HU-RSS-008) y la responsabilidad de orquestación de captura/deduplicación de la capa de Servicios en `docs/architecture.md`, sección 4—, por eso se modela como un caso de uso incluido compartido en lugar de duplicar el comportamiento en cada uno.
-- **HU-RSS-006 y HU-RSS-009 son Historias Técnicas/Enabler** (el actor no es un usuario final humano, según la sección 4 de las instrucciones del proyecto) — se representan igualmente como casos de uso porque describen comportamiento observable del sistema, pero con actores no humanos (`Sistema HumWorld`, `Equipo de desarrollo`).
-- **HU-RSS-001 y HU-RSS-010 comparten la entidad `CanalNoticias`** (alta y consulta respectivamente) sin relación de inclusión/extensión entre sí — son operaciones independientes sobre el mismo recurso, tal como quedó definido en la Guía P6.
-- No se modelan aquí relaciones de `«extend»` porque ninguna historia actual describe un comportamiento opcional condicional sobre otro caso de uso ya definido. (El primer caso `«extend»` de la documentación del proyecto aparece en `diagrama-casos-de-uso-sentimiento.md`, para el camino condicional de cálculo con ML.)
-- **Cruce con EPIC-SENT:** `UC6` y `UCcapt` (captura de una noticia) disparan automáticamente el cálculo de humor de HU-SENT-002-v2 (ver `diagrama-casos-de-uso-sentimiento.md`) — esa relación se documenta como nota textual en el diagrama de EPIC-SENT, no como flecha cruzada entre ambos diagramas.
+- **Captura reutilizada (`«include»`):** la captura manual (HU-RSS-008) y el cron automático (HU-RSS-006) comparten el mismo procedimiento de captura y deduplicación (`UCcapt`), implementado en `captura_service.py`.
+- **Cálculo de humor disparado por la captura:** tras capturar una noticia, el sistema calcula su humor (HU-SENT-002-v3). Se modela como `UCcapt «include» UCS2`.
+- **Diccionario siempre disponible, ML condicional:** `UCS2 «include» UCDicc` (el método de diccionario es el camino base y el fallback); `UCS2 «extend» UCML` (el camino de ML solo se ejecuta si existe un modelo entrenado que responde dentro del timeout — HU-SENT-002-v3). El análisis de texto arbitrario (HU-SENT-005) usa siempre diccionario, nunca ML.
+- **Barrido de respaldo:** el job periódico no reimplementa el cálculo; reutiliza `UCS2` sobre las noticias con `metodo_calculo IS NULL` (HU-SENT-002-v3).
+- **Enabler Stories:** HU-RSS-006, HU-RSS-009-v2, HU-SENT-002-v3 y HU-ADMIN-002 tienen al sistema como actor (no un usuario humano); se representan como casos de uso por describir comportamiento observable.
+- **Historias sin caso de uso propio:** HU-SENT-003 (persistencia del resultado) y HU-SENT-008 (persistencia de coincidencias) extienden el modelo de datos sin comportamiento observable distinto del que ya modelan otros casos; se documentan en el diagrama de clases, no aquí. El panel de administración unificado (HU-ADMIN-004) está sin iniciar y no se representa.
+
+## Historial de revisión
+
+| Versión | Fecha | Motivo del cambio |
+|---|---|---|
+| v1.0 | 2026-09-06 | Creación como diagrama de casos de uso de EPIC-RSS (HU-RSS-001 a 010), con relaciones `«include»` para la captura. |
+| v2.0 | 2026-10-29 | Consolidación en el diagrama del sistema completo (rol Documentación): se integran los casos de uso de EPIC-SENT (antes en `diagrama-casos-de-uso-sentimiento.md`) y se añaden EPIC-DASH y EPIC-ADMIN. Se actualizan las historias a sus versiones vigentes (HU-SENT-002-v3, HU-SENT-007-v3). Reemplaza y absorbe a `diagrama-casos-de-uso-sentimiento.md`. |

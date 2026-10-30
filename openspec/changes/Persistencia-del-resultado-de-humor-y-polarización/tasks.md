@@ -3,7 +3,7 @@
 - [x] 1.0 Verificar que ya existe la migración de HU-SENT-002-v2 que crea `metodo_calculo` y `cantidad_terminos_evaluados` (decisión de equipo del 2026-10-18); no iniciar este cambio antes.
 - [x] 1.1 Extender `src/app/models/noticia.py` con `polarizacion_terminos` nullable de tipo Float; verificar la definición ORM. `metodo_calculo` ya lo agrega HU-SENT-002-v2 y no se redefine.
 - [x] 1.2 Crear migración Alembic solo para `polarizacion_terminos`, con `down_revision` igual a la revisión de HU-SENT-002-v2; verificar `alembic upgrade head --sql`, orden de migración y un downgrade que retire solo esa columna.
-- [x] 1.3 Actualizar `docs/UML/diagrama-clases-sentimiento.md` (donde se modela la extensión de `Noticia`; `diagrama-clases.md` remite a él) con los nuevos atributos de `Noticia`; verificar que el diagrama refleja modelo, nullabilidad y tipo persistido.
+- [x] 1.3 Actualizar `docs/UML/diagrama-clases.md` (donde se modela la extensión de `Noticia`) con los nuevos atributos de `Noticia`; verificar que el diagrama refleja modelo, nullabilidad y tipo persistido. (Modelo consolidado el 2026-10-29; antes en `diagrama-clases-sentimiento.md`.)
 
 ## 2. Repositorio y persistencia
 
