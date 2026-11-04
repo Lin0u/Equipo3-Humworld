@@ -156,35 +156,37 @@ export default function DiccionarioAdmin() {
                       termino.valor
                     )}
                   </td>
-                  <td className="admin-acciones">
-                    {edicion?.id === termino.id ? (
-                      <>
-                        <button
-                          type="button"
-                          className="filtro activo"
-                          disabled={!valorValido(edicion.valor)}
-                          onClick={guardarEdicion}
-                        >
-                          Guardar
-                        </button>
-                        <button type="button" className="filtro" onClick={() => setEdicion(null)}>
-                          Cancelar
-                        </button>
-                      </>
-                    ) : (
-                      <>
-                        <button
-                          type="button"
-                          className="filtro"
-                          onClick={() => setEdicion({ id: termino.id, valor: String(termino.valor) })}
-                        >
-                          Editar
-                        </button>
-                        <button type="button" className="filtro" onClick={() => eliminar(termino)}>
-                          Eliminar
-                        </button>
-                      </>
-                    )}
+                  <td>
+                    <div className="admin-acciones admin-acciones-fila">
+                      {edicion?.id === termino.id ? (
+                        <>
+                          <button
+                            type="button"
+                            className="filtro activo"
+                            disabled={!valorValido(edicion.valor)}
+                            onClick={guardarEdicion}
+                          >
+                            Guardar
+                          </button>
+                          <button type="button" className="filtro" onClick={() => setEdicion(null)}>
+                            Cancelar
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <button
+                            type="button"
+                            className="filtro"
+                            onClick={() => setEdicion({ id: termino.id, valor: String(termino.valor) })}
+                          >
+                            Editar
+                          </button>
+                          <button type="button" className="filtro" onClick={() => eliminar(termino)}>
+                            Eliminar
+                          </button>
+                        </>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}

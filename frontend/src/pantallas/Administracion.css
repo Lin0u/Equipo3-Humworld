@@ -119,3 +119,9 @@
   transform: none;
   box-shadow: none;
 }
+
+/* Botones de cada fila de tabla: en una sola línea. */
+.admin-acciones-fila {
+  flex-wrap: nowrap;
+  white-space: nowrap;
+}

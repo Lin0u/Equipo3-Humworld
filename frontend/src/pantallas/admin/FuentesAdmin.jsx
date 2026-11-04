@@ -117,10 +117,7 @@ export default function FuentesAdmin() {
 
   async function agregarFuente(evento) {
     evento.preventDefault()
-    const ok = await ejecutar(
-      () => crearFuente({ ...nuevaFuente, url: nuevaFuente.url.trim() }),
-      'Fuente creada.',
-    )
+    const ok = await ejecutar(() => crearFuente({ ...nuevaFuente, url: nuevaFuente.url.trim() }), 'Fuente creada.')
     if (ok) {
       setNuevaFuente({ canalId: nuevaFuente.canalId, url: '', categoriaIptc: '' })
       recargar()
@@ -336,18 +333,20 @@ export default function FuentesAdmin() {
                     <td>{fuente.activo ? 'Sí' : 'No'}</td>
                     <td>{formatoFecha(fuente.fecha_ultima_captura_exitosa)}</td>
                     <td>{ESTADOS_CIRCUITO[fuente.estado_circuit_breaker] ?? fuente.estado_circuit_breaker}</td>
-                    <td className="admin-acciones">
-                      <button
-                        type="button"
-                        className="filtro"
-                        disabled={!fuente.activo || enCurso}
-                        onClick={() => capturar([fuente.id])}
-                      >
-                        Capturar ahora
-                      </button>
-                      <button type="button" className="filtro" onClick={() => alternarEstado(fuente)}>
-                        {fuente.activo ? 'Desactivar' : 'Reactivar'}
-                      </button>
+                    <td>
+                      <div className="admin-acciones admin-acciones-fila">
+                        <button
+                          type="button"
+                          className="filtro"
+                          disabled={!fuente.activo || enCurso}
+                          onClick={() => capturar([fuente.id])}
+                        >
+                          Capturar ahora
+                        </button>
+                        <button type="button" className="filtro" onClick={() => alternarEstado(fuente)}>
+                          {fuente.activo ? 'Desactivar' : 'Reactivar'}
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
