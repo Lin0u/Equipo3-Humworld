@@ -281,7 +281,7 @@ Escenario: Noticias calculadas con ML no se recalculan por cambios del diccionar
  
 **Prioridad:** Alta
 **Estimación (Planning Poker P3):** 3 puntos
-**Depende de contrato de API:** No expone endpoint propio — extiende el modelo de datos `Noticia` ya definido en `diagrama-clases.md` (EPIC-RSS). El campo `valor_humor` (float, nullable) **ya existe** en ese diagrama, dejado explícitamente reservado para este módulo. **Resuelto el 2026-10-19:** el indicador de polarización se persiste en `noticias.polarizacion_terminos` (float, nullable), nombre propuesto por `ADR-003-eleccion-algoritmo-agregacion-sentimiento.md`, calculado como desviación estándar poblacional de los valores de los términos coincidentes (migración `a7c3e9b5d1f4`, rama `feature/polarizacion-analisis`). Queda NULL cuando la noticia no tiene términos coincidentes. Modelado en `diagrama-clases-sentimiento.md`.
+**Depende de contrato de API:** No expone endpoint propio — extiende el modelo de datos `Noticia` ya definido en `diagrama-clases.md` (EPIC-RSS). El campo `valor_humor` (float, nullable) **ya existe** en ese diagrama, dejado explícitamente reservado para este módulo. **Resuelto el 2026-10-19:** el indicador de polarización se persiste en `noticias.polarizacion_terminos` (float, nullable), nombre propuesto por `ADR-003-eleccion-algoritmo-agregacion-sentimiento.md`, calculado como desviación estándar poblacional de los valores de los términos coincidentes (migración `a7c3e9b5d1f4`, rama `feature/polarizacion-analisis`). Queda NULL cuando la noticia no tiene términos coincidentes. Modelado en `diagrama-clases.md`.
  
 ### Criterios de aceptación (Gherkin)
  

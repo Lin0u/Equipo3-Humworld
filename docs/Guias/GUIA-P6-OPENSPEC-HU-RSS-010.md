@@ -1,5 +1,7 @@
 # Guía de ejecución — Práctica P6 OpenSpec II (Specification-Driven Development) aplicada a HumWorld
 
+> **Documento histórico (práctica P6, 2026-08-30).** Registra cómo se ejecutó la práctica en su momento; no describe el estado actual del sistema. Los nombres de archivo de ADR que cita (`ADR-001-stack-backend.md`, `ADR-002-arquitectura-captura-rss.md`) eran los vigentes en esa fecha; luego se renombraron a `ADR-001-framework-api-backend.md` y `ADR-002-relacion-composicion-canal-fuente.md` (ver `docs/Adr/`). Se conservan tal cual para no alterar la transcripción del ejercicio. El bloque de `architecture.md` que se reproduce más abajo también es la versión de Sprint 1; el documento vigente es `docs/architecture.md`.
+
 **Proyecto:** HumWorld — Equipo 3
 **Práctica de referencia:** `P6 - OPENSPEC II` (continuación de P5)
 **Historia 1 (ya ejecutada en P5):** HU-RSS-001 — Alta de Canal de Noticias (cambio OpenSpec `alta-canal-noticias`, propuesto en `GUIA-P5-OPENSPEC-HU-RSS-001.md`)

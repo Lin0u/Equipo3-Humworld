@@ -5,14 +5,14 @@
 **Alcance de este plan:** HU-RSS-001, HU-RSS-002, HU-RSS-003-v2, HU-RSS-004, HU-RSS-005 y HU-RSS-010
 **Rol responsable:** QA / Documentación
 **Versión del documento:** v1 — Sesión 2026-09-06
-**Estado:** Vigente para Sprint 1
+**Estado:** Documento de Sprint 1 (punto en el tiempo). Describe el plan de pruebas y el estado del módulo de Captura RSS tal como estaban en el Sprint 1. Las referencias a HU-RSS-006/007/008/009 como esqueletos (scaffolding) que lanzan `NotImplementedError` eran correctas **en ese momento**; esas historias ya están implementadas en el sistema actual. Para la trazabilidad de pruebas vigente del sistema completo, ver `docs/Backlog/Requisitos.md` (matriz de trazabilidad).
 
 **Referencias:**
 - Historias de usuario y criterios Gherkin: `docs/Backlog/HU-RSS-captura.md`
 - Arquitectura y reglas de capas: `docs/architecture.md`
 - Decisiones de stack y arquitectura: `docs/Adr/ADR-001-framework-api-backend.md`, `docs/Adr/ADR-002-relacion-composicion-canal-fuente.md`
 - Definition of Done: `docs/Planificación/PLANIFICACION-AGIL-HUMWORLD-ENTREGADO-P3.md` (Paso 5) e instrucciones del proyecto (sección 14)
-- Guía operativa de ejecución: `README-despliegue-captura-rss.md` (sección "Ejecutar las pruebas")
+- Guía operativa de ejecución: `README.md` (raíz, sección "Pruebas")
 
 ---
 
