@@ -11,7 +11,7 @@ export default function ModeloAdmin() {
 
   async function entrenar() {
     setEnCurso(true)
-    setAviso({ tipo: 'info', texto: 'Entrenando el modelo…' })
+    setAviso({ tipo: 'info', texto: 'Entrenando el modelo… puede tardar hasta 3 minutos.' })
     try {
       const modelo = await entrenarModelo()
       setAviso({

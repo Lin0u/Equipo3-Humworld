@@ -144,6 +144,8 @@ export default function FuentesAdmin() {
       recargar()
     } catch (causa) {
       setAviso({ tipo: 'error', texto: causa.message })
+      // El backend pudo haber capturado igual: se recarga para ver la fecha real.
+      recargar()
     } finally {
       setEnCurso(false)
     }

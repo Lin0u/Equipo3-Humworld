@@ -5,8 +5,13 @@
 
 const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000/api/v1'
 
-// Tiempo máximo de espera de cada llamada. Valor propuesto, a ratificar por el equipo.
+// Tiempo máximo de espera de cada llamada. Valores propuestos, a ratificar por el equipo.
 const TIMEOUT_MS = 10000
+// La captura manual (HU-RSS-008) y el entrenamiento (HU-SENT-006) tardan más: una
+// captura puede hacer hasta 4 intentos con timeouts de 5 s + 10 s y backoff
+// (src/app/core/config.py), más el cálculo del humor; varias fuentes se capturan en
+// serie. Con 10 s el navegador abandonaba la espera aunque el backend terminara bien.
+export const TIMEOUT_LARGO_MS = 180000
 
 // Error de la API con el código HTTP y el "codigo" de negocio que devuelve el
 // backend (por ejemplo, TERMINO_DUPLICADO). El mensaje es el que manda la API,
@@ -31,9 +36,9 @@ async function errorDeRespuesta(respuesta) {
   return new ErrorApi(mensaje, respuesta.status, cuerpo?.codigo)
 }
 
-async function solicitar(ruta, { metodo = 'GET', cuerpo } = {}) {
+async function solicitar(ruta, { metodo = 'GET', cuerpo, timeoutMs = TIMEOUT_MS } = {}) {
   const control = new AbortController()
-  const temporizador = setTimeout(() => control.abort(), TIMEOUT_MS)
+  const temporizador = setTimeout(() => control.abort(), timeoutMs)
   const opciones = { method: metodo, signal: control.signal }
   if (cuerpo !== undefined) {
     opciones.headers = { 'Content-Type': 'application/json' }
@@ -119,13 +124,7 @@ export async function obtenerPaises(continente = '') {
 }
 
 // GET /news (HU-DASH-002-v2): noticias más influyentes, paginadas y filtradas.
-export function obtenerNoticias({
-  signo = 'todas',
-  continente = '',
-  pais = '',
-  pagina = 1,
-  tamanioPagina = 10,
-}) {
+export function obtenerNoticias({ signo = 'todas', continente = '', pais = '', pagina = 1, tamanioPagina = 10 }) {
   const consulta = new URLSearchParams({
     orden: 'influencia',
     signo,
@@ -179,12 +178,12 @@ export function cambiarEstadoFuente(id, activo) {
 
 // POST /sources/{id}/captures (HU-RSS-008): captura manual de una fuente.
 export function capturarFuente(id) {
-  return solicitar(`/sources/${id}/captures`, { metodo: 'POST' })
+  return solicitar(`/sources/${id}/captures`, { metodo: 'POST', timeoutMs: TIMEOUT_LARGO_MS })
 }
 
 // POST /captures (HU-RSS-008): captura manual de varias fuentes.
 export function capturarFuentes(ids) {
-  return solicitar('/captures', { metodo: 'POST', cuerpo: { fuente_ids: ids } })
+  return solicitar('/captures', { metodo: 'POST', cuerpo: { fuente_ids: ids }, timeoutMs: TIMEOUT_LARGO_MS })
 }
 
 // GET /dictionary (HU-SENT-001-v2), paginado y con búsqueda.
@@ -232,5 +231,5 @@ export function purgarNoticias(fecha = '') {
 
 // POST /trainings (HU-SENT-006).
 export function entrenarModelo() {
-  return solicitar('/trainings', { metodo: 'POST' })
+  return solicitar('/trainings', { metodo: 'POST', timeoutMs: TIMEOUT_LARGO_MS })
 }

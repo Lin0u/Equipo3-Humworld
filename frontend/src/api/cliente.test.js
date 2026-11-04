@@ -2,6 +2,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   ErrorApi,
+  TIMEOUT_LARGO_MS,
   actualizarTermino,
   cambiarEstadoFuente,
   capturarFuente,
@@ -173,6 +174,15 @@ describe('panel de administración (HU-ADMIN-004)', () => {
     expect(rutaLlamada(2)).toBe('/news?fecha_anterior_a=2026-01-01')
     expect(rutaLlamada(3)).toBe('/news')
     expect(rutaLlamada(4)).toBe('/trainings')
+  })
+
+  it('espera más tiempo en la captura y el entrenamiento', async () => {
+    const espera = vi.spyOn(globalThis, 'setTimeout')
+    await obtenerConfiguracion()
+    await capturarFuente(1)
+    await entrenarModelo()
+    expect(espera.mock.calls.map((llamada) => llamada[1])).toEqual([10000, TIMEOUT_LARGO_MS, TIMEOUT_LARGO_MS])
+    espera.mockRestore()
   })
 
   it('usa el mensaje y el código de negocio que devuelve la API', async () => {
