@@ -21,6 +21,13 @@ BARRIDO_HUMOR_JOB_ID = "barrido-humor-pendiente"  # HU-SENT-002-v2
 PURGADO_JOB_ID = "purgado-noticias-caducadas"  # HU-ADMIN-002
 scheduler: AsyncIOScheduler = AsyncIOScheduler()
 
+# APScheduler descarta una ejecución que llega más de 1 s tarde (valor por
+# defecto de misfire_grace_time). Si el event loop estuvo ocupado (por ejemplo,
+# con una captura manual larga) o el equipo se suspendió, la captura del ciclo se
+# perdía en silencio ("was missed by ..."). Con None se ejecuta igual al
+# liberarse, y coalesce=True junta en una sola las ejecuciones atrasadas.
+TOLERANCIA_ATRASO = None
+
 
 def _obtener_periodicidad_actual() -> int:
     db = SessionLocal()
@@ -83,6 +90,7 @@ def iniciar_scheduler() -> None:
         next_run_time=datetime.now(timezone.utc) + timedelta(minutes=minutos),
         max_instances=1,
         coalesce=True,
+        misfire_grace_time=TOLERANCIA_ATRASO,
     )
     # Primera ejecución 1 minuto después de arrancar, para retomar noticias
     # pendientes (p. ej., capturadas antes de existir el cálculo de humor).
@@ -94,6 +102,7 @@ def iniciar_scheduler() -> None:
         next_run_time=datetime.now(timezone.utc) + timedelta(minutes=1),
         max_instances=1,
         coalesce=True,
+        misfire_grace_time=TOLERANCIA_ATRASO,
     )
     # HU-ADMIN-002: primera ejecución 5 minutos después de arrancar y luego
     # cada purgado_intervalo_horas (valor propuesto: 24 h).
@@ -105,6 +114,7 @@ def iniciar_scheduler() -> None:
         next_run_time=datetime.now(timezone.utc) + timedelta(minutes=5),
         max_instances=1,
         coalesce=True,
+        misfire_grace_time=TOLERANCIA_ATRASO,
     )
     scheduler.start()
 
@@ -130,4 +140,5 @@ def reprogramar_periodicidad(minutos: int) -> None:
             next_run_time=datetime.now(timezone.utc) + timedelta(minutes=minutos),
             max_instances=1,
             coalesce=True,
+            misfire_grace_time=TOLERANCIA_ATRASO,
         )

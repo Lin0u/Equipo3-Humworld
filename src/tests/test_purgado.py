@@ -165,6 +165,9 @@ def test_el_scheduler_registra_el_job_de_purgado(monkeypatch):
     jobs = dict(registrados)
     assert scheduler_module.PURGADO_JOB_ID in jobs
     assert jobs[scheduler_module.PURGADO_JOB_ID]["hours"] == 24
+    # Ningún job se descarta por llegar tarde: se ejecuta al liberarse el loop.
+    assert all(kwargs["misfire_grace_time"] is None for kwargs in jobs.values())
+    assert len(jobs) == 3
 
 
 # --- HU-ADMIN-003: purgado manual -----------------------------------------
