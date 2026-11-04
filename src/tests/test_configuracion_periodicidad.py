@@ -155,3 +155,4 @@ def test_reprogramar_periodicidad_modifica_job_existente(monkeypatch):
     assert kwargs["minutes"] == 90
     assert kwargs["max_instances"] == 1
     assert kwargs["coalesce"] is True
+    assert kwargs["misfire_grace_time"] is None
