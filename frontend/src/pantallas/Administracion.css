@@ -1,0 +1,121 @@
+/* HumWorld - panel de administración (HU-ADMIN-004). Reutiliza las variables de
+   index.css y las clases compartidas .campo, .filtro y .paginacion. */
+.admin-encabezado {
+  margin-bottom: 14px;
+}
+
+.admin-pestanas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.admin-panel {
+  background: var(--superficie);
+  border: var(--borde);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra);
+  padding: 20px;
+}
+
+.admin-formulario {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.admin-fila-formulario {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 16px;
+  margin-bottom: 14px;
+}
+
+.admin-acciones {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.admin-ayuda {
+  font-size: 13px;
+  color: var(--texto-suave);
+  margin: 4px 0 10px;
+}
+
+.admin-aviso {
+  border: var(--borde);
+  border-radius: 10px;
+  padding: 8px 12px;
+  margin: 10px 0;
+  font-weight: 600;
+}
+
+.admin-aviso-error {
+  background: #ffe1e2;
+  color: var(--texto-negativo);
+}
+
+.admin-aviso-exito {
+  background: #d9f6ee;
+  color: var(--texto-positivo);
+}
+
+.admin-aviso-info {
+  background: #fff3cf;
+  color: var(--texto-neutro);
+}
+
+.admin-resultados {
+  margin: 0 0 14px 18px;
+  font-size: 14px;
+}
+
+.admin-buscador {
+  margin: 12px 0;
+}
+
+.admin-tabla-contenedor {
+  overflow-x: auto;
+}
+
+.admin-tabla {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  margin-top: 8px;
+}
+
+.admin-tabla th,
+.admin-tabla td {
+  text-align: left;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--humor-sin-datos);
+  vertical-align: middle;
+}
+
+.admin-tabla th {
+  font-family: var(--letra-titulos);
+  font-weight: 600;
+  border-bottom: var(--borde);
+}
+
+.admin-tabla input[type='number'] {
+  width: 70px;
+}
+
+.admin-url {
+  max-width: 320px;
+  overflow-wrap: anywhere;
+}
+
+.filtro:disabled {
+  opacity: 0.45;
+  cursor: default;
+  transform: none;
+  box-shadow: none;
+}

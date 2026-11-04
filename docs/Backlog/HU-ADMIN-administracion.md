@@ -2,7 +2,7 @@
 
 **Proyecto:** HumWorld — Equipo 3
 **Origen:** PDF de especificaciones, §4.2.5 (Purgado de información antigua), §4.3 punto 1 (Panel de administración) y §10.2 (`/config`: GET, PUT; `/news`: DELETE). Títulos y puntos tomados del backlog entregado en P3 (`Anexo-I-Planificacion-entregado-P3.md`, Sprint 4).
-**Estado general:** HU-ADMIN-001 (parcial), HU-ADMIN-002 y HU-ADMIN-003 implementadas el 2026-10-19 (rama `feature/cierre-sprint`), pendientes de revisión en el PR y de ratificación del equipo. HU-ADMIN-004 formalizada el 2026-10-20, pendiente de implementación.
+**Estado general:** HU-ADMIN-001 (parcial), HU-ADMIN-002 y HU-ADMIN-003 implementadas el 2026-10-19 (rama `feature/cierre-sprint`), pendientes de revisión en el PR y de ratificación del equipo. HU-ADMIN-004 formalizada el 2026-10-20 e implementada el 2026-11-04 (rama `feature/panel-admin`), pendiente de revisión en el PR, de validación visual y de ratificación del equipo.
 **Versión del documento:** v1.2. Ver la Tabla de control de versiones al final del documento.
 
 > **Nota de grounding (valores propuestos):** el PDF exige que la caducidad sea "un parámetro modificable por el usuario", pero no fija su valor. Los valores de este documento — caducidad por defecto de **90 días** y ejecución del purgado automático **cada 24 horas** — son propuestos (decisión de la PO del 2026-10-19), no tomados del PDF, y quedan pendientes de ratificación del equipo con el mismo tratamiento que una estimación de Planning Poker. Justificación de los 90 días: cubren con holgura la ventana de 30 días del gráfico de evolución (HU-DASH-001-v3) y conservan historial suficiente para el umbral de entrenamiento del modelo de ML (1.000 noticias, ADR-004).
@@ -171,7 +171,7 @@ Escenario: Idempotencia
 
 **Prioridad:** Alta *(es la única vista obligatoria del PDF que falta: §4.3, vista 1)*
 **Estimación (Planning Poker P3):** 2 puntos. *Con el detalle de abajo el alcance es mayor que el estimado en P3; el equipo debe re-estimarla. Es un punto de partida, no un valor definitivo.*
-**Responsable propuesto:** Valentín García (frontend).
+**Responsable propuesto:** Valentín García (frontend). *Implementada por la PO con el agente PO/Arquitecto el 2026-11-04; la revisión del PR queda a cargo del equipo.*
 **Depende de contrato de API:** Sí. No requiere endpoints nuevos: consume los ya implementados.
 
 | Pestaña | Endpoints | Contrato |
@@ -194,6 +194,7 @@ Escenario: Idempotencia
 3. **Fuentes:** "Eliminar" es una baja lógica (la API deja `activo = false`, HU-RSS-005). La vista lo nombra "Desactivar" para no confundir al usuario.
 4. **Acciones irreversibles** (purgado, eliminar término): piden confirmación explícita antes de llamar a la API.
 5. **Errores:** se muestra el `mensaje` que devuelve la API (por ejemplo, el 409 de término duplicado), no un texto genérico.
+6. **URL duplicada:** la API no rechaza URLs repetidas (`fuente_rss.url` no tiene restricción de unicidad y el contrato de `POST /sources` no define 409 por duplicado). La vista no inventa esa regla. Si el equipo quiere impedir duplicados, debe hacerse primero en el backend (nueva versión de HU-RSS-002 y del contrato).
 
 ### Criterios de aceptación (Gherkin)
 
@@ -210,10 +211,10 @@ Escenario: Alta de una fuente
   Cuando el administrador completa URL y categoría IPTC (lista de las 17 categorías de primer nivel) y guarda
   Entonces la API responde 201 y la fuente aparece en el listado sin recargar la página
 
-Escenario: URL inválida o duplicada
-  Cuando el administrador guarda una fuente con una URL mal formada o ya registrada
-  Entonces la vista muestra el mensaje de error que devuelve la API (400 o 409)
-  Y el formulario conserva los datos escritos
+Escenario: URL mal formada
+  Cuando el administrador escribe una URL que no empieza con http:// o https://
+  Entonces el formulario no permite guardar y explica el formato esperado
+  Y si la API rechaza la fuente (400), la vista muestra su mensaje y el formulario conserva los datos escritos
 
 Escenario: Desactivar y reactivar una fuente
   Dado una fuente activa
@@ -238,8 +239,9 @@ Escenario: Captura manual de varias fuentes
   Y la vista muestra un resultado por fuente, aunque alguna falle
 
 Escenario: Captura de una fuente inactiva
-  Cuando el administrador intenta capturar una fuente inactiva
-  Entonces la vista muestra el mensaje del 409 de la API
+  Dado una fuente inactiva
+  Entonces su botón "Capturar ahora" está deshabilitado y no se puede seleccionar para captura múltiple
+  Y si la API responde 409 (por ejemplo, porque otra sesión la desactivó), la vista muestra su mensaje
 
 # --- Diccionario (HU-SENT-001) ---
 Escenario: Búsqueda en el diccionario
@@ -335,3 +337,4 @@ Escenario: API no disponible
 | HU-ADMIN-001 a 003 | v1.0 | 2026-10-19 | Primera formalización de EPIC-ADMIN a partir de los títulos del backlog de P3 y del PDF §4.2.5, junto con su implementación. Decisiones de la PO: caducidad por defecto de 90 días y fecha de referencia `fecha_registro`. Valor propuesto por el agente PO/Arquitecto: ejecución cada 24 horas. HU-ADMIN-004 queda sin formalizar. |
 | HU-ADMIN-004 | v1.1 | 2026-10-20 | Formalización de HU-ADMIN-004: pestañas, endpoints que consume, 20 escenarios Gherkin, DoD, alcance excluido (usuarios, edición de canales) y 5 decisiones de diseño propuestas. Sube a prioridad Alta por ser la única vista obligatoria del PDF pendiente; se pide re-estimar. |
 | HU-ADMIN-004 | v1.2 | 2026-10-20 | Decisión de la PO: el diccionario se pagina en el backend (HU-SENT-001-v2), no en el navegador. Se ajustan la decisión de diseño 2, el escenario de búsqueda y la tabla de endpoints. |
+| HU-ADMIN-004 | v1.3 | 2026-11-04 | Implementación en el frontend (`pantallas/Administracion.jsx` y `pantallas/admin/`, 29 pruebas Vitest). Se corrige el escenario "URL inválida o duplicada": la API acepta URLs repetidas, por lo que queda "URL mal formada" (validación en el formulario y 400 de la API) y se agrega la decisión de diseño 6. El escenario de captura de una fuente inactiva refleja que el botón se deshabilita. |

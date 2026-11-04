@@ -98,7 +98,7 @@ flowchart LR
 - **Diccionario siempre disponible, ML condicional:** `UCS2 «include» UCDicc` (el método de diccionario es el camino base y el fallback); `UCS2 «extend» UCML` (el camino de ML solo se ejecuta si existe un modelo entrenado que responde dentro del timeout — HU-SENT-002-v3). El análisis de texto arbitrario (HU-SENT-005) usa siempre diccionario, nunca ML.
 - **Barrido de respaldo:** el job periódico no reimplementa el cálculo; reutiliza `UCS2` sobre las noticias con `metodo_calculo IS NULL` (HU-SENT-002-v3).
 - **Enabler Stories:** HU-RSS-006, HU-RSS-009-v2, HU-SENT-002-v3 y HU-ADMIN-002 tienen al sistema como actor (no un usuario humano); se representan como casos de uso por describir comportamiento observable.
-- **Historias sin caso de uso propio:** HU-SENT-003 (persistencia del resultado) y HU-SENT-008 (persistencia de coincidencias) extienden el modelo de datos sin comportamiento observable distinto del que ya modelan otros casos; se documentan en el diagrama de clases, no aquí. El panel de administración unificado (HU-ADMIN-004) está sin iniciar y no se representa.
+- **Historias sin caso de uso propio:** HU-SENT-003 (persistencia del resultado) y HU-SENT-008 (persistencia de coincidencias) extienden el modelo de datos sin comportamiento observable distinto del que ya modelan otros casos; se documentan en el diagrama de clases, no aquí. El panel de administración unificado (HU-ADMIN-004) no agrega casos de uso: es la interfaz desde la que el Administrador ejecuta los que ya figuran (gestión de fuentes y canales, captura manual, CRUD del diccionario, parámetros, purgado manual y entrenamiento).
 
 ## Historial de revisión
 
@@ -106,3 +106,4 @@ flowchart LR
 |---|---|---|
 | v1.0 | 2026-09-06 | Creación como diagrama de casos de uso de EPIC-RSS (HU-RSS-001 a 010), con relaciones `«include»` para la captura. |
 | v2.0 | 2026-10-29 | Consolidación en el diagrama del sistema completo (rol Documentación): se integran los casos de uso de EPIC-SENT (antes en `diagrama-casos-de-uso-sentimiento.md`) y se añaden EPIC-DASH y EPIC-ADMIN. Se actualizan las historias a sus versiones vigentes (HU-SENT-002-v3, HU-SENT-007-v3). Reemplaza y absorbe a `diagrama-casos-de-uso-sentimiento.md`. |
+| v2.1 | 2026-11-04 | HU-ADMIN-004 implementada: se aclara que no introduce casos de uso nuevos. |

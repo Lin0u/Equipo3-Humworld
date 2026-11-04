@@ -100,7 +100,7 @@
 **Historias incluidas (diseño/backlog):** HU-ADMIN-001, HU-ADMIN-002, HU-ADMIN-003 (formalización); HU-SENT-006 (arquitectura en ADR-004).
 
 **Desviaciones respecto de P3:**
-- **HU-ADMIN-004 (panel de administración unificado)** quedó **sin iniciar** (así lo declara `HU-ADMIN-administracion.md`). Es la principal historia planificada que no se ejecutó.
+- **HU-ADMIN-004 (panel de administración unificado)** quedó **sin iniciar** en este sprint. Se formalizó el 2026-10-20 y se implementó en el cierre del Sprint 5 (2026-11-04).
 - La implementación efectiva de EPIC-ADMIN y del modelo de ML se integró a `main` en Sprint 5.
 
 ---
@@ -121,8 +121,9 @@
 - Entrenamiento y versionado del modelo de ML (HU-SENT-006, ADR-004) (`52a7912`, 19-oct).
 - Renombrado de ADR a tres dígitos (ADR-001 a ADR-005) (`96e5722`, 19-oct) y actualización del README y `.env.example` (`7ef5f84`, 19-oct).
 - Comparación por lema con spaCy y detección de idioma (HU-SENT-007-v3) (`23afb88`, 20-oct); corrección de hallazgos de SonarQube y medición de cobertura (`a3e191b`, 20-oct); exigir modelos de spaCy al arrancar y ejecutar la API sin usuario root (`f94027a`, 20-oct).
+- Paginación de `GET /dictionary` (HU-SENT-001-v2) (`a500d86`, 20-oct) y panel de administración unificado (HU-ADMIN-004) (rama `feature/panel-admin`, 04-nov).
 
-**Historias incluidas (implementadas e integradas):** HU-RSS-009-v2; HU-SENT-002-v3, HU-SENT-003, HU-SENT-004, HU-SENT-005, HU-SENT-006, HU-SENT-007-v3, HU-SENT-008; HU-DASH-001-v3, HU-DASH-002-v2, HU-DASH-003-v2; HU-ADMIN-001, HU-ADMIN-002, HU-ADMIN-003.
+**Historias incluidas (implementadas e integradas):** HU-RSS-009-v2; HU-SENT-002-v3, HU-SENT-003, HU-SENT-004, HU-SENT-005, HU-SENT-006, HU-SENT-007-v3, HU-SENT-008; HU-DASH-001-v3, HU-DASH-002-v2, HU-DASH-003-v2; HU-ADMIN-001, HU-ADMIN-002, HU-ADMIN-003, HU-ADMIN-004; HU-SENT-001-v2.
 
 **Observación:** el Sprint 5 absorbió la implementación de lo diseñado en los Sprints 2-4. El cierre del camino de ML (HU-SENT-002-v3 / HU-SENT-006) se ejecutó aquí, en línea con el goal planificado de "activar el camino del modelo".
 
@@ -136,10 +137,10 @@
 | Sprint 1 | Captura y gestión RSS | Ejecutado; +HU-RSS-010; HU-RSS-003→003-v2 | HU-RSS-001, 002, 003-v2, 004, 005, 010 |
 | Sprint 2 | Motor de sentimiento | Diseño/backlog ejecutado; implementación diferida a Sprint 5 | HU-SENT-001 a 007 (diseño) |
 | Sprint 3 | Dashboards | Maqueta + diseño ejecutados; integración diferida a Sprint 5 | HU-DASH-001-v3, 002-v2, 003-v2; HU-SENT-008 |
-| Sprint 4 | Administración + ML | Backlog formalizado; implementación diferida a Sprint 5; HU-ADMIN-004 sin iniciar | HU-ADMIN-001, 002, 003; HU-SENT-006 |
+| Sprint 4 | Administración + ML | Backlog formalizado; implementación diferida a Sprint 5 (HU-ADMIN-004 incluida, 04-nov) | HU-ADMIN-001, 002, 003; HU-SENT-006 |
 | Sprint 5 | Estabilización e integración | Ejecutado; concentró la integración a `main` de Sprints 2-5 | Todas las anteriores + cargas iniciales |
 
-**Historias planificadas no ejecutadas:** HU-ADMIN-004 (panel de administración unificado) — sin iniciar.
+**Historias planificadas no ejecutadas:** ninguna. HU-ADMIN-004 (panel de administración unificado), la última pendiente, se implementó el 2026-11-04.
 
 ---
 
@@ -154,3 +155,4 @@ El Anexo I de P3 usa una numeración de HU-RSS distinta a la del backlog vigente
 | Versión | Fecha | Motivo del cambio |
 |---|---|---|
 | v1.0 | 2026-10-29 | Creación. Reconstrucción de la organización real de los sprints a partir del historial de git y de las tablas de control de versiones del backlog, con goals planificados, ejecución real, desviaciones e historias por sprint. Entregable de §4.7 punto 7. No modifica los documentos de P3. |
+| v1.1 | 2026-11-04 | HU-ADMIN-004 implementada en el cierre del Sprint 5; se agrega también la paginación del diccionario (HU-SENT-001-v2). Ya no quedan historias planificadas sin ejecutar. |

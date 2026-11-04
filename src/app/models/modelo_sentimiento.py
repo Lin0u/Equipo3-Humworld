@@ -5,7 +5,7 @@ Origina en: HU-SENT-006 (entrenamiento y versionado del modelo de ML) y
 ADR-004, punto 5 (esquema de versionado). Solo guarda metadatos y la ruta del
 regresor serializado (.joblib); el archivo vive en disco o en un volumen Docker.
 
-Agregación con Noticia (rombo vacío, diagrama-clases-sentimiento.md): una
+Agregación con Noticia (rombo vacío, docs/UML/diagrama-clases.md): una
 noticia calculada con ML referencia la versión usada, pero ambas tienen ciclos
 de vida independientes.
 """

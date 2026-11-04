@@ -25,3 +25,7 @@ export function nombreCategoria(codigo) {
   if (!codigo) return null
   return CATEGORIAS_IPTC[codigo] ?? codigo
 }
+
+// Lista [código, nombre] en orden de código, para los selectores del panel de
+// administración (HU-ADMIN-004).
+export const LISTA_CATEGORIAS_IPTC = Object.entries(CATEGORIAS_IPTC)

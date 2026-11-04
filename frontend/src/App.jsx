@@ -1,11 +1,12 @@
 // HumWorld - estructura base del frontend: cabecera con la mascota, menú y pantalla activa.
 // Cada pantalla vive en su propio archivo dentro de src/pantallas.
-// Origen: HU-DASH-001-v3 a HU-DASH-003-v2 y ADR-005. El mapa usa datos reales del
+// Origen: HU-DASH-001-v3 a HU-DASH-003-v2, HU-ADMIN-004 y ADR-005. El mapa usa datos reales del
 // backend; la nube y el listado siguen con datos de ejemplo hasta tener sus endpoints.
 import { useEffect, useState } from 'react'
 import './App.css'
 import { obtenerMapa } from './api/cliente.js'
 import CerebroHumor from './componentes/CerebroHumor.jsx'
+import Administracion from './pantallas/Administracion.jsx'
 import ListadoNoticias from './pantallas/ListadoNoticias.jsx'
 import MapaHumor from './pantallas/MapaHumor.jsx'
 import NubePalabras from './pantallas/NubePalabras.jsx'
@@ -16,6 +17,7 @@ const PANTALLAS = [
   { id: 'mapa', nombre: 'Mapa de humor' },
   { id: 'nube', nombre: 'Nube de palabras' },
   { id: 'noticias', nombre: 'Noticias' },
+  { id: 'admin', nombre: 'Administración' },
 ]
 
 export default function App() {
@@ -90,6 +92,7 @@ export default function App() {
         )}
         {pantallaActiva === 'nube' && <NubePalabras />}
         {pantallaActiva === 'noticias' && <ListadoNoticias />}
+        {pantallaActiva === 'admin' && <Administracion />}
       </main>
     </div>
   )

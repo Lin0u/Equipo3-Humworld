@@ -46,7 +46,7 @@ Cada requisito funcional (RF) deriva de una función descrita en el PDF (§4.1 a
 | RF-26 | Documentación interactiva de la API REST con Swagger/OpenAPI (`/api/docs`). | §10.1 | (transversal, FastAPI) |
 
 **Notas:**
-- RF-25 (HU-ADMIN-004) está declarada **sin iniciar** en el backlog (`HU-ADMIN-administracion.md`): no se ha implementado un panel unificado. Las vistas de gestión existentes (fuentes, diccionario, parámetros) se operan hoy vía la API REST y las vistas del frontend. Se deja como requisito pendiente del equipo.
+- RF-25 (HU-ADMIN-004) se implementó el 2026-11-04 como la vista "Administración" del frontend (`frontend/src/pantallas/Administracion.jsx` y `pantallas/admin/`), con pestañas de fuentes RSS, diccionario, parámetros, purgado y modelo de ML sobre los endpoints existentes; pruebas en `frontend/src/pantallas/Administracion.test.jsx`. Pendiente de revisión en el PR y de validación visual del equipo.
 - RF-12 (carga inicial del diccionario) se implementó como script interno (`python -m scripts.seed_diccionario`), de forma análoga a RF-09 (carga inicial de fuentes, `python -m scripts.seed`). El dataset está en `docs/Backlog/Dataset-diccionario-inicial.md`, propuesto y pendiente de aprobación del equipo.
 
 ---
@@ -125,3 +125,4 @@ Trazabilidad **requisito → historia → endpoint/mecanismo → prueba**. El en
 | Versión | Fecha | Motivo del cambio |
 |---|---|---|
 | v1.0 | 2026-10-29 | Creación. Lista formal de requisitos funcionales (RF-01 a RF-26) y no funcionales (RNF-01 a RNF-16) derivada del PDF de especificaciones del proyecto, con matriz de trazabilidad requisito → historia → endpoint → prueba y registro de huecos. Entregable de §4.7 punto 2 y §8.1. |
+| v1.1 | 2026-11-04 | RF-25 (HU-ADMIN-004) pasa de pendiente a implementado, pendiente de revisión. |
